@@ -13,6 +13,7 @@ import {
 } from "recharts";
 import { JobCard } from "@/features/job/components";
 import { MOCK_JOBS } from "@/features/job/api/job.api";
+import { StatCard } from "@/shared/components/data-display/stat-card";
 
 /* ─── CHART SERIES COLORS ───────────────────────────────────────
    Categorical pair from the brand ramp (primary-600 + primary-400).
@@ -158,43 +159,6 @@ function SectionCard({
       </div>
       <div className={flush ? "" : "p-5"}>{children}</div>
     </div>
-  );
-}
-
-/* ─── STAT CARD (KPI tile) ──────────────────────────────────── */
-function StatCard({
-  label, value, change, changeUp, icon, accentColor, accentBg, href,
-}: {
-  label: string;
-  value: string;
-  change: string;
-  changeUp?: boolean;
-  icon: React.ReactNode;
-  accentColor: string;
-  accentBg: string;
-  href: string;
-}) {
-  return (
-    <Link
-      href={href}
-      className="rounded-lg border p-5 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 group block"
-      style={{ background: "var(--color-card)", borderColor: "var(--color-border)", boxShadow: "var(--shadow-sm)" }}
-    >
-      <div className="flex items-center justify-between mb-3">
-        <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--color-text-tertiary)" }}>{label}</p>
-        <div
-          className="w-9 h-9 rounded-md flex items-center justify-center transition-transform duration-200 group-hover:scale-110"
-          style={{ background: accentBg, color: accentColor }}
-        >
-          {icon}
-        </div>
-      </div>
-      <p className="text-3xl font-extrabold tracking-tight" style={{ color: "var(--color-text-primary)" }}>{value}</p>
-      <p className="text-xs mt-1.5 flex items-center gap-1" style={{ color: "var(--color-text-tertiary)" }}>
-        {changeUp && <TrendingUp size={11} style={{ color: "var(--color-success-500)" }} />}
-        {change}
-      </p>
-    </Link>
   );
 }
 
