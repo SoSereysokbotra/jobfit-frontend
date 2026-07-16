@@ -269,6 +269,41 @@
   .animate-pulse-soft {
     animation: pulseSoft 2s ease-in-out infinite;
   }
+
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  .animate-float-delayed {
+    animation: float 6s ease-in-out 1.5s infinite;
+  }
+
+  /* Infinite horizontal logo strip — content must be duplicated once
+     inside a w-max flex row so the -50% shift loops seamlessly. */
+  .animate-marquee {
+    animation: marquee 30s linear infinite;
+  }
+
+  .animate-marquee:hover {
+    animation-play-state: paused;
+  }
+
+  .animate-marquee-reverse {
+    animation: marquee 30s linear infinite reverse;
+  }
+
+  .animate-marquee-reverse:hover {
+    animation-play-state: paused;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .animate-float,
+    .animate-float-delayed,
+    .animate-marquee,
+    .animate-marquee-reverse {
+      animation: none;
+    }
+  }
 }
 
 /* ─── KEYFRAMES ───────────────────────────────────────────── */
@@ -286,6 +321,16 @@
 @keyframes pulseSoft {
   0%, 100% { opacity: 1; }
   50%      { opacity: 0.7; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-12px); }
+}
+
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
 }
 
 @keyframes spin {
