@@ -288,7 +288,7 @@ function ResumeUploadStep({
       {!file && (
         <div className="p-3 bg-neutral-50 rounded-lg border border-neutral-200">
           <label className="block text-[11px] font-bold text-neutral-500 uppercase tracking-wider mb-2 text-center">
-            ⚙️ Parser Simulation Mode
+           Parser Simulation Mode
           </label>
           <div className="grid grid-cols-3 gap-2">
             {(["high", "low", "failed"] as const).map((q) => (
@@ -910,9 +910,6 @@ function ProfileSetupStep({
             <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wider">
               Salary Expectations
             </label>
-            <span className="text-[10px] font-bold text-green-700 bg-green-50 border border-green-200 px-2 py-0.5 rounded-full">
-              🔒 Private for matching
-            </span>
           </div>
           
           <div className="p-4 bg-neutral-50 rounded-lg border border-neutral-200 space-y-4">
@@ -1178,7 +1175,7 @@ function FirstMatchesStep({
       {/* SIMULATOR SWITCHER */}
       <div className="p-3 bg-neutral-50 rounded-lg border border-neutral-200">
         <label className="block text-[11px] font-bold text-neutral-500 uppercase tracking-wider mb-2 text-center">
-          ⚙️ Recommendation Simulation Path
+          Recommendation Simulation Path
         </label>
         <div className="grid grid-cols-2 gap-2">
           <button
@@ -1223,7 +1220,6 @@ function FirstMatchesStep({
         <div className="space-y-5">
           <div className="border rounded-lg p-5 bg-primary-50 border-primary-200 text-sm space-y-3 shadow-sm">
             <div className="flex items-center gap-2 font-bold text-primary-800 text-base">
-              <span className="animate-pulse">⏳</span>
               Your personalized matches will be ready in a few hours
             </div>
             <p className="text-primary-700 text-xs leading-relaxed">

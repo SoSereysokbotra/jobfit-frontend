@@ -80,6 +80,16 @@
   --color-hover:          var(--color-primary-600);
   --color-active:         var(--color-primary-800);
 
+  /* ─── ON-GRADIENT / OVERLAY ALIASES ─────────────────────────
+     For content sitting on primary gradients, dark panels, and
+     modal scrims. Use these instead of raw white/rgba values. */
+  --color-text-on-primary-muted:    rgba(255, 255, 255, 0.75);
+  --color-surface-on-primary:       rgba(255, 255, 255, 0.10);
+  --color-surface-on-primary-hover: rgba(255, 255, 255, 0.15);
+  --color-border-on-primary:        rgba(255, 255, 255, 0.25);
+  --color-scrim:                    rgba(10, 10, 15, 0.80);
+  --color-success-glow:             rgba(16, 185, 129, 0.12);
+
   /* ─── SPACING SCALE ─────────────────────────────────────── */
   --spacing-xs:  4px;
   --spacing-sm:  8px;

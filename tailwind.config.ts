@@ -56,6 +56,17 @@ const config: Config = {
           500: "var(--color-info-500)",
           600: "var(--color-info-600)",
         },
+        /* On-gradient / overlay aliases — content on primary gradients & scrims.
+           Usage: text-on-primary, text-on-primary-muted, bg-on-primary-surface,
+           hover:bg-on-primary-surface-hover, border-on-primary-border, bg-scrim */
+        "on-primary": {
+          DEFAULT: "var(--color-text-on-primary)",
+          muted: "var(--color-text-on-primary-muted)",
+          surface: "var(--color-surface-on-primary)",
+          "surface-hover": "var(--color-surface-on-primary-hover)",
+          border: "var(--color-border-on-primary)",
+        },
+        scrim: "var(--color-scrim)",
       },
       fontFamily: {
         sans: ["var(--font-family)"],
