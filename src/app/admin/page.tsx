@@ -1,0 +1,84 @@
+"use client";
+
+import React from "react";
+import Link from "next/link";
+import { Activity, Gauge, Users, CheckCircle2, AlertTriangle, Info, ArrowRight, Mail } from "lucide-react";
+import { StatCard } from "@/shared/components/data-display/stat-card";
+import { Badge } from "@/shared/components/data-display/badge";
+import { SYSTEM_HEALTH, SYSTEM_ALERTS, type SystemAlert } from "@/features/admin/api/admin.api";
+
+const ALERT_ICON: Record<SystemAlert["severity"], React.ReactNode> = {
+  info: <Info size={15} className="text-info-500" />,
+  warning: <AlertTriangle size={15} className="text-warning-500" />,
+  error: <AlertTriangle size={15} className="text-error-500" />,
+};
+
+export default function AdminDashboardPage() {
+  return (
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight text-content">Dashboard</h1>
+        <p className="text-sm mt-1 text-content-secondary">Welcome back — here&apos;s how the platform is doing.</p>
+      </div>
+
+      {/* Stat tiles */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <StatCard label="Uptime" value={`${SYSTEM_HEALTH.uptimePercent}%`} hint="+0.2% vs last week" trend="up" icon={<Activity size={18} />} accent="bg-success-50 text-success-600" href="/admin/system" />
+        <StatCard label="API Latency" value={`${SYSTEM_HEALTH.apiLatencyMs}ms`} hint="Well under 500ms target" icon={<Gauge size={18} />} accent="bg-info-50 text-info-600" href="/admin/system" />
+        <StatCard label="Active Users" value={`${SYSTEM_HEALTH.activeUsers}`} hint="Currently online" icon={<Users size={18} />} accent="bg-primary-50 text-primary-600" href="/admin/users" />
+      </div>
+
+      {/* System alerts */}
+      <div className="rounded-lg border border-border bg-card shadow-sm overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-100">
+          <div className="flex items-center gap-2.5">
+            <CheckCircle2 size={18} className="text-success-500" />
+            <div>
+              <h2 className="text-base font-bold text-content">System Alerts</h2>
+              <p className="text-xs text-content-tertiary">Last 24 hours · All systems healthy</p>
+            </div>
+          </div>
+          <Link href="/admin/system" className="text-xs font-bold flex items-center gap-1 text-primary-600 hover:opacity-80">
+            View all <ArrowRight size={13} />
+          </Link>
+        </div>
+        <div className="divide-y divide-neutral-100">
+          {SYSTEM_ALERTS.map((alert) => (
+            <div key={alert.id} className="flex items-center gap-3 px-5 py-3.5">
+              {ALERT_ICON[alert.severity]}
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-content">{alert.message}</p>
+                <p className="text-xs text-content-tertiary">{alert.createdAt}</p>
+              </div>
+              {alert.acknowledged ? (
+                <Badge tone="neutral">Acknowledged</Badge>
+              ) : (
+                <button className="text-xs font-bold px-3 py-1.5 rounded-md border border-border text-content-secondary transition-colors hover:bg-neutral-50">
+                  Acknowledge
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Quick actions */}
+      <div>
+        <h2 className="text-sm font-bold uppercase tracking-wider mb-3 text-content-tertiary">Quick actions</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {[
+            { href: "/admin/users", label: "Manage Users", icon: <Users size={18} />, accent: "bg-primary-50 text-primary-600" },
+            { href: "/admin/system", label: "System Health", icon: <Activity size={18} />, accent: "bg-success-50 text-success-600" },
+            { href: "/admin/email", label: "Email Tracking", icon: <Mail size={18} />, accent: "bg-info-50 text-info-600" },
+          ].map((a) => (
+            <Link key={a.href} href={a.href} className="flex items-center gap-3 p-4 rounded-lg border border-border bg-card shadow-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 group">
+              <div className={`w-10 h-10 rounded-md flex items-center justify-center transition-transform group-hover:scale-110 ${a.accent}`}>{a.icon}</div>
+              <span className="text-sm font-semibold text-content">{a.label}</span>
+              <ArrowRight size={15} className="ml-auto text-content-tertiary" />
+            </Link>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}

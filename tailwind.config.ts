@@ -67,6 +67,32 @@ const config: Config = {
           border: "var(--color-border-on-primary)",
         },
         scrim: "var(--color-scrim)",
+
+        /* ─── SEMANTIC ALIASES (pure-Tailwind surfaces & text) ─────────
+           Enables classes like bg-card, border-border, text-content,
+           text-content-secondary — no inline var() styles needed. */
+        background: {
+          DEFAULT: "var(--color-bg)",
+          secondary: "var(--color-bg-secondary)",
+        },
+        surface: {
+          DEFAULT: "var(--color-surface)",
+          hover: "var(--color-surface-hover)",
+        },
+        card: {
+          DEFAULT: "var(--color-card)",
+          hover: "var(--color-card-hover)",
+        },
+        border: {
+          DEFAULT: "var(--color-border)",
+          focus: "var(--color-border-focus)",
+        },
+        content: {
+          DEFAULT: "var(--color-text-primary)",
+          secondary: "var(--color-text-secondary)",
+          tertiary: "var(--color-text-tertiary)",
+          disabled: "var(--color-text-disabled)",
+        },
       },
       fontFamily: {
         sans: ["var(--font-family)"],
