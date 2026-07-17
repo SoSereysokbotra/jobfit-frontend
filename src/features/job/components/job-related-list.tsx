@@ -1,14 +1,23 @@
+"use client";
+
 import React from "react";
 import Link from "next/link";
-import { MOCK_JOBS } from "../api/job.api";
+import { useJobs } from "../hooks/use-job";
+import { formatSalaryRange } from "@/shared/types/shared.types";
 
 interface JobRelatedListProps {
   currentJobId: string;
 }
 
+/**
+ * "Similar jobs" rail on the job detail page. Sources live published jobs and
+ * excludes the current one. TODO(backend): true relatedness (shared skills /
+ * match score) needs the AI matching service — until then this is "other open
+ * roles", so we show salary rather than a placeholder match %.
+ */
 export function JobRelatedList({ currentJobId }: JobRelatedListProps) {
-  // Grab a few jobs from mock data to show as related
-  const relatedJobs = MOCK_JOBS.filter((j) => j.id !== currentJobId).slice(0, 3);
+  const { data: jobs = [] } = useJobs();
+  const relatedJobs = jobs.filter((j) => j.id !== currentJobId).slice(0, 3);
 
   if (relatedJobs.length === 0) return null;
 
@@ -22,9 +31,9 @@ export function JobRelatedList({ currentJobId }: JobRelatedListProps) {
       }}
     >
       <h3 className="text-sm font-bold mb-4" style={{ color: "var(--color-text-primary)" }}>
-        Similar high-matching jobs
+        Other open roles
       </h3>
-      
+
       <div className="space-y-4">
         {relatedJobs.map((job) => (
           <div key={job.id} className="flex gap-3 pb-4 border-b last:border-b-0 last:pb-0" style={{ borderColor: "var(--color-border)" }}>
@@ -46,8 +55,8 @@ export function JobRelatedList({ currentJobId }: JobRelatedListProps) {
                 {job.company}
               </p>
               <div className="flex items-center justify-between mt-2">
-                <span className="text-xs font-medium" style={{ color: "var(--color-primary-600)" }}>
-                  {job.match}% Match
+                <span className="text-xs font-medium" style={{ color: "var(--color-success-600)" }}>
+                  {formatSalaryRange(job)}
                 </span>
                 <Link
                   href={`/jobs/${job.id}`}

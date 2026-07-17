@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from "react";
 import { RefreshCw, LayoutGrid, List, SlidersHorizontal, X, Star } from "lucide-react";
-import { MOCK_JOBS } from "@/features/job/api/job.api";
+import { MOCK_JOBS } from "@/features/job/api/job.mock";
 import {
   JobRecommendationCard,
   JobRecommendationFilters,

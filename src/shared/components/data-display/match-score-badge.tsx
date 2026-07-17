@@ -17,9 +17,12 @@ export default function MatchScoreBadge({ score, size = "md", className = "" }: 
   const sw = strokeWidths[size];
   const r = (dim / 2) - sw;
   const circumference = 2 * Math.PI * r;
-  const dashArray = `${(score / 100) * circumference} ${circumference}`;
+  // A match score of 0 means "not scored yet" (the AI match service is not wired
+  // in — see INTEGRATION_PLAN.md Phase 10), so render a neutral dash, not a red 0%.
+  const scored = score > 0;
+  const dashArray = `${(scored ? score / 100 : 0) * circumference} ${circumference}`;
 
-  const scoreColor =
+  const scoreColor = !scored ? "var(--color-text-tertiary)" :
     score >= 85 ? "var(--color-primary-600)" :
     score >= 70 ? "var(--color-warning-500)" :
     "var(--color-error-500)";
@@ -46,7 +49,7 @@ export default function MatchScoreBadge({ score, size = "md", className = "" }: 
         className={`absolute font-bold ${fontSizes[size]}`}
         style={{ color: scoreColor }}
       >
-        {score}%
+        {scored ? `${score}%` : "—"}
       </span>
     </div>
   );

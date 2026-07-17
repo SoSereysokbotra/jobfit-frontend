@@ -12,7 +12,7 @@ import {
   ResponsiveContainer, Legend,
 } from "recharts";
 import { JobCard } from "@/features/job/components";
-import { MOCK_JOBS } from "@/features/job/api/job.api";
+import { MOCK_JOBS } from "@/features/job/api/job.mock";
 import { useSession, displayName } from "@/features/auth/hooks/use-session";
 
 /* ─── CHART SERIES COLORS ───────────────────────────────────────

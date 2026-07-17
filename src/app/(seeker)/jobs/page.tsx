@@ -1,16 +1,15 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   SlidersHorizontal, X, List, LayoutGrid, ChevronLeft, ChevronRight,
   SearchX, ArrowUpDown,
 } from "lucide-react";
 import { JobCard, JobSearchBar, JobFilters } from "@/features/job/components";
-import { fetchJobs } from "@/features/job/api/job.api";
+import { useJobs } from "@/features/job/hooks/use-job";
 import { useJobSearch, type JobSortKey } from "@/features/job/hooks/use-job-search";
 import { EmptyState } from "@/shared/components/data-display/empty-state";
 import { JobCardSkeleton } from "@/shared/components/feedback/skeleton";
-import type { Job } from "@/shared/types/shared.types";
 
 const SORT_OPTIONS: { value: JobSortKey; label: string }[] = [
   { value: "match", label: "Match score" },
@@ -19,25 +18,14 @@ const SORT_OPTIONS: { value: JobSortKey; label: string }[] = [
 ];
 
 export default function JobSearchPage() {
-  const [jobs, setJobs] = useState<Job[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  // Live published jobs (React Query). The board filters/sorts client-side over
+  // this set — see useJobSearch — so we fetch the published page once and cache it.
+  const { data: jobs = [], isLoading } = useJobs();
   const [view, setView] = useState<"list" | "grid">("list");
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
 
   const search = useJobSearch(jobs, 5);
-
-  // Simulated fetch (backend: Elasticsearch, FR-JOBS-003)
-  useEffect(() => {
-    let cancelled = false;
-    fetchJobs().then((data) => {
-      if (!cancelled) {
-        setJobs(data);
-        setIsLoading(false);
-      }
-    });
-    return () => { cancelled = true; };
-  }, []);
 
   const toggleSave = (id: string) => {
     setSavedIds((prev) => {
