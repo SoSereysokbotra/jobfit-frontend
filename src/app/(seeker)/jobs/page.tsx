@@ -8,6 +8,7 @@ import {
 import { JobCard, JobSearchBar, JobFilters } from "@/features/job/components";
 import { useJobs } from "@/features/job/hooks/use-job";
 import { useJobSearch, type JobSortKey } from "@/features/job/hooks/use-job-search";
+import { useSavedJobIds, useToggleSavedJob } from "@/features/saved-jobs/hooks/use-saved-jobs";
 import { EmptyState } from "@/shared/components/data-display/empty-state";
 import { JobCardSkeleton } from "@/shared/components/feedback/skeleton";
 
@@ -23,18 +24,11 @@ export default function JobSearchPage() {
   const { data: jobs = [], isLoading } = useJobs();
   const [view, setView] = useState<"list" | "grid">("list");
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
+  const { ids: savedIds } = useSavedJobIds();
+  const toggle = useToggleSavedJob();
+  const toggleSave = (id: string) => toggle.mutate(id);
 
   const search = useJobSearch(jobs, 5);
-
-  const toggleSave = (id: string) => {
-    setSavedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
 
   const filtersPanel = (
     <JobFilters

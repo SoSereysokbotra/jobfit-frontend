@@ -2,64 +2,97 @@
 
 import React from "react";
 import Link from "next/link";
-import { Activity, Gauge, Users, CheckCircle2, AlertTriangle, Info, ArrowRight, Mail } from "lucide-react";
+import { Activity, Gauge, Users, AlertTriangle, Info, ArrowRight, Mail } from "lucide-react";
 import { StatCard } from "@/shared/components/data-display/stat-card";
 import { Badge } from "@/shared/components/data-display/badge";
-import { SYSTEM_HEALTH, SYSTEM_ALERTS, type SystemAlert } from "@/features/admin/api/admin.api";
+import { Skeleton } from "@/shared/components/feedback/skeleton";
+import { useSystemHealth, useAlerts, useAcknowledgeAlert } from "@/features/admin/hooks/use-admin";
+import {
+  HEALTH_TONE,
+  healthLabel,
+  uptimeLabel,
+  severityTone,
+  isAcknowledged,
+  ago,
+} from "@/features/admin/api/admin.mappers";
 
-const ALERT_ICON: Record<SystemAlert["severity"], React.ReactNode> = {
-  info: <Info size={15} className="text-info-500" />,
-  warning: <AlertTriangle size={15} className="text-warning-500" />,
-  error: <AlertTriangle size={15} className="text-error-500" />,
-};
+function AlertIcon({ severity }: { severity: string }) {
+  const tone = severityTone(severity);
+  if (tone === "error") return <AlertTriangle size={15} className="text-error-500" />;
+  if (tone === "warning") return <AlertTriangle size={15} className="text-warning-500" />;
+  return <Info size={15} className="text-info-500" />;
+}
 
 export default function AdminDashboardPage() {
+  const { data: health, isLoading } = useSystemHealth();
+  const { data: alerts = [] } = useAlerts();
+  const acknowledge = useAcknowledgeAlert();
+
+  const recentAlerts = alerts.slice(0, 5);
+
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight text-content">Dashboard</h1>
-        <p className="text-sm mt-1 text-content-secondary">Welcome back — here&apos;s how the platform is doing.</p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-content">Dashboard</h1>
+          <p className="text-sm mt-1 text-content-secondary">Welcome back — here&apos;s how the platform is doing.</p>
+        </div>
+        {health && <Badge tone={HEALTH_TONE[health.status] ?? "neutral"} dot>{healthLabel(health.status)}</Badge>}
       </div>
 
       {/* Stat tiles */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <StatCard label="Uptime" value={`${SYSTEM_HEALTH.uptimePercent}%`} hint="+0.2% vs last week" trend="up" icon={<Activity size={18} />} accent="bg-success-50 text-success-600" href="/admin/system" />
-        <StatCard label="API Latency" value={`${SYSTEM_HEALTH.apiLatencyMs}ms`} hint="Well under 500ms target" icon={<Gauge size={18} />} accent="bg-info-50 text-info-600" href="/admin/system" />
-        <StatCard label="Active Users" value={`${SYSTEM_HEALTH.activeUsers}`} hint="Currently online" icon={<Users size={18} />} accent="bg-primary-50 text-primary-600" href="/admin/users" />
-      </div>
+      {isLoading || !health ? (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">{[1, 2, 3].map((i) => <Skeleton key={i} className="h-28 rounded-lg" />)}</div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <StatCard label="Uptime" value={uptimeLabel(health.uptimeSeconds)} hint={health.databaseUp ? "Database up" : "Database down"} icon={<Activity size={18} />} accent="bg-success-50 text-success-600" href="/admin/system" />
+          <StatCard label="DB Latency" value={`${health.databaseLatencyMs}ms`} hint="Round-trip probe" icon={<Gauge size={18} />} accent="bg-info-50 text-info-600" href="/admin/system" />
+          <StatCard label="Active Users" value={`${health.activeUsers}`} hint="Last 15 minutes" icon={<Users size={18} />} accent="bg-primary-50 text-primary-600" href="/admin/users" />
+        </div>
+      )}
 
       {/* System alerts */}
       <div className="rounded-lg border border-border bg-card shadow-sm overflow-hidden">
         <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-100">
           <div className="flex items-center gap-2.5">
-            <CheckCircle2 size={18} className="text-success-500" />
+            <AlertTriangle size={18} className={health && health.openAlerts.critical > 0 ? "text-error-500" : "text-success-500"} />
             <div>
               <h2 className="text-base font-bold text-content">System Alerts</h2>
-              <p className="text-xs text-content-tertiary">Last 24 hours · All systems healthy</p>
+              <p className="text-xs text-content-tertiary">
+                {health ? `${health.openAlerts.critical} critical · ${health.openAlerts.warning} warning · ${health.openAlerts.info} info` : "Loading…"}
+              </p>
             </div>
           </div>
           <Link href="/admin/system" className="text-xs font-bold flex items-center gap-1 text-primary-600 hover:opacity-80">
             View all <ArrowRight size={13} />
           </Link>
         </div>
-        <div className="divide-y divide-neutral-100">
-          {SYSTEM_ALERTS.map((alert) => (
-            <div key={alert.id} className="flex items-center gap-3 px-5 py-3.5">
-              {ALERT_ICON[alert.severity]}
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-content">{alert.message}</p>
-                <p className="text-xs text-content-tertiary">{alert.createdAt}</p>
+        {recentAlerts.length === 0 ? (
+          <p className="text-sm text-center py-10 text-content-tertiary">No alerts. All systems healthy.</p>
+        ) : (
+          <div className="divide-y divide-neutral-100">
+            {recentAlerts.map((alert) => (
+              <div key={alert.id} className="flex items-center gap-3 px-5 py-3.5">
+                <AlertIcon severity={alert.severity} />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-content">{alert.message}</p>
+                  <p className="text-xs text-content-tertiary">{ago(alert.createdAt)}</p>
+                </div>
+                {isAcknowledged(alert) ? (
+                  <Badge tone="neutral">Acknowledged</Badge>
+                ) : (
+                  <button
+                    onClick={() => acknowledge.mutate(alert.id)}
+                    disabled={acknowledge.isPending}
+                    className="text-xs font-bold px-3 py-1.5 rounded-md border border-border text-content-secondary transition-colors hover:bg-neutral-50 disabled:opacity-50"
+                  >
+                    Acknowledge
+                  </button>
+                )}
               </div>
-              {alert.acknowledged ? (
-                <Badge tone="neutral">Acknowledged</Badge>
-              ) : (
-                <button className="text-xs font-bold px-3 py-1.5 rounded-md border border-border text-content-secondary transition-colors hover:bg-neutral-50">
-                  Acknowledge
-                </button>
-              )}
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Quick actions */}
