@@ -76,7 +76,7 @@ function StepIndicator({ current }: { current: Step }) {
     { num: 3, label: "Your Matches" },
   ];
   return (
-    <div className="w-full max-w-md mx-auto mb-8 px-4">
+    <div className="w-full max-w-2xl mx-auto mb-8 px-4">
       {/* Tracker headers */}
       <div className="flex justify-between items-center text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-3">
         <span>Onboarding Progress</span>
@@ -1437,15 +1437,17 @@ export default function OnboardingResumePage() {
       <div className="fixed top-0 right-0 w-96 h-96 rounded-full opacity-10 pointer-events-none" style={{ background: "var(--color-primary-400)", filter: "blur(100px)" }} />
       <div className="fixed bottom-0 left-0 w-72 h-72 rounded-full opacity-10 pointer-events-none" style={{ background: "var(--color-primary-300)", filter: "blur(80px)" }} />
 
-      <div className="relative z-10 w-full max-w-3xl">
+      <div className="relative z-10 w-full max-w-4xl">
         {/* Logo & Brand */}
         <div className="text-center mb-6">
           <div className="inline-flex items-center gap-3 mb-3">
-            <img
-              src="/logo.png"
-              alt="JobFits Logo"
-              className="w-10 h-10 rounded-xl object-contain bg-white/10 p-1.5 shadow-lg border border-white/25 backdrop-blur-sm"
-            />
+            <div className="w-12 h-12 rounded-xl bg-white shadow-lg flex items-center justify-center p-1.5 border border-white/25">
+              <img
+                src="/logo.png"
+                alt="JobFits Logo"
+                className="w-full h-full object-contain"
+              />
+            </div>
             <span className="text-xl font-extrabold text-white tracking-tight">JobFits</span>
           </div>
           {/* Step Quote */}
@@ -1460,7 +1462,7 @@ export default function OnboardingResumePage() {
           className="rounded-2xl overflow-hidden"
           style={{ background: "var(--color-card)", boxShadow: "0 25px 50px rgba(0,0,0,0.3)" }}
         >
-          <div className="p-6 sm:p-8">
+          <div className="p-6 sm:p-10">
             <StepIndicator current={step} />
 
             {step === 1 && (

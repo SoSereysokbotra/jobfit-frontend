@@ -54,13 +54,13 @@ export default function SignupPage() {
     localStorage.setItem("jobfits_token", "mock-jwt-session-token-30-day");
   };
 
-  // Email/password path — sends a 6-digit verification code
+  // Email/password path — sends a magic link
   const handleEmailSignup = (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     setTimeout(() => {
       setIsSubmitting(false);
-      router.push("/verify-email");
+      router.push(`/verify-email?email=${encodeURIComponent(email)}`);
     }, 1200);
   };
 
