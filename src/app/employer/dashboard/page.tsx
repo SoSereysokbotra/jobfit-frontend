@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useMemo } from "react";
 import Link from "next/link";
 import { Briefcase, Users, Target, TrendingUp, ArrowRight } from "lucide-react";
 import {
@@ -8,11 +8,11 @@ import {
 } from "recharts";
 import { StatCard } from "@/shared/components/data-display/stat-card";
 import { Badge } from "@/shared/components/data-display/badge";
-import { EMPLOYER_JOBS, APPLICANTS, EMPLOYER_TREND } from "@/features/employer/api/employer.api";
+import { Skeleton } from "@/shared/components/feedback/skeleton";
+import { useEmployerJobs, useEmployerApplications } from "@/features/employer/hooks/use-employer";
+import { EMPLOYER_TREND_PLACEHOLDER } from "@/features/employer/api/employer.mappers";
 
-/* Recharts consumes color strings (not Tailwind classes) for stroke/fill. */
 const SERIES = { applications: "var(--color-primary-600)", views: "var(--color-primary-400)" };
-/* Tailwind dot classes for the tooltip legend, keyed by series name. */
 const DOT_CLASS: Record<string, string> = { Applications: "bg-primary-600", Views: "bg-primary-400" };
 
 function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: { name: string; value: number }[]; label?: string }) {
@@ -31,11 +31,21 @@ function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: 
 }
 
 export default function EmployerAnalyticsPage() {
-  const activeJobs = EMPLOYER_JOBS.filter((j) => j.status === "Published").length;
-  const totalApps = EMPLOYER_JOBS.reduce((sum, j) => sum + j.applications, 0);
-  const totalViews = EMPLOYER_JOBS.reduce((sum, j) => sum + j.views, 0);
-  const applyRate = totalViews ? ((totalApps / totalViews) * 100).toFixed(1) : "0";
-  const recent = [...APPLICANTS].slice(0, 4);
+  const { data: jobs = [], isLoading } = useEmployerJobs();
+  const { data: applicants = [] } = useEmployerApplications();
+
+  const activeJobs = jobs.filter((j) => j.status === "Published").length;
+  const totalApps = applicants.length;
+  const scored = applicants.filter((a) => a.match > 0);
+  const avgMatch = scored.length ? Math.round(scored.reduce((s, a) => s + a.match, 0) / scored.length) : null;
+
+  const countByJob = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const a of applicants) m.set(a.jobId, (m.get(a.jobId) ?? 0) + 1);
+    return m;
+  }, [applicants]);
+
+  const recent = applicants.slice(0, 4);
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6">
@@ -46,20 +56,23 @@ export default function EmployerAnalyticsPage() {
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard label="Active Jobs" value={`${activeJobs}`} hint="Published & accepting" icon={<Briefcase size={18} />} accent="bg-primary-50 text-primary-600" href="/employer/jobs" />
-        <StatCard label="Applicants" value={`${totalApps}`} hint="+4 today" trend="up" icon={<Users size={18} />} accent="bg-info-50 text-info-600" href="/employer/applications" />
-        <StatCard label="Apply Rate" value={`${applyRate}%`} hint="views → applies" icon={<Target size={18} />} accent="bg-success-50 text-success-600" />
-        <StatCard label="Avg Match" value="80%" hint="across all roles" trend="up" icon={<TrendingUp size={18} />} accent="bg-warning-50 text-warning-600" />
+        <StatCard label="Applicants" value={`${totalApps}`} hint="across all roles" icon={<Users size={18} />} accent="bg-info-50 text-info-600" href="/employer/applications" />
+        <StatCard label="Total Jobs" value={`${jobs.length}`} hint="draft + published" icon={<Target size={18} />} accent="bg-success-50 text-success-600" href="/employer/jobs" />
+        <StatCard label="Avg Match" value={avgMatch !== null ? `${avgMatch}%` : "—"} hint="scored candidates" icon={<TrendingUp size={18} />} accent="bg-warning-50 text-warning-600" />
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        {/* Chart */}
+        {/* Chart — TODO(backend): no trend endpoint; placeholder series. */}
         <div className="xl:col-span-2 rounded-lg border border-border bg-card shadow-sm p-5 sm:p-6">
-          <div className="mb-5">
-            <h2 className="text-base font-bold text-content">Applications & Views</h2>
-            <p className="text-xs mt-0.5 text-content-tertiary">Last 7 months</p>
+          <div className="mb-5 flex items-center justify-between">
+            <div>
+              <h2 className="text-base font-bold text-content">Applications &amp; Views</h2>
+              <p className="text-xs mt-0.5 text-content-tertiary">Last 7 months</p>
+            </div>
+            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-neutral-100 text-content-tertiary">Sample</span>
           </div>
           <ResponsiveContainer width="100%" height={230}>
-            <AreaChart data={EMPLOYER_TREND} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+            <AreaChart data={EMPLOYER_TREND_PLACEHOLDER} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
               <defs>
                 <linearGradient id="appsFill" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={SERIES.applications} stopOpacity={0.14} /><stop offset="95%" stopColor={SERIES.applications} stopOpacity={0} /></linearGradient>
                 <linearGradient id="viewsFill" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={SERIES.views} stopOpacity={0.14} /><stop offset="95%" stopColor={SERIES.views} stopOpacity={0} /></linearGradient>
@@ -81,18 +94,22 @@ export default function EmployerAnalyticsPage() {
             <h2 className="text-base font-bold text-content">Recent Applicants</h2>
             <Link href="/employer/applications" className="text-xs font-bold flex items-center gap-1 text-primary-600 hover:opacity-80">All <ArrowRight size={12} /></Link>
           </div>
-          <div className="divide-y divide-neutral-100">
-            {recent.map((a) => (
-              <div key={a.id} className="flex items-center gap-3 px-5 py-3">
-                <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0 bg-primary-100 text-primary-700">{a.initials}</div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold truncate text-content">{a.name}</p>
-                  <p className="text-xs text-content-tertiary">{a.appliedAt}</p>
+          {recent.length === 0 ? (
+            <p className="text-sm text-center py-10 text-content-tertiary">No applicants yet.</p>
+          ) : (
+            <div className="divide-y divide-neutral-100">
+              {recent.map((a) => (
+                <div key={a.id} className="flex items-center gap-3 px-5 py-3">
+                  <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0 bg-primary-100 text-primary-700">{a.initials}</div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold truncate text-content">{a.name}</p>
+                    <p className="text-xs text-content-tertiary truncate">{a.jobTitle} · {a.appliedAt}</p>
+                  </div>
+                  {a.match > 0 && <span className="text-sm font-extrabold text-primary-600">{a.match}%</span>}
                 </div>
-                <span className="text-sm font-extrabold text-primary-600">{a.match}%</span>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
@@ -101,30 +118,32 @@ export default function EmployerAnalyticsPage() {
         <div className="px-5 py-4 border-b border-neutral-100">
           <h2 className="text-base font-bold text-content">Job Performance</h2>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-content-tertiary">
-                <th className="font-semibold text-xs uppercase tracking-wider px-5 py-3">Job</th>
-                <th className="font-semibold text-xs uppercase tracking-wider px-5 py-3">Status</th>
-                <th className="font-semibold text-xs uppercase tracking-wider px-5 py-3 hidden sm:table-cell">Views</th>
-                <th className="font-semibold text-xs uppercase tracking-wider px-5 py-3">Applicants</th>
-              </tr>
-            </thead>
-            <tbody>
-              {EMPLOYER_JOBS.map((j) => (
-                <tr key={j.id} className="border-t border-neutral-100">
-                  <td className="px-5 py-3">
-                    <Link href={`/employer/jobs/${j.id}`} className="font-semibold text-content hover:text-primary-700 transition-colors">{j.title}</Link>
-                  </td>
-                  <td className="px-5 py-3"><Badge tone={j.status === "Published" ? "success" : j.status === "Draft" ? "neutral" : "warning"}>{j.status}</Badge></td>
-                  <td className="px-5 py-3 hidden sm:table-cell text-content-secondary">{j.views}</td>
-                  <td className="px-5 py-3 font-bold text-content">{j.applications}</td>
+        {isLoading ? (
+          <div className="p-5 space-y-2">{[1, 2, 3].map((i) => <Skeleton key={i} className="h-8 rounded" />)}</div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-content-tertiary">
+                  <th className="font-semibold text-xs uppercase tracking-wider px-5 py-3">Job</th>
+                  <th className="font-semibold text-xs uppercase tracking-wider px-5 py-3">Status</th>
+                  <th className="font-semibold text-xs uppercase tracking-wider px-5 py-3">Applicants</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {jobs.map((j) => (
+                  <tr key={j.id} className="border-t border-neutral-100">
+                    <td className="px-5 py-3">
+                      <Link href={`/employer/jobs/${j.id}`} className="font-semibold text-content hover:text-primary-700 transition-colors">{j.title}</Link>
+                    </td>
+                    <td className="px-5 py-3"><Badge tone={j.statusTone}>{j.status}</Badge></td>
+                    <td className="px-5 py-3 font-bold text-content">{countByJob.get(j.id) ?? 0}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );

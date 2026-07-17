@@ -64,6 +64,8 @@ export const qk = {
   employer: {
     all: ["employer"] as const,
     company: (companyId: string) => [...qk.employer.all, "company", companyId] as const,
+    companyMe: () => [...qk.employer.all, "company", "me"] as const,
+    jobs: () => [...qk.employer.all, "jobs"] as const,
     jobAnalytics: (jobId: string) =>
       [...qk.employer.all, "job", jobId, "analytics"] as const,
     applications: (filters: Record<string, unknown> = {}) =>
