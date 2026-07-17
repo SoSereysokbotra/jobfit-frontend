@@ -3,65 +3,59 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Mail, Lock, ArrowRight, AlertCircle } from "lucide-react";
+import { Mail, Lock, User, ArrowRight, AlertCircle } from "lucide-react";
 import {
   AuthShell,
   AuthHeading,
   TextField,
   SocialAuthButtons,
   PasswordStrengthMeter,
-  GoogleOAuthModal,
-  MOCK_ACCOUNTS,
-  type MockGoogleAccount,
-  type OAuthProcessingStep,
 } from "@/features/auth/components";
+import { authApi } from "@/features/auth/api/auth.api";
+import { ApiError } from "@/lib/api/client";
+import { Alert } from "@/shared/components/feedback/alert";
 import { Button } from "@/shared/components/ui/button";
-
-const OAUTH_STEPS: OAuthProcessingStep[] = [
-  { label: "Verifying credentials with Google OAuth provider...", desc: "Received email, firstName, lastName, profilePhotoUrl" },
-  { label: "Backend: Creating database record...", desc: "INSERT INTO users (email, firstName, lastName, isEmailVerified=true, role='USER')" },
-  { label: "Backend: Generating JWT Session token...", desc: "Created 30-day expiry authentication token" },
-  { label: "Backend: Registering Refresh token...", desc: "CREATE refresh_tokens (userId, token, expiresAt=NOW+30days)" },
-  { label: "Trust established by OAuth provider...", desc: "Skipped email verification requirement" },
-  { label: "Authentication complete. Finalizing session...", desc: "Redirecting to profile setup..." },
-];
 
 export default function SignupPage() {
   const router = useRouter();
 
-  // Form state
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
-  // OAuth modal
-  const [showOAuthModal, setShowOAuthModal] = useState(false);
+  // RegisterDto requires @MinLength(8); mirror it so the user sees it before submitting.
+  const passwordTooShort = password.length > 0 && password.length < 8;
 
-  const persistSession = (account: MockGoogleAccount) => {
-    if (typeof window === "undefined") return;
-    localStorage.setItem(
-      "jobfits_user",
-      JSON.stringify({
-        email: account.email,
-        firstName: account.firstName,
-        lastName: account.lastName,
-        profilePhotoUrl: "https://lh3.googleusercontent.com/a/mock-id",
-        role: "USER",
-      }),
-    );
-    localStorage.setItem("jobfits_token", "mock-jwt-session-token-30-day");
-  };
-
-  // Email/password path — sends a 6-digit verification code
-  const handleEmailSignup = (e: React.FormEvent) => {
+  const handleEmailSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    setTimeout(() => {
+    setErrorMessage("");
+
+    try {
+      await authApi.register({
+        email: email.trim(),
+        password,
+        name: name.trim() || undefined,
+        agreeToTerms: agreeTerms,
+      });
+      // The 6-digit code is tied to an httpOnly cookie the browser now holds, but
+      // the *email* is not readable from JS — pass it along so the verify page can
+      // offer "resend", which needs it in the request body.
+      router.push(`/verify-email?email=${encodeURIComponent(email.trim())}`);
+    } catch (error) {
+      const err = error as ApiError;
+      setErrorMessage(
+        err instanceof ApiError
+          ? // Validation failures return one message per field.
+            err.messages.join(" ")
+          : "Something went wrong. Please try again.",
+      );
       setIsSubmitting(false);
-      router.push("/verify-email");
-    }, 1200);
+    }
   };
 
   return (
@@ -74,8 +68,24 @@ export default function SignupPage() {
         subtitle="Enter your details to create your account"
       />
 
+      {errorMessage && (
+        <Alert variant="error" className="animate-fade-in">
+          {errorMessage}
+        </Alert>
+      )}
+
       {/* EMAIL/PASSWORD FORM */}
       <form className="space-y-4" onSubmit={handleEmailSignup}>
+        <TextField
+          label="Full Name"
+          icon={User}
+          type="text"
+          maxLength={120}
+          placeholder="Jane Doe"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+        />
+
         <TextField
           label="Email Address"
           icon={Mail}
@@ -97,6 +107,11 @@ export default function SignupPage() {
             onChange={(e) => setPassword(e.target.value)}
           />
           <PasswordStrengthMeter password={password} />
+          {passwordTooShort && (
+            <p className="mt-1 text-xs text-error-500 flex items-center gap-1">
+              <AlertCircle className="w-3.5 h-3.5" /> Password must be at least 8 characters
+            </p>
+          )}
         </div>
 
         <div>
@@ -116,7 +131,7 @@ export default function SignupPage() {
           )}
         </div>
 
-        {/* Terms checkbox */}
+        {/* Terms checkbox — RegisterDto @Equals(true), so this gates submission. */}
         <div className="flex items-start mt-2">
           <div className="flex items-center h-5">
             <input
@@ -141,7 +156,7 @@ export default function SignupPage() {
           fullWidth
           loading={isSubmitting}
           loadingText="Creating account…"
-          disabled={!agreeTerms || password !== confirmPassword || !email}
+          disabled={!agreeTerms || !email || !password || password !== confirmPassword || passwordTooShort}
         >
           Create Account <ArrowRight className="w-4 h-4" />
         </Button>
@@ -157,7 +172,11 @@ export default function SignupPage() {
         </div>
       </div>
 
-      <SocialAuthButtons onGoogle={() => setShowOAuthModal(true)} />
+      {/* TODO(backend): no OAuth endpoints exist. Kept visible but disabled. */}
+      <SocialAuthButtons onGoogle={() => {}} onLinkedIn={() => {}} disabled />
+      <p className="text-center text-xs text-neutral-400 mt-2">
+        Social sign-up is coming soon.
+      </p>
 
       {/* SIGN IN LINK */}
       <div className="text-center text-xs mt-4">
@@ -166,21 +185,6 @@ export default function SignupPage() {
           Log In
         </Link>
       </div>
-
-      <GoogleOAuthModal
-        open={showOAuthModal}
-        onClose={() => setShowOAuthModal(false)}
-        processingSteps={OAUTH_STEPS}
-        successTitle="Registration Successful!"
-        successSubtitle="Session Token generated (expires in 30 days)"
-        redirectLabel="Redirecting to Profile Setup onboarding..."
-        accounts={MOCK_ACCOUNTS}
-        onSelectAccount={persistSession}
-        onComplete={() => {
-          setShowOAuthModal(false);
-          router.push("/onboarding/resume");
-        }}
-      />
     </AuthShell>
   );
 }

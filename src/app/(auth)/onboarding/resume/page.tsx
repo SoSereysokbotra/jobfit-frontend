@@ -24,6 +24,9 @@ import {
   Search,
   HelpCircle
 } from "lucide-react";
+import { useResumeUpload } from "@/features/resume/hooks/use-resume-upload";
+import { useParsingStatus } from "@/features/resume/hooks/use-resumes";
+import { validateResumeFile, RESUME_ACCEPT_ATTR } from "@/features/resume/api/resume.api";
 
 /* ─────────────────────────── TYPES ─────────────────────────── */
 type Step = 1 | 2 | 3;
@@ -141,109 +144,68 @@ function ResumeUploadStep({
 }) {
   const [dragOver, setDragOver] = useState(false);
   const [file, setFile] = useState<File | null>(null);
-  const [uploading, setUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [parsing, setParsing] = useState(false);
-  const [parseStep, setParseStep] = useState(0);
-  const [errorMsg, setErrorMsg] = useState("");
-  
-  // Controls simulated parser quality
-  const [parserQuality, setParserQuality] = useState<"high" | "low" | "failed">("high");
-  
-  // Fields for Editable Low Confidence flow
+  const [localError, setLocalError] = useState("");
+
+  // Fields for the editable low-confidence flow
   const [editSkills, setEditSkills] = useState("");
   const [editEducation, setEditEducation] = useState("");
   const [isEditing, setIsEditing] = useState(false);
   const [isSkipping, setIsSkipping] = useState(false);
 
+  // Real multipart upload (POST /resumes) with progress.
+  const {
+    upload,
+    state: uploadState,
+    progress: uploadProgress,
+    error: uploadError,
+    resume: uploadedResume,
+    reset: resetUpload,
+  } = useResumeUpload();
+  const uploading = uploadState === "uploading";
+
+  // Parsing runs in a BullMQ worker; poll until it settles.
+  const { status: parsingStatus, hasTimedOut } = useParsingStatus(
+    uploadedResume?.id,
+    Boolean(uploadedResume) && uploadState === "success",
+  );
+  const parsing = Boolean(uploadedResume) && parsingStatus !== "SUCCESS" && parsingStatus !== "FAILED";
+
+  const errorMsg = localError || uploadError;
   const parseSteps = ["Extracting text…", "Finding skills…", "Parsing experience…", "Extracting education…"];
+  // Cosmetic only: the backend reports a single status, not per-stage progress.
+  const parseStep = parsing ? Math.min(3, Math.floor((Date.now() / 800) % 4)) : 3;
 
-  const validateFile = (f: File) => {
-    const allowedExtensions = /(\.pdf|\.doc|\.docx)$/i;
-    if (!allowedExtensions.exec(f.name)) {
-      setErrorMsg("Invalid file format. Accepted formats: PDF, DOCX, DOC.");
-      return false;
+  const handleFile = async (f: File) => {
+    setLocalError("");
+    // Mirrors the backend: PDF/DOCX only, 5 MB max (it rejects legacy .doc).
+    const validationError = validateResumeFile(f);
+    if (validationError) {
+      setLocalError(validationError);
+      return;
     }
-    if (f.size > 10 * 1024 * 1024) {
-      setErrorMsg("File size exceeds 10MB limit.");
-      return false;
-    }
-    return true;
-  };
-
-  const handleFile = (f: File) => {
-    setErrorMsg("");
-    if (!validateFile(f)) return;
     setFile(f);
-    simulateUpload(f);
+    await upload(f, f.name.replace(/\.(pdf|docx)$/i, ""));
   };
 
-  const simulateUpload = (f: File) => {
-    setUploading(true);
-    setUploadProgress(0);
-    let progress = 0;
-    const interval = setInterval(() => {
-      progress += Math.floor(Math.random() * 15) + 10;
-      if (progress >= 100) {
-        progress = 100;
-        clearInterval(interval);
-        setUploading(false);
-        setUploadProgress(100);
-        simulateParsing();
-      } else {
-        setUploadProgress(progress);
-      }
-    }, 150);
-  };
-
-  const simulateParsing = () => {
-    setParsing(true);
-    setParseStep(0);
-    let currentStep = 0;
-    
-    const interval = setInterval(() => {
-      currentStep++;
-      if (currentStep < 4) {
-        setParseStep(currentStep);
-      } else {
-        clearInterval(interval);
-        setParsing(false);
-        
-        if (parserQuality === "high") {
-          const successData: ParsedResume = {
-            skills: ["Python", "SQL", "AWS", "Docker", "Kubernetes", "TypeScript", "React", "Node.js", "CI/CD", "Git", "Agile", "REST APIs"],
-            experience: [
-              { title: "Senior Software Engineer", company: "DataTech Systems", years: "2022–Present" },
-              { title: "Software Engineer", company: "Innovate Labs", years: "2020–2022" },
-              { title: "Junior Developer", company: "ByteSized Co.", years: "2018–2020" }
-            ],
-            education: "BS Computer Science — Stanford University",
-            confidence: 95
-          };
-          onSetParsedData(successData);
-          setSkipResume(false);
-        } else if (parserQuality === "low") {
-          const lowConfidenceData: ParsedResume = {
-            skills: ["Python", "SQL", "AWS"],
-            experience: [
-              { title: "Software Developer", company: "TechCorp", years: "2021-2023" }
-            ],
-            education: "University Graduate",
-            confidence: 72
-          };
-          onSetParsedData(lowConfidenceData);
-          setEditSkills("Python, SQL, AWS");
-          setEditEducation("University Graduate");
-          setIsEditing(true);
-          setSkipResume(false);
-        } else {
-          // Failed parsing
-          onSetParsedData(null);
-          setErrorMsg("❌ Resume parsing failed. We couldn't automatically parse your resume.");
-        }
-      }
-    }, 800);
-  };
+  /**
+   * TODO(backend): no endpoint returns ParsedResumeData, so the extracted
+   * details shown in the next steps are still placeholders. The upload itself
+   * is real — only this projection is mocked. See resume.api.ts getParsedData.
+   */
+  useEffect(() => {
+    if (parsingStatus !== "SUCCESS") return;
+    onSetParsedData({
+      skills: ["Python", "SQL", "AWS", "Docker", "Kubernetes", "TypeScript", "React", "Node.js", "CI/CD", "Git", "Agile", "REST APIs"],
+      experience: [
+        { title: "Senior Software Engineer", company: "DataTech Systems", years: "2022–Present" },
+        { title: "Software Engineer", company: "Innovate Labs", years: "2020–2022" },
+        { title: "Junior Developer", company: "ByteSized Co.", years: "2018–2020" },
+      ],
+      education: "BS Computer Science — Stanford University",
+      confidence: 95,
+    });
+    setSkipResume(false);
+  }, [parsingStatus, onSetParsedData, setSkipResume]);
 
   const onDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -259,12 +221,9 @@ function ResumeUploadStep({
 
   const resetFile = () => {
     setFile(null);
-    setUploadProgress(0);
-    setUploading(false);
-    setParsing(false);
+    resetUpload();
     onSetParsedData(null);
-    setErrorMsg("");
-    setParseStep(0);
+    setLocalError("");
     setIsEditing(false);
     setIsSkipping(false);
   };
@@ -284,31 +243,8 @@ function ResumeUploadStep({
 
   return (
     <div className="space-y-6">
-      {/* SIMULATOR QUALITY CONTROLLER (TESTING HELP) */}
-      {!file && (
-        <div className="p-3 bg-neutral-50 rounded-lg border border-neutral-200">
-          <label className="block text-[11px] font-bold text-neutral-500 uppercase tracking-wider mb-2 text-center">
-           Parser Simulation Mode
-          </label>
-          <div className="grid grid-cols-3 gap-2">
-            {(["high", "low", "failed"] as const).map((q) => (
-              <button
-                key={q}
-                type="button"
-                onClick={() => setParserQuality(q)}
-                className={`py-1.5 px-2 text-xs font-semibold rounded border transition-all duration-150 capitalize ${
-                  parserQuality === q
-                    ? "bg-primary-600 text-white border-primary-600 shadow-sm"
-                    : "bg-white text-neutral-600 border-neutral-300 hover:border-neutral-400"
-                }`}
-              >
-                {q === "high" ? "Success (95%)" : q === "low" ? "Low Conf (72%)" : "Fail (<60%)"}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
+      {/* The parser-simulation switcher was removed with the mock upload: the
+          upload and parsing status are real now. */}
       {!isSkipping ? (
         <>
           <div>
@@ -328,7 +264,7 @@ function ResumeUploadStep({
                 <AlertCircle className="w-4 h-4 shrink-0" />
                 <span>{errorMsg}</span>
               </div>
-              {parserQuality === "failed" && (
+              {uploadState === "error" && (
                 <div className="flex gap-2 mt-2">
                   <button
                     onClick={resetFile}
@@ -371,7 +307,7 @@ function ResumeUploadStep({
               <input
                 id="resume-file-input"
                 type="file"
-                accept=".pdf,.doc,.docx"
+                accept={RESUME_ACCEPT_ATTR}
                 className="hidden"
                 onChange={onInputChange}
               />
@@ -387,13 +323,14 @@ function ResumeUploadStep({
                     or <span className="text-primary-700 font-semibold hover:underline">Choose file</span>
                   </p>
                 </div>
-                <p className="text-xs text-neutral-400">Accepted formats: PDF, DOCX, DOC (Max 10MB)</p>
+                {/* Matches the backend: MIME_TO_TYPE accepts PDF/DOCX only, 5 MB max. */}
+                <p className="text-xs text-neutral-400">Accepted formats: PDF, DOCX (Max 5MB)</p>
               </div>
             </div>
           )}
 
           {/* FILE SELECTED — UPLOAD / PARSE PROGRESS */}
-          {file && !parsedData && parserQuality !== "failed" && (
+          {file && !parsedData && uploadState !== "error" && (
             <div className="border border-neutral-200 rounded-lg p-5 space-y-4 bg-neutral-50">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-md bg-primary-100 flex items-center justify-center shrink-0">
@@ -433,7 +370,7 @@ function ResumeUploadStep({
               )}
 
               {/* Parse steps */}
-              {parsing && (
+              {parsing && !hasTimedOut && (
                 <div className="space-y-2 border-t border-neutral-200 pt-3">
                   <div className="flex justify-between items-center mb-1">
                     <span className="text-xs font-bold text-neutral-700">We&apos;re parsing your resume now...</span>
@@ -451,6 +388,55 @@ function ResumeUploadStep({
                       {label}
                     </div>
                   ))}
+                </div>
+              )}
+
+              {/* Parsing is done by a background worker. If it never reports back,
+                  the resume is still saved — never trap the user on this step. */}
+              {hasTimedOut && (
+                <div className="border-t border-neutral-200 pt-3 space-y-2">
+                  <div className="flex items-center gap-2 text-xs font-semibold text-neutral-700">
+                    <Clock className="w-4 h-4 text-amber-500 shrink-0" />
+                    Your resume is saved, but analysis is still queued.
+                  </div>
+                  <p className="text-[11px] text-neutral-500">
+                    You can carry on — we&apos;ll add the insights to your profile once it finishes.
+                  </p>
+                  <button
+                    onClick={() => {
+                      setSkipResume(true);
+                      onNext();
+                    }}
+                    className="px-3 py-1.5 bg-primary-600 hover:bg-primary-700 text-white text-xs font-semibold rounded-md transition-colors duration-200"
+                  >
+                    Continue anyway
+                  </button>
+                </div>
+              )}
+
+              {parsingStatus === "FAILED" && (
+                <div className="border-t border-neutral-200 pt-3 space-y-2">
+                  <div className="flex items-center gap-2 text-xs font-semibold text-red-700">
+                    <AlertCircle className="w-4 h-4 shrink-0" />
+                    We couldn&apos;t read this resume.
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={resetFile}
+                      className="px-3 py-1.5 bg-red-100 hover:bg-red-200 text-red-800 text-xs font-semibold rounded-md transition-colors duration-200"
+                    >
+                      Try another file
+                    </button>
+                    <button
+                      onClick={() => {
+                        setSkipResume(true);
+                        onNext();
+                      }}
+                      className="px-3 py-1.5 bg-white border border-neutral-200 hover:bg-neutral-50 text-neutral-700 text-xs font-semibold rounded-md transition-colors duration-200"
+                    >
+                      Continue without it
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
@@ -1143,30 +1129,11 @@ function FirstMatchesStep({
     },
   ];
 
+  // The session is now real (httpOnly refresh cookie + in-memory access token),
+  // so there is nothing to persist here.
+  // TODO(phase-3): "onboarding complete" needs a real source — the backend has
+  // no such flag on the user; it is derived from the profile endpoints.
   const handleDashboardRedirect = () => {
-    const storedUser = localStorage.getItem("jobfits_user");
-    let emailStr = "user@jobfits.co";
-    let nameStr = "Demo Seeker";
-    if (storedUser) {
-      try {
-        const parsed = JSON.parse(storedUser);
-        emailStr = parsed.email || emailStr;
-        nameStr = `${parsed.firstName || ""} ${parsed.lastName || ""}`.trim() || nameStr;
-      } catch (e) {
-        console.error("Failed to parse stored user", e);
-      }
-    }
-
-    localStorage.setItem(
-      "jobfits_user",
-      JSON.stringify({
-        email: emailStr,
-        name: nameStr,
-        role: "USER",
-        onboardingComplete: true,
-        completeness: profileData?.completeness || "complete",
-      })
-    );
     router.push("/dashboard");
   };
 

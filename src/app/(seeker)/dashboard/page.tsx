@@ -13,6 +13,7 @@ import {
 } from "recharts";
 import { JobCard } from "@/features/job/components";
 import { MOCK_JOBS } from "@/features/job/api/job.api";
+import { useSession, displayName } from "@/features/auth/hooks/use-session";
 
 /* ─── CHART SERIES COLORS ───────────────────────────────────────
    Categorical pair from the brand ramp (primary-600 + primary-400).
@@ -203,18 +204,11 @@ function StatCard({
    ═══════════════════════════════════════════════════════════════ */
 export default function DashboardPage() {
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
-  const [firstName, setFirstName] = useState("there");
 
-  // Personalize greeting from the mock session (layout guarantees it exists)
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem("jobfits_user");
-      if (stored) {
-        const user = JSON.parse(stored);
-        if (user.firstName) setFirstName(user.firstName);
-      }
-    } catch { /* keep default */ }
-  }, []);
+  // Personalize the greeting from the real session (GET /auth/me). `name` is
+  // optional at registration, so fall back to a neutral greeting.
+  const { user } = useSession();
+  const firstName = displayName(user).firstName || "there";
 
   const today = new Date().toLocaleDateString("en-US", {
     weekday: "long", month: "long", day: "numeric",

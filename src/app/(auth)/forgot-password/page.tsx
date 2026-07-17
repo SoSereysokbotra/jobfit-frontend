@@ -12,8 +12,14 @@ import {
   PasswordStrengthMeter,
   getPasswordStrength,
 } from "@/features/auth/components";
+import { authApi } from "@/features/auth/api/auth.api";
+import { ApiError } from "@/lib/api/client";
 import { Alert } from "@/shared/components/feedback/alert";
 import { Button } from "@/shared/components/ui/button";
+
+/** Mirrors PASSWORD_RESET_CODE_TTL_MINUTES on the backend. */
+const CODE_TTL_SECONDS = 15 * 60;
+const RESEND_COOLDOWN_SECONDS = 30;
 
 export default function ForgotPasswordPage() {
   const router = useRouter();
@@ -21,26 +27,20 @@ export default function ForgotPasswordPage() {
   // Wizard steps: 1 = Email, 2 = Code, 3 = New Password, 4 = Success
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
 
-  // Form fields
   const [email, setEmail] = useState("");
   const [verificationCode, setVerificationCode] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
-  // UI state
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
-  // Code expiry timer (Step 2)
-  const [timeLeft, setTimeLeft] = useState(600);
-  const [resendDisabled, setResendDisabled] = useState(true);
-  const [resendTimer, setResendTimer] = useState(30);
-  const [attemptsRemaining, setAttemptsRemaining] = useState(3);
-
-  // Step 4 auto-redirect
+  const [timeLeft, setTimeLeft] = useState(CODE_TTL_SECONDS);
+  const [resendTimer, setResendTimer] = useState(RESEND_COOLDOWN_SECONDS);
   const [redirectCountdown, setRedirectCountdown] = useState(3);
 
   const strength = getPasswordStrength(password);
+  const passwordTooShort = password.length > 0 && password.length < 8;
 
   // Code expiry countdown
   useEffect(() => {
@@ -51,8 +51,7 @@ export default function ForgotPasswordPage() {
 
   // Resend cooldown
   useEffect(() => {
-    if (step !== 2) return;
-    if (resendTimer <= 0) { setResendDisabled(false); return; }
+    if (step !== 2 || resendTimer <= 0) return;
     const timer = setInterval(() => setResendTimer((p) => p - 1), 1000);
     return () => clearInterval(timer);
   }, [step, resendTimer]);
@@ -62,7 +61,11 @@ export default function ForgotPasswordPage() {
     if (step !== 4) return;
     const timer = setInterval(() => {
       setRedirectCountdown((prev) => {
-        if (prev <= 1) { clearInterval(timer); router.push("/login"); return 0; }
+        if (prev <= 1) {
+          clearInterval(timer);
+          router.push("/login");
+          return 0;
+        }
         return prev - 1;
       });
     }, 1000);
@@ -75,71 +78,71 @@ export default function ForgotPasswordPage() {
     return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
   };
 
-  // STEP 1: Send code
-  const handleSendCode = (e: React.FormEvent) => {
+  const toMessage = (error: unknown, fallback: string) =>
+    error instanceof ApiError ? error.messages.join(" ") : fallback;
+
+  // STEP 1: request a code. Always succeeds — the backend hides whether the
+  // account exists, so we advance regardless.
+  const handleSendCode = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setErrorMsg("");
-    setTimeout(() => {
-      setIsLoading(false);
-      setTimeLeft(600);
-      setResendTimer(30);
-      setResendDisabled(true);
+    try {
+      await authApi.requestPasswordReset(email.trim());
+      setTimeLeft(CODE_TTL_SECONDS);
+      setResendTimer(RESEND_COOLDOWN_SECONDS);
       setStep(2);
-      alert("Demo System: A reset code '654321' has been simulated to your inbox!");
-    }, 1200);
+    } catch (error) {
+      setErrorMsg(toMessage(error, "Could not send a reset code. Please try again."));
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  // STEP 2: Verify code
-  const handleVerifyCode = (e: React.FormEvent) => {
+  // STEP 2: verify the code — the email comes from the cookie set in step 1.
+  const handleVerifyCode = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setErrorMsg("");
-    setTimeout(() => {
+    try {
+      await authApi.verifyPasswordReset(verificationCode);
+      setStep(3);
+    } catch (error) {
+      setErrorMsg(toMessage(error, "Could not verify that code."));
+    } finally {
       setIsLoading(false);
-      if (timeLeft <= 0) {
-        setErrorMsg("Code expired. Please request a new code below.");
-        return;
-      }
-      if (verificationCode === "654321") {
-        setStep(3);
-      } else {
-        const nextAttempts = attemptsRemaining - 1;
-        setAttemptsRemaining(nextAttempts);
-        if (nextAttempts <= 0) {
-          setErrorMsg("Too many incorrect attempts. Request a new code.");
-          setStep(1);
-          setAttemptsRemaining(3);
-          setVerificationCode("");
-        } else {
-          setErrorMsg(`Incorrect code. ${nextAttempts} attempts remaining.`);
-        }
-      }
-    }, 1200);
+    }
   };
 
-  // STEP 3: Reset password
-  const handleResetPassword = (e: React.FormEvent) => {
+  // STEP 3: set the new password, using the reset-session cookie from step 2.
+  const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (password !== confirmPassword) {
+      setErrorMsg("Passwords do not match.");
+      return;
+    }
     setIsLoading(true);
     setErrorMsg("");
-    setTimeout(() => {
-      setIsLoading(false);
-      if (password !== confirmPassword) {
-        setErrorMsg("Passwords do not match.");
-        return;
-      }
+    try {
+      await authApi.resetPassword(password);
       setStep(4);
-    }, 1200);
+    } catch (error) {
+      setErrorMsg(toMessage(error, "Could not reset your password."));
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleResendCode = () => {
-    setResendTimer(30);
-    setResendDisabled(true);
-    setTimeLeft(600);
-    setVerificationCode("");
+  const handleResendCode = async () => {
+    setResendTimer(RESEND_COOLDOWN_SECONDS);
     setErrorMsg("");
-    alert("Demo System: A new reset code '654321' has been resent!");
+    try {
+      await authApi.resendPasswordReset(email.trim());
+      setTimeLeft(CODE_TTL_SECONDS);
+      setVerificationCode("");
+    } catch (error) {
+      setErrorMsg(toMessage(error, "Could not resend the code."));
+    }
   };
 
   return (
@@ -189,8 +192,8 @@ export default function ForgotPasswordPage() {
             title="Verify Your Email"
             subtitle={<>Enter the 6-digit code sent to <strong className="text-neutral-900">{email || "your email"}</strong></>}
           />
-          <p className="text-xs text-primary-800 bg-primary-50 p-2 border border-primary-100 rounded-md">
-            Demo code: <strong className="font-bold">654321</strong>
+          <p className="text-xs text-neutral-500">
+            If an account exists for that address, a code is on its way.
           </p>
 
           {errorMsg && <Alert variant="error">{errorMsg}</Alert>}
@@ -201,7 +204,7 @@ export default function ForgotPasswordPage() {
                 <label className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider">
                   Verification Code
                 </label>
-                <span className={`text-xs font-medium ${timeLeft < 60 ? "text-error-600" : "text-neutral-500"}`}>
+                <span className={`text-xs font-medium ${timeLeft <= 0 ? "text-error-600" : "text-neutral-500"}`}>
                   {timeLeft > 0 ? `Expires in ${formatTime(timeLeft)}` : "Code expired"}
                 </span>
               </div>
@@ -228,11 +231,11 @@ export default function ForgotPasswordPage() {
           <div className="flex flex-col items-center gap-3 pt-2">
             <button
               type="button"
-              disabled={resendDisabled}
+              disabled={resendTimer > 0}
               onClick={handleResendCode}
               className="text-xs text-primary-600 font-semibold hover:underline disabled:opacity-40 disabled:no-underline"
             >
-              {resendDisabled ? `Resend Code in ${resendTimer}s` : "Resend Code"}
+              {resendTimer > 0 ? `Resend Code in ${resendTimer}s` : "Resend Code"}
             </button>
 
             <button
@@ -268,6 +271,11 @@ export default function ForgotPasswordPage() {
                 onChange={(e) => setPassword(e.target.value)}
               />
               <PasswordStrengthMeter password={password} />
+              {passwordTooShort && (
+                <p className="mt-1 text-xs text-error-500 flex items-center gap-1">
+                  <AlertCircle className="w-3.5 h-3.5" /> Password must be at least 8 characters
+                </p>
+              )}
             </div>
 
             <div>
@@ -292,7 +300,7 @@ export default function ForgotPasswordPage() {
               fullWidth
               loading={isLoading}
               loadingText="Resetting password..."
-              disabled={!password || password !== confirmPassword || strength.label === "Weak"}
+              disabled={!password || password !== confirmPassword || passwordTooShort || strength.label === "Weak"}
             >
               Reset Password
             </Button>
@@ -312,7 +320,7 @@ export default function ForgotPasswordPage() {
           <div>
             <h2 className="text-2xl font-bold tracking-tight text-neutral-900">Password Reset Successful!</h2>
             <p className="text-sm text-neutral-500 mt-2">
-              Your password has been updated. You can now log in.
+              Your password has been updated and all other sessions were signed out. You can now log in.
             </p>
           </div>
 

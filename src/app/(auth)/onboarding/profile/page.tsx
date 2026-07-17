@@ -5,14 +5,20 @@ import { useRouter } from "next/navigation";
 import {
   User, Briefcase, MapPin, Phone, FileText, ArrowRight, Check, Loader2,
 } from "lucide-react";
+import { useSession, displayName } from "@/features/auth/hooks/use-session";
+import { useCreateProfile, useUpdatePreferences } from "@/features/user-profile/hooks/use-profile";
+import { parseLocationInput } from "@/features/user-profile/api/profile.mappers";
+import type { JobLevel } from "@/features/user-profile/api/profile.api";
+import { ApiError } from "@/lib/api/client";
+import { Alert } from "@/shared/components/feedback/alert";
 
-interface UserProfile {
-  email: string;
-  firstName: string;
-  lastName: string;
-  profilePhotoUrl?: string;
-  role: string;
-}
+/** The step's four choices map onto the backend's JobLevel enum. */
+const EXPERIENCE_LEVEL_TO_JOB_LEVEL: Record<string, JobLevel> = {
+  entry: "ENTRY",
+  mid: "MID",
+  senior: "SENIOR",
+  lead: "LEAD",
+};
 
 const STEPS = [
   { num: 1, label: "Profile" },
@@ -75,35 +81,60 @@ export default function OnboardingProfilePage() {
   const [location, setLocation] = useState("");
   const [experienceLevel, setExperienceLevel] = useState("mid");
   const [bio, setBio] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
 
-  // Read localStorage only on client, after mount — no mounted flag needed
+  const createProfile = useCreateProfile();
+  const updatePreferences = useUpdatePreferences();
+  const isSubmitting = createProfile.isPending || updatePreferences.isPending;
+
+  // Prefill from the real session (GET /auth/me). The backend stores a single
+  // `name`, so it is split into first/last for these fields.
+  // TODO(phase-3): submitting still only simulates — wire to POST /profiles.
+  const { user } = useSession();
   useEffect(() => {
-    const storedUser = localStorage.getItem("jobfits_user");
-    if (storedUser) {
+    if (!user) return;
+    const { firstName: first, lastName: last } = displayName(user);
+    setFirstName(first);
+    setLastName(last);
+    setEmail(user.email);
+  }, [user]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // POST /profiles creates the profile; the desired job level is a work
+    // preference, which is a separate endpoint (the profile POST ignores it).
+    await createProfile.mutateAsync({
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
+      phone: phone.trim() || undefined,
+      headline: headline.trim() || undefined,
+      bio: bio.trim() || undefined,
+      location: parseLocationInput(location),
+    });
+
+    const jobLevel = EXPERIENCE_LEVEL_TO_JOB_LEVEL[experienceLevel];
+    if (jobLevel) {
+      // Non-fatal: the profile already exists, so a preferences hiccup must not
+      // strand the user on this step — they can set it later on /profile.
       try {
-        const parsed: UserProfile = JSON.parse(storedUser);
-        setFirstName(parsed.firstName || "");
-        setLastName(parsed.lastName || "");
-        setEmail(parsed.email || "");
-      } catch (e) {
-        console.error("Failed to parse stored user", e);
+        await updatePreferences.mutateAsync({ jobLevels: [jobLevel] });
+      } catch {
+        /* ignore */
       }
     }
-  }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    setTimeout(() => {
-      setIsSubmitting(false);
-      setShowSuccess(true);
-      setTimeout(() => {
-        router.push("/onboarding/resume");
-      }, 1200);
-    }, 1500);
+    setShowSuccess(true);
+    setTimeout(() => router.push("/onboarding/resume"), 1200);
   };
+
+  const submitError = createProfile.error;
+  const errorMessage =
+    submitError instanceof ApiError
+      ? submitError.messages.join(" ")
+      : submitError
+        ? "Could not save your profile. Please try again."
+        : "";
 
   return (
     <div
@@ -355,13 +386,17 @@ export default function OnboardingProfilePage() {
                         <input
                           type="text"
                           required
-                          placeholder="e.g. San Francisco, CA"
+                          placeholder="e.g. San Francisco, USA"
                           value={location}
                           onChange={(e) => setLocation(e.target.value)}
                           className="block w-full pl-10 pr-3 py-2.5 border rounded-lg text-sm outline-none transition-all duration-200 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                           style={{ borderColor: "var(--color-border)", background: "var(--color-bg)" }}
                         />
                       </div>
+                      {/* The backend's LocationDto needs city AND country. */}
+                      <p className="mt-1 text-xs" style={{ color: "var(--color-text-disabled)" }}>
+                        Use “City, Country”.
+                      </p>
                     </div>
                   </div>
 
@@ -428,6 +463,8 @@ export default function OnboardingProfilePage() {
                       />
                     </div>
                   </div>
+
+                  {errorMessage && <Alert variant="error">{errorMessage}</Alert>}
 
                   <div
                     className="flex items-center justify-between pt-2 border-t"

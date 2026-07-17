@@ -231,6 +231,86 @@ async function request<T>(
   return unwrap<T>(await response.json());
 }
 
+export interface UploadProgress {
+  loaded: number;
+  total: number;
+  /** 0–100; 0 when the browser cannot compute the total. */
+  percent: number;
+}
+
+/**
+ * Multipart upload with progress. Uses XMLHttpRequest because fetch cannot
+ * report upload progress (there is no request-body stream event).
+ *
+ * Mirrors `send`'s auth behaviour: bearer token, credentials, and exactly one
+ * silent refresh + retry on a 401.
+ */
+export function uploadWithProgress<T>(
+  path: string,
+  form: FormData,
+  options: { onProgress?: (progress: UploadProgress) => void; signal?: AbortSignal } = {},
+): Promise<T> {
+  const attempt = (isRetry: boolean): Promise<T> =>
+    new Promise<T>((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open("POST", buildUrl(path));
+      xhr.withCredentials = true; // sends the httpOnly refresh cookie
+
+      const token = authBridge?.getAccessToken();
+      if (token) xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+      // Content-Type is deliberately unset: the browser adds the multipart boundary.
+
+      xhr.upload.onprogress = (event) => {
+        if (!options.onProgress) return;
+        options.onProgress({
+          loaded: event.loaded,
+          total: event.total,
+          percent: event.lengthComputable ? Math.round((event.loaded / event.total) * 100) : 0,
+        });
+      };
+
+      xhr.onload = async () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try {
+            resolve(unwrap<T>(xhr.responseText ? JSON.parse(xhr.responseText) : undefined));
+          } catch {
+            reject(new ApiError(xhr.status, ["Malformed response from the server"]));
+          }
+          return;
+        }
+
+        if (xhr.status === 401 && !isRetry) {
+          const refreshed = await refreshAccessToken();
+          if (refreshed) {
+            authBridge?.setAccessToken(refreshed);
+            resolve(await attempt(true));
+            return;
+          }
+          authBridge?.setAccessToken(null);
+          authBridge?.onAuthFailure();
+        }
+
+        let body: ApiErrorBody = {};
+        try {
+          body = JSON.parse(xhr.responseText) as ApiErrorBody;
+        } catch {
+          /* non-JSON error body */
+        }
+        const messages = toMessages(body.message);
+        if (messages.length === 0) messages.push(xhr.statusText || "Upload failed");
+        reject(new ApiError(body.statusCode ?? xhr.status, messages, body.code, body.path));
+      };
+
+      xhr.onerror = () => reject(new ApiError(0, ["Network error during upload"]));
+      xhr.onabort = () => reject(new ApiError(0, ["Upload cancelled"]));
+
+      options.signal?.addEventListener("abort", () => xhr.abort(), { once: true });
+      xhr.send(form);
+    });
+
+  return attempt(false);
+}
+
 export const apiClient = {
   get: <T>(path: string, options?: RequestOptions) =>
     request<T>("GET", path, undefined, options),

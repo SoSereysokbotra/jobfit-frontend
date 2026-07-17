@@ -8,6 +8,7 @@ import {
   Award, User, FileText, BarChart3, Bell, HelpCircle,
   Settings, LogOut
 } from "lucide-react";
+import { useAuth } from "@/providers/auth-provider";
 
 interface SidebarProps {
   onLogout?: () => void;
@@ -16,6 +17,7 @@ interface SidebarProps {
 
 export default function Sidebar({ onLogout, className = "" }: SidebarProps) {
   const pathname = usePathname();
+  const { logout } = useAuth();
 
   const menuGroups = [
     {
@@ -58,16 +60,9 @@ export default function Sidebar({ onLogout, className = "" }: SidebarProps) {
     }
   ];
 
-  const handleLogout = () => {
-    if (onLogout) {
-      onLogout();
-    } else {
-      if (typeof window !== "undefined") {
-        localStorage.removeItem("jobfits_user");
-        window.location.href = "/login";
-      }
-    }
-  };
+  // Defaults to the real session logout (revokes the refresh token and clears
+  // the in-memory access token); callers can still override it.
+  const handleLogout = onLogout ?? logout;
 
   return (
     <aside

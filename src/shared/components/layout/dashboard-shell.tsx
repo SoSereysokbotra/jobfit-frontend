@@ -18,6 +18,8 @@ interface DashboardShellProps {
   brandSublabel: string;
   nav: DashboardNavItem[];
   user: { name: string; email: string; initials: string };
+  /** Owner of the session ends it — the shell has no auth knowledge of its own. */
+  onLogout?: () => void;
   children: React.ReactNode;
 }
 
@@ -26,7 +28,7 @@ interface DashboardShellProps {
  * drawer on mobile. Shared by the admin and employer areas so their shells
  * stay identical (dev rules §2.1, §3.2).
  */
-export function DashboardShell({ brand, brandSublabel, nav, user, children }: DashboardShellProps) {
+export function DashboardShell({ brand, brandSublabel, nav, user, onLogout, children }: DashboardShellProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -34,9 +36,9 @@ export function DashboardShell({ brand, brandSublabel, nav, user, children }: Da
   const isActive = (href: string) => pathname === href || pathname?.startsWith(href + "/");
 
   const handleLogout = () => {
-    if (typeof window !== "undefined") {
-      localStorage.removeItem("jobfits_user");
-      localStorage.removeItem("jobfits_token");
+    if (onLogout) {
+      onLogout();
+      return;
     }
     router.push("/login");
   };

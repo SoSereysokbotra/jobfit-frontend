@@ -4,103 +4,52 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Mail, Lock, ArrowRight, ShieldAlert } from "lucide-react";
-import {
-  AuthShell,
-  AuthHeading,
-  TextField,
-  SocialAuthButtons,
-  GoogleOAuthModal,
-  MOCK_ACCOUNTS,
-  type MockGoogleAccount,
-  type OAuthProcessingStep,
-} from "@/features/auth/components";
+import { AuthShell, AuthHeading, TextField, SocialAuthButtons } from "@/features/auth/components";
+import { homeForRole } from "@/features/auth/hooks/use-session";
+import { useAuth } from "@/providers/auth-provider";
+import { ApiError } from "@/lib/api/client";
 import { Alert } from "@/shared/components/feedback/alert";
 import { Button } from "@/shared/components/ui/button";
 
-const OAUTH_STEPS: OAuthProcessingStep[] = [
-  { label: "Verifying session with OAuth provider...", desc: "Received email, firstName, lastName, profilePhotoUrl" },
-  { label: "Backend: Checking if user exists in database...", desc: "SELECT * FROM users WHERE email = ?" },
-  { label: "Backend: Syncing user record & updating login timestamp...", desc: "UPDATE users SET lastLoginAt = NOW() WHERE id = ?" },
-  { label: "Backend: Generating JWT Session token...", desc: "Created 30-day expiry authentication token" },
-  { label: "Backend: Registering Refresh token...", desc: "CREATE refresh_tokens (userId, token, expiresAt=NOW+30days)" },
-  { label: "Authentication complete. Finalizing session...", desc: "Redirecting to seeker dashboard..." },
-];
-
 export default function LoginPage() {
   const router = useRouter();
+  const { login } = useAuth();
 
-  // Form state
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  // Failed attempts & account lock simulation
-  const [failedAttempts, setFailedAttempts] = useState(0);
+  // LOGIN_BLOCKED (429) — the backend owns lockout; we only reflect it.
   const [isLocked, setIsLocked] = useState(false);
-  const [unlockCode, setUnlockCode] = useState("");
-  const [unlockError, setUnlockError] = useState("");
-  const [isUnlocking, setIsUnlocking] = useState(false);
+  // EMAIL_NOT_VERIFIED (403) — offer the verification flow instead of a dead end.
+  const [needsVerification, setNeedsVerification] = useState(false);
 
-  // OAuth modal
-  const [showOAuthModal, setShowOAuthModal] = useState(false);
-  const [selectedAccount, setSelectedAccount] = useState<MockGoogleAccount | null>(null);
-
-  const persistSession = (user: { email: string; firstName: string; lastName: string }) => {
-    if (typeof window === "undefined") return;
-    localStorage.setItem(
-      "jobfits_user",
-      JSON.stringify({ ...user, role: "USER", onboardingComplete: true }),
-    );
-    localStorage.setItem("jobfits_token", "mock-jwt-session-token-30-day");
-  };
-
-  const handleEmailLogin = (e: React.FormEvent) => {
+  const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isLocked) return;
 
     setIsLoading(true);
     setErrorMessage("");
+    setNeedsVerification(false);
 
-    setTimeout(() => {
+    try {
+      const user = await login(email.trim(), password);
+      // Land each role in its own area rather than assuming /dashboard.
+      router.replace(homeForRole(user.role));
+    } catch (error) {
+      const err = error as ApiError;
+      if (err instanceof ApiError && err.code === "LOGIN_BLOCKED") {
+        setIsLocked(true);
+      } else if (err instanceof ApiError && err.code === "EMAIL_NOT_VERIFIED") {
+        setNeedsVerification(true);
+      }
+      setErrorMessage(
+        err instanceof ApiError ? err.message : "Something went wrong. Please try again.",
+      );
       setIsLoading(false);
-      const isSuccess = email.trim() === "test@jobfits.co" && password === "password123";
-
-      if (isSuccess) {
-        persistSession({ email, firstName: "Demo", lastName: "Seeker" });
-        router.push("/dashboard");
-      } else {
-        const newAttempts = failedAttempts + 1;
-        setFailedAttempts(newAttempts);
-        if (newAttempts >= 5) {
-          setIsLocked(true);
-          setErrorMessage("Account temporarily locked for security. Please verify your unlock code.");
-        } else {
-          setErrorMessage(`Email or password incorrect. (${5 - newAttempts} attempts remaining)`);
-        }
-      }
-    }, 1000);
-  };
-
-  const handleUnlockVerify = (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsUnlocking(true);
-    setUnlockError("");
-
-    setTimeout(() => {
-      if (unlockCode === "123456") {
-        setIsLocked(false);
-        setFailedAttempts(0);
-        setErrorMessage("");
-        setUnlockCode("");
-        setIsUnlocking(false);
-        alert("Account unlocked successfully! You can now log in.");
-      } else {
-        setIsUnlocking(false);
-        setUnlockError("Invalid code. Please enter 123456 to unlock.");
-      }
-    }, 1200);
+    }
   };
 
   return (
@@ -109,7 +58,10 @@ export default function LoginPage() {
       author="Confucius"
     >
       {isLocked ? (
-        /* ACCOUNT LOCKED VIEW */
+        /* ACCOUNT LOCKED — the backend locks after repeated failures and unlocks
+           on its own timer. TODO(backend): no self-serve unlock endpoint exists
+           (only the admin-only POST /admin/users/{id}/unlock), so there is
+           nothing for the user to submit here. */
         <div className="space-y-6 animate-fade-in">
           <div className="text-center">
             <div className="mx-auto flex items-center justify-center w-12 h-12 rounded-full bg-error-100 mb-4">
@@ -117,35 +69,34 @@ export default function LoginPage() {
             </div>
             <h2 className="text-2xl font-bold tracking-tight text-neutral-900">Account Locked</h2>
             <p className="text-sm text-neutral-500 mt-2">
-              Locked due to 5+ failed attempts. We&apos;ve sent a 6-digit code to your email. Enter{" "}
-              <strong className="text-neutral-900">123456</strong> to unlock.
+              {errorMessage || "Too many failed attempts. Please try again later."}
             </p>
           </div>
 
-          <form className="space-y-4" onSubmit={handleUnlockVerify}>
-            <TextField
-              label="6-Digit Unlock Code"
-              required
-              maxLength={6}
-              placeholder="Enter code"
-              value={unlockCode}
-              onChange={(e) => setUnlockCode(e.target.value.replace(/\D/g, ""))}
-              className="text-center tracking-widest font-mono"
-            />
+          <Alert variant="warning">
+            For security, sign-in is paused for a short period. You can try again shortly, or
+            reset your password if you&apos;ve forgotten it.
+          </Alert>
 
-            {unlockError && <Alert variant="error">{unlockError}</Alert>}
-
+          <div className="space-y-3">
             <Button
-              type="submit"
-              variant="danger"
               fullWidth
-              loading={isUnlocking}
-              loadingText="Unlocking..."
-              disabled={unlockCode.length !== 6}
+              variant="secondary"
+              onClick={() => {
+                setIsLocked(false);
+                setErrorMessage("");
+                setPassword("");
+              }}
             >
-              Unlock Account
+              Back to Sign In
             </Button>
-          </form>
+            <Link
+              href="/forgot-password"
+              className="block text-center text-xs text-primary-600 font-semibold hover:underline"
+            >
+              Reset your password
+            </Link>
+          </div>
         </div>
       ) : (
         <>
@@ -153,13 +104,19 @@ export default function LoginPage() {
             title="Sign in to your account"
             subtitle="Enter your credentials to access your dashboard"
           />
-          <div className="p-3 rounded-md border text-xs bg-primary-50 border-primary-100 text-primary-800">
-            Demo credentials: <strong className="font-semibold">test@jobfits.co</strong> /{" "}
-            <strong className="font-semibold">password123</strong>
-          </div>
 
           {errorMessage && (
-            <Alert variant="error" className="animate-fade-in">{errorMessage}</Alert>
+            <Alert variant="error" className="animate-fade-in">
+              {errorMessage}
+              {needsVerification && (
+                <>
+                  {" "}
+                  <Link href={`/verify-email?email=${encodeURIComponent(email.trim())}`} className="font-semibold underline">
+                    Verify your email
+                  </Link>
+                </>
+              )}
+            </Alert>
           )}
 
           <form className="space-y-4" onSubmit={handleEmailLogin}>
@@ -223,7 +180,12 @@ export default function LoginPage() {
             </div>
           </div>
 
-          <SocialAuthButtons onGoogle={() => setShowOAuthModal(true)} />
+          {/* TODO(backend): no OAuth endpoints exist. Kept visible but disabled
+              rather than removed, so the UI is ready when they land. */}
+          <SocialAuthButtons onGoogle={() => {}} onLinkedIn={() => {}} disabled />
+          <p className="text-center text-xs text-neutral-400 mt-2">
+            Social sign-in is coming soon.
+          </p>
 
           {/* SIGN UP LINK */}
           <div className="text-center text-xs mt-4">
@@ -234,27 +196,6 @@ export default function LoginPage() {
           </div>
         </>
       )}
-
-      <GoogleOAuthModal
-        open={showOAuthModal}
-        onClose={() => setShowOAuthModal(false)}
-        processingSteps={OAUTH_STEPS}
-        fileName="oauth_login_handler.py"
-        successTitle="Signed in Successfully!"
-        successSubtitle="Session Token generated (expires in 30 days)"
-        redirectLabel="Redirecting to Seekers Dashboard..."
-        accounts={MOCK_ACCOUNTS}
-        onSelectAccount={setSelectedAccount}
-        onComplete={() => {
-          setShowOAuthModal(false);
-          persistSession({
-            email: selectedAccount?.email || "user@jobfits.co",
-            firstName: selectedAccount?.firstName || "Member",
-            lastName: selectedAccount?.lastName || "",
-          });
-          router.push("/dashboard");
-        }}
-      />
     </AuthShell>
   );
 }

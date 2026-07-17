@@ -1,40 +1,39 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import React, { useEffect, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
 import Sidebar from "@/shared/components/layout/sidebar";
 import BottomTabBar from "@/shared/components/layout/bottom-tab-bar";
 import TopNav from "@/shared/components/layout/topnav";
+import { useRequireAuth } from "@/features/auth/hooks/use-session";
+import { useProfileComplete } from "@/features/user-profile/hooks/use-profile";
 import { Loader2 } from "lucide-react";
 
 export default function SeekerLayout({ children }: { children: React.ReactNode }) {
-  const router = useRouter();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-  // Start as false — both server and client agree on initial render
-  const [authChecked, setAuthChecked] = useState(false);
+  const router = useRouter();
+  const pathname = usePathname();
+
+  // Backed by GET /auth/me. Unauthenticated -> /login; an employer or admin who
+  // lands here is sent to their own area rather than being bounced to /login.
+  const { isAllowed } = useRequireAuth({ roles: ["JOB_SEEKER"] });
+
+  // Replaces the mock session's `onboardingComplete`: the backend has no such
+  // flag, so "onboarded" means GET /profiles/{userId} returns a profile.
+  const { hasProfile, isResolved } = useProfileComplete();
+
+  // /profile is exempt — it doubles as the create-profile form, so redirecting
+  // away from it when there is no profile would be a loop.
+  const needsOnboarding = isAllowed && isResolved && !hasProfile && pathname !== "/profile";
 
   useEffect(() => {
-    const stored = localStorage.getItem("jobfits_user");
+    if (needsOnboarding) router.replace("/onboarding/profile");
+  }, [needsOnboarding, router]);
 
-    if (!stored) {
-      router.replace("/login");
-      return;
-    }
-
-    try {
-      const user = JSON.parse(stored);
-      if (!user.onboardingComplete) {
-        router.replace("/onboarding/profile");
-        return;
-      }
-    } catch {
-      router.replace("/login");
-      return;
-    }
-
-    setAuthChecked(true);
-  }, [router]);
+  // Hold the overlay until we know both the role AND whether onboarding is due,
+  // so a user with no profile never sees the dashboard flash by first.
+  const authChecked = isAllowed && isResolved && !needsOnboarding;
 
   // Always render the full layout so server and client HTML match.
   // A fixed overlay covers the content until the auth check resolves.
