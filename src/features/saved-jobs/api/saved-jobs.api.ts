@@ -1,95 +1,46 @@
-import type { Job } from "@/shared/types/shared.types";
-import { MOCK_JOBS } from "@/features/job/api/job.api";
+/**
+ * Saved jobs.
+ *
+ * TODO(backend): there is no saved-jobs endpoint. Rather than fake it, this persists
+ * the saved job IDs in localStorage — a genuinely working, if device-local, feature.
+ * When a backend lands, swap the three functions below for HTTP calls and everything
+ * above (hooks, pages) keeps working unchanged. (INTEGRATION_PLAN.md Phase 10.)
+ */
 
-/* Saved Jobs feature (FR-SAVED-001/002) — Path 2C of the User Flows Guide.
-   A saved job wraps a Job with the user's personal layer: tags, notes,
-   pipeline status, and when it was saved. */
+const STORAGE_KEY = "jobfits_saved_jobs";
 
-export type SavedJobStatus = "Applied" | "Waiting" | "Interview" | "Rejected";
-
-export interface SavedJob {
-  job: Job;
-  savedDaysAgo: number;
-  /** Pipeline status if the user already applied (undefined = not applied yet). */
-  status?: SavedJobStatus;
-  tags: string[];
-  notes: string;
+function read(): string[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    const parsed = raw ? (JSON.parse(raw) as unknown) : [];
+    return Array.isArray(parsed) ? parsed.filter((x): x is string => typeof x === "string") : [];
+  } catch {
+    return [];
+  }
 }
 
-/** Predefined tags from the flows guide (custom tags are also allowed). */
-export const PRESET_TAGS = [
-  "Dream company",
-  "Ready to apply",
-  "Backup option",
-  "Learning opportunity",
-] as const;
+function write(ids: string[]): void {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(ids));
+}
 
-const byId = (id: string): Job => {
-  const job = MOCK_JOBS.find((j) => j.id === id);
-  if (!job) throw new Error(`Unknown mock job id: ${id}`);
-  return job;
+export const savedJobsApi = {
+  /** All saved job IDs (most-recently-saved first). */
+  list: async (): Promise<string[]> => read(),
+
+  /** Toggle a job's saved state; resolves to the new full list. */
+  toggle: async (jobId: string): Promise<string[]> => {
+    const ids = read();
+    const next = ids.includes(jobId) ? ids.filter((id) => id !== jobId) : [jobId, ...ids];
+    write(next);
+    return next;
+  },
+
+  /** Remove a job from the saved list. */
+  remove: async (jobId: string): Promise<string[]> => {
+    const next = read().filter((id) => id !== jobId);
+    write(next);
+    return next;
+  },
 };
-
-/* Mock saved collection — reuses the shared job dataset so /jobs,
-   /dashboard and /saved-jobs all reference the same listings. */
-export const MOCK_SAVED_JOBS: SavedJob[] = [
-  {
-    job: byId("j1"),
-    savedDaysAgo: 3,
-    status: "Interview",
-    tags: ["Dream company"],
-    notes: "Recruiter said they'd decide by EOW — follow up on Friday.",
-  },
-  {
-    job: byId("j9"),
-    savedDaysAgo: 1,
-    tags: ["Ready to apply"],
-    notes: "Salary is 10% above my expectation — room to negotiate?",
-  },
-  {
-    job: byId("j2"),
-    savedDaysAgo: 5,
-    status: "Applied",
-    tags: ["Dream company"],
-    notes: "",
-  },
-  {
-    job: byId("j4"),
-    savedDaysAgo: 6,
-    status: "Waiting",
-    tags: [],
-    notes: "Team seems great. Glassdoor reviews are 4.5/5.",
-  },
-  {
-    job: byId("j5"),
-    savedDaysAgo: 8,
-    status: "Interview",
-    tags: [],
-    notes: "Video interview tomorrow 2:00 PM — review Kubernetes notes.",
-  },
-  {
-    job: byId("j12"),
-    savedDaysAgo: 2,
-    tags: ["Learning opportunity"],
-    notes: "",
-  },
-  {
-    job: byId("j7"),
-    savedDaysAgo: 10,
-    tags: ["Backup option"],
-    notes: "",
-  },
-  {
-    job: byId("j10"),
-    savedDaysAgo: 14,
-    status: "Rejected",
-    tags: [],
-    notes: "",
-  },
-];
-
-/** Simulated network fetch for the user's saved jobs. */
-export async function fetchSavedJobs(): Promise<SavedJob[]> {
-  await new Promise((r) => setTimeout(r, 600));
-  return MOCK_SAVED_JOBS;
-}

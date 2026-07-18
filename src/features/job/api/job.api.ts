@@ -1,222 +1,64 @@
-import type { Job } from "@/shared/types/shared.types";
+/**
+ * Job endpoints (backend module: `job`). Public — no auth required.
+ *
+ * Contract read off the running backend, not guessed:
+ *   - `GET /jobs` does NOT default to published: with no `status` it returns
+ *     DRAFT + PUBLISHED + CLOSED. A public board must send `status=PUBLISHED`.
+ *   - `remoteType` is one of the canonical tokens REMOTE | HYBRID | ON_SITE.
+ *   - `salaryRange` is absolute yearly amounts ({ min, max, currency }) or absent.
+ *   - `companyName` is enriched by JobService from the Company table (the Job
+ *     aggregate itself only carries `companyId`); it can be absent.
+ *
+ * TODO(backend): the Job model has no employment type, experience level, industry,
+ * or match score. Those frontend `Job` fields are defaulted in job.mappers.ts and
+ * flagged there — swap when the backend exposes them (match depends on the AI
+ * service; see INTEGRATION_PLAN.md Phase 10).
+ */
 
-/* Mock job listings — stands in for the backend search API (FR-JOBS-003/004).
-   Logo backgrounds rotate through token colors for visual variety. */
-export const MOCK_JOBS: Job[] = [
-  {
-    id: "j1",
-    title: "Senior Frontend Engineer",
-    company: "Stripe",
-    logo: "S",
-    logoBg: "var(--color-primary-700)",
-    location: "San Francisco, CA",
-    salaryMin: 165,
-    salaryMax: 210,
-    match: 94,
-    type: "Full-time",
-    remote: "Hybrid",
-    level: "Senior",
-    industry: "Technology",
-    postedDaysAgo: 2,
-    description: "Build and scale the payment dashboard used by millions of businesses worldwide, working with React, TypeScript, and design systems.",
-  },
-  {
-    id: "j2",
-    title: "React Specialist Developer",
-    company: "Airbnb",
-    logo: "A",
-    logoBg: "var(--color-info-600)",
-    location: "Remote (US)",
-    salaryMin: 150,
-    salaryMax: 195,
-    match: 89,
-    type: "Full-time",
-    remote: "Remote",
-    level: "Senior",
-    industry: "Technology",
-    postedDaysAgo: 3,
-    description: "Own core booking-flow components and drive performance improvements across the guest experience platform.",
-  },
-  {
-    id: "j3",
-    title: "Software Engineer – Platforms",
-    company: "Figma",
-    logo: "F",
-    logoBg: "var(--color-neutral-800)",
-    location: "New York, NY",
-    salaryMin: 140,
-    salaryMax: 185,
-    match: 85,
-    type: "Full-time",
-    remote: "Hybrid",
-    level: "Mid-level",
-    industry: "Technology",
-    postedDaysAgo: 5,
-    description: "Develop the multiplayer editing infrastructure that powers real-time collaboration for design teams.",
-  },
-  {
-    id: "j4",
-    title: "Data Scientist",
-    company: "InnovateLab",
-    logo: "IL",
-    logoBg: "var(--color-primary-500)",
-    location: "Remote (US)",
-    salaryMin: 130,
-    salaryMax: 170,
-    match: 82,
-    type: "Full-time",
-    remote: "Remote",
-    level: "Mid-level",
-    industry: "Technology",
-    postedDaysAgo: 1,
-    description: "Apply machine learning to career-matching problems and ship models that improve recommendation quality.",
-  },
-  {
-    id: "j5",
-    title: "DevOps Lead",
-    company: "CloudBase",
-    logo: "CB",
-    logoBg: "var(--color-info-500)",
-    location: "Austin, TX",
-    salaryMin: 155,
-    salaryMax: 200,
-    match: 78,
-    type: "Full-time",
-    remote: "On-site",
-    level: "Lead/Manager",
-    industry: "Technology",
-    postedDaysAgo: 7,
-    description: "Lead a team of five platform engineers running Kubernetes infrastructure across three cloud providers.",
-  },
-  {
-    id: "j6",
-    title: "Product Designer",
-    company: "HealthHub",
-    logo: "H",
-    logoBg: "var(--color-success-600)",
-    location: "Boston, MA",
-    salaryMin: 110,
-    salaryMax: 145,
-    match: 74,
-    type: "Full-time",
-    remote: "Hybrid",
-    level: "Mid-level",
-    industry: "Healthcare",
-    postedDaysAgo: 4,
-    description: "Design patient-facing telehealth experiences with a focus on accessibility and clinical-workflow integration.",
-  },
-  {
-    id: "j7",
-    title: "Frontend Developer (Contract)",
-    company: "FinEdge",
-    logo: "FE",
-    logoBg: "var(--color-warning-600)",
-    location: "Chicago, IL",
-    salaryMin: 90,
-    salaryMax: 120,
-    match: 71,
-    type: "Contract",
-    remote: "Remote",
-    level: "Mid-level",
-    industry: "Finance",
-    postedDaysAgo: 6,
-    description: "Six-month contract building trading-dashboard widgets in React and TypeScript with strict latency budgets.",
-  },
-  {
-    id: "j8",
-    title: "Junior Web Developer",
-    company: "EduSpark",
-    logo: "E",
-    logoBg: "var(--color-primary-600)",
-    location: "Remote (US)",
-    salaryMin: 70,
-    salaryMax: 95,
-    match: 68,
-    type: "Full-time",
-    remote: "Remote",
-    level: "Entry-level",
-    industry: "Education",
-    postedDaysAgo: 2,
-    description: "Join a mission-driven team building interactive learning tools used in over 2,000 classrooms.",
-  },
-  {
-    id: "j9",
-    title: "Machine Learning Engineer",
-    company: "Nexus AI",
-    logo: "N",
-    logoBg: "var(--color-primary-800)",
-    location: "Seattle, WA",
-    salaryMin: 175,
-    salaryMax: 230,
-    match: 88,
-    type: "Full-time",
-    remote: "Hybrid",
-    level: "Senior",
-    industry: "Technology",
-    postedDaysAgo: 1,
-    description: "Productionize LLM-powered features end to end, from evaluation pipelines to low-latency serving.",
-  },
-  {
-    id: "j10",
-    title: "Engineering Manager – Web",
-    company: "TechCorp",
-    logo: "TC",
-    logoBg: "var(--color-neutral-700)",
-    location: "San Francisco, CA",
-    salaryMin: 190,
-    salaryMax: 245,
-    match: 76,
-    type: "Full-time",
-    remote: "On-site",
-    level: "Lead/Manager",
-    industry: "Technology",
-    postedDaysAgo: 9,
-    description: "Manage two product squads (10 engineers) owning the customer-facing web platform and design system.",
-  },
-  {
-    id: "j11",
-    title: "UX Researcher (Part-time)",
-    company: "RetailX",
-    logo: "R",
-    logoBg: "var(--color-error-500)",
-    location: "Denver, CO",
-    salaryMin: 60,
-    salaryMax: 80,
-    match: 65,
-    type: "Part-time",
-    remote: "Hybrid",
-    level: "Mid-level",
-    industry: "Retail",
-    postedDaysAgo: 12,
-    description: "Run usability studies and synthesize insights for the e-commerce checkout redesign initiative.",
-  },
-  {
-    id: "j12",
-    title: "Full-Stack Engineer",
-    company: "GreenGrid",
-    logo: "G",
-    logoBg: "var(--color-success-500)",
-    location: "Portland, OR",
-    salaryMin: 125,
-    salaryMax: 160,
-    match: 80,
-    type: "Full-time",
-    remote: "Remote",
-    level: "Mid-level",
-    industry: "Energy",
-    postedDaysAgo: 3,
-    description: "Build monitoring dashboards and APIs for residential solar fleets using Next.js and PostgreSQL.",
-  },
-];
+import { apiClient } from "@/lib/api/client";
 
-/** Simulated network fetch for job listings. */
-export async function fetchJobs(): Promise<Job[]> {
-  await new Promise((r) => setTimeout(r, 600));
-  return MOCK_JOBS;
+/** Mirrors JobResponseDto. */
+export interface JobDto {
+  id: string;
+  companyId: string;
+  companyName?: string;
+  title: string;
+  description: string;
+  status: "DRAFT" | "PUBLISHED" | "CLOSED";
+  remoteType: string;
+  location?: string;
+  salaryRange?: { min: number; max: number; currency: string };
+  skillIds: string[];
+  createdAt: string;
+  updatedAt: string;
 }
 
-/** Simulated network fetch for a single job by id. */
-export async function fetchJobById(id: string): Promise<Job | undefined> {
-  await new Promise((r) => setTimeout(r, 600));
-  return MOCK_JOBS.find((j) => j.id === id);
+/** Query params accepted by `GET /jobs` (SearchJobQueryDto). */
+export interface SearchJobsParams {
+  q?: string;
+  status?: "DRAFT" | "PUBLISHED" | "CLOSED";
+  remoteType?: string;
+  location?: string;
+  skillIds?: string[];
+  minSalary?: number;
+  maxSalary?: number;
+  limit?: number;
+  offset?: number;
 }
+
+export const jobApi = {
+  /**
+   * GET /jobs — public search. Defaults to PUBLISHED and a generous page size,
+   * because the current UI filters/sorts client-side over the fetched set (the
+   * facets it filters on — type, level, industry, match — have no server-side
+   * equivalent yet).
+   */
+  search: (params: SearchJobsParams = {}) =>
+    apiClient.get<JobDto[]>("/jobs", {
+      skipAuth: true,
+      query: { status: "PUBLISHED", limit: 100, ...params },
+    }),
+
+  /** GET /jobs/{id} — public. */
+  get: (jobId: string) => apiClient.get<JobDto>(`/jobs/${jobId}`, { skipAuth: true }),
+};

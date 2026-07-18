@@ -2,22 +2,26 @@
 
 import React, { useState, useMemo } from "react";
 import { RefreshCw, LayoutGrid, List, SlidersHorizontal, X, Star } from "lucide-react";
-import { MOCK_JOBS } from "@/features/job/api/job.api";
 import {
   JobRecommendationCard,
   JobRecommendationFilters,
   JobCard,
 } from "@/features/job/components";
 import { useJobSearch } from "@/features/job/hooks/use-job-search";
+import { useRecommendations } from "@/features/matching/hooks/use-recommendations";
+import { useSavedJobIds, useToggleSavedJob } from "@/features/saved-jobs/hooks/use-saved-jobs";
 
 type ViewMode = "list" | "grid";
 
 export default function RecommendationsPage() {
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
-  const [savedJobs, setSavedJobs] = useState<Set<string>>(new Set());
   const [dismissedJobs, setDismissedJobs] = useState<Set<string>>(new Set());
-  const [refreshing, setRefreshing] = useState(false);
+
+  // Live-shaped recommendations (mock behind interface until the AI service lands).
+  const { data: recommendations = [], isFetching, refetch } = useRecommendations();
+  const { ids: savedJobs } = useSavedJobIds();
+  const toggleSaved = useToggleSavedJob();
 
   const {
     filters,
@@ -28,33 +32,26 @@ export default function RecommendationsPage() {
     activeFilterCount,
     pills,
     removePill,
-  } = useJobSearch(MOCK_JOBS, 50);
+  } = useJobSearch(recommendations, 50);
 
   const visibleResults = useMemo(
     () => results.filter((job) => !dismissedJobs.has(job.id)),
     [results, dismissedJobs],
   );
 
-  const handleToggleSave = (id: string) => {
-    setSavedJobs((prev) => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
-  };
+  const handleToggleSave = (id: string) => toggleSaved.mutate(id);
 
   const handleDismiss = (id: string) => {
     setDismissedJobs((prev) => new Set(prev).add(id));
   };
 
   const handleRefresh = () => {
-    setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 1200);
+    refetch();
   };
 
   const filterPanel = (
     <JobRecommendationFilters
-      jobs={MOCK_JOBS}
+      jobs={recommendations}
       filters={filters}
       toggleFilter={toggleFilter}
       setFilter={setFilter}
@@ -83,12 +80,12 @@ export default function RecommendationsPage() {
             </div>
             <button
               onClick={handleRefresh}
-              disabled={refreshing}
+              disabled={isFetching}
               className="flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-semibold transition-all duration-200 hover:bg-neutral-50 disabled:opacity-60"
               style={{ borderColor: "var(--color-border)", color: "var(--color-text-secondary)", background: "var(--color-card)" }}
             >
-              <RefreshCw size={16} className={refreshing ? "animate-spin" : ""} />
-              {refreshing ? "Refreshing…" : "Refresh recommendations"}
+              <RefreshCw size={16} className={isFetching ? "animate-spin" : ""} />
+              {isFetching ? "Refreshing…" : "Refresh recommendations"}
             </button>
           </div>
         </div>

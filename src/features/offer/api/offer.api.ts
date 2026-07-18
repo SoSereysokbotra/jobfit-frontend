@@ -1,5 +1,5 @@
 import type { Job } from "@/shared/types/shared.types";
-import { MOCK_JOBS } from "@/features/job/api/job.api";
+import { MOCK_JOBS } from "@/features/job/api/job.mock";
 import type { BadgeVariant } from "@/shared/components/ui/badge";
 
 /* Offers & Decisions (FR-SALARY-001/002) — Path 3C of the User Flows Guide.

@@ -1,102 +1,126 @@
-/* Mock data for the employer dashboard (jobs, applicants, analytics, company).
-   Stands in for the /api/employer/* and /api/companies/* endpoints. */
+/**
+ * Employer endpoints (backend module: `employer`). All require an EMPLOYER JWT; every
+ * route is scoped server-side to the employer's own company (resolved from their profile).
+ *
+ * Contract read off the running backend, not guessed:
+ *   - `GET /employer/companies/me` resolves the company from the caller's profile — the
+ *     frontend bootstraps with this (there's no other way to learn your companyId).
+ *   - `GET /employer/jobs` lists ALL of the company's jobs (draft + published + closed).
+ *   - Job routes require UUID ids (ParseUUIDPipe); the seed uses UUIDs accordingly.
+ *   - Pipeline status uses `{ newStatus, notes? }`; the response is a lean
+ *     { id, status, previousStatus } — NOT the full application.
+ *   - Analytics `views` is always 0 (no view tracking exists yet).
+ */
 
-export type JobStatus = "Published" | "Draft" | "Closed";
-export type ApplicationStage = "Applied" | "Interview" | "Offer" | "Hired" | "Rejected";
+import { apiClient } from "@/lib/api/client";
+import type { JobDto } from "@/features/job/api/job.api";
+import type { ApplicationStatus } from "@/features/application/api/application.api";
 
-export interface EmployerJob {
+/** Mirrors EmployerCompanyResponseDto. */
+export interface EmployerCompanyDto {
   id: string;
-  title: string;
-  status: JobStatus;
-  postedAt: string;
-  location: string;
-  salaryMin: number;
-  salaryMax: number;
-  employmentType: string;
-  remote: string;
-  skills: string[];
-  views: number;
-  applications: number;
-  avgMatch: number;
+  name: string;
+  description: string | null;
+  website: string | null;
+  logoUrl: string | null;
+  industry: string | null;
+  size: string | null;
+  foundedYear: number | null;
+  city: string | null;
+  state: string | null;
+  country: string | null;
+  isVerified: boolean;
+  verificationMethod: string | null;
+  verifiedAt: string | null;
 }
 
-export interface Applicant {
+/** Employer jobs reuse the shared JobResponseDto shape. */
+export type EmployerJobDto = JobDto;
+
+/** Mirrors JobAnalyticsResponseDto. */
+export interface JobAnalyticsDto {
+  jobId: string;
+  applicationsCount: number;
+  applicationsByStatus: Record<string, number>;
+  averageMatchScore: number | null;
+  views: number;
+}
+
+/** Mirrors EmployerApplicationResponseDto (pipeline row). */
+export interface EmployerApplicationDto {
   id: string;
   jobId: string;
-  name: string;
-  initials: string;
-  email: string;
-  location: string;
-  match: number;
-  stage: ApplicationStage;
+  jobTitle: string;
+  candidate: { id: string; name: string; email: string };
+  status: ApplicationStatus;
+  employerNotes: string | null;
+  matchScore: number | null;
   appliedAt: string;
 }
 
-export interface CompanyProfile {
-  name: string;
-  verified: boolean;
-  verifiedDate: string;
+export interface CreateJobInput {
+  title: string;
   description: string;
-  industries: string[];
-  size: string;
-  website: string;
+  remoteType: "REMOTE" | "HYBRID" | "ON_SITE";
+  location?: string;
+  minSalary?: number;
+  maxSalary?: number;
+  skillIds?: string[];
 }
 
-export const COMPANY_PROFILE: CompanyProfile = {
-  name: "TechCorp Inc",
-  verified: true,
-  verifiedDate: "Jan 15, 2026",
-  description: "Leading software company focused on AI-powered developer tools and platform infrastructure.",
-  industries: ["Software", "Technology"],
-  size: "Mid-Size (201–1000)",
-  website: "https://techcorp.com",
+export type UpdateJobInput = Partial<CreateJobInput>;
+
+export interface UpdateCompanyInput {
+  description?: string;
+  website?: string;
+  logoUrl?: string;
+  industry?: string;
+  size?: string;
+  foundedYear?: number;
+  city?: string;
+  state?: string;
+  country?: string;
+}
+
+export interface ListApplicationsParams {
+  jobId?: string;
+  status?: ApplicationStatus;
+  skip?: number;
+  take?: number;
+}
+
+export const employerApi = {
+  // ── Company ──
+  companyMe: () => apiClient.get<EmployerCompanyDto>("/employer/companies/me"),
+  updateCompany: (companyId: string, input: UpdateCompanyInput) =>
+    apiClient.patch<EmployerCompanyDto>(`/employer/companies/${companyId}`, input),
+  verifyCompanyEmail: (companyId: string) =>
+    apiClient.post<EmployerCompanyDto>(`/employer/companies/${companyId}/verify-email`),
+
+  // ── Jobs ──
+  listJobs: () => apiClient.get<EmployerJobDto[]>("/employer/jobs"),
+  createJob: (input: CreateJobInput) =>
+    apiClient.post<EmployerJobDto>("/employer/jobs", input),
+  updateJob: (jobId: string, input: UpdateJobInput) =>
+    apiClient.patch<EmployerJobDto>(`/employer/jobs/${jobId}`, input),
+  publishJob: (jobId: string) =>
+    apiClient.post<EmployerJobDto>(`/employer/jobs/${jobId}/publish`),
+  jobAnalytics: (jobId: string) =>
+    apiClient.get<JobAnalyticsDto>(`/employer/jobs/${jobId}/analytics`),
+
+  // ── Applications (pipeline) ──
+  listApplications: (params: ListApplicationsParams = {}) =>
+    apiClient.get<EmployerApplicationDto[]>("/employer/applications", {
+      query: { ...params },
+    }),
+  updateApplicationStatus: (id: string, newStatus: ApplicationStatus, notes?: string) =>
+    apiClient.patch<{ id: string; status: ApplicationStatus; previousStatus: ApplicationStatus }>(
+      `/employer/applications/${id}/status`,
+      { newStatus, ...(notes ? { notes } : {}) },
+    ),
+  addApplicationNotes: (id: string, notes: string) =>
+    apiClient.post<{ id: string; employerNotes: string }>(
+      `/employer/applications/${id}/notes`,
+      { notes },
+    ),
 };
-
-export const EMPLOYER_JOBS: EmployerJob[] = [
-  {
-    id: "ej1", title: "Senior Software Engineer", status: "Published", postedAt: "Jan 15, 2026",
-    location: "San Francisco, CA", salaryMin: 150, salaryMax: 190, employmentType: "Full-time", remote: "Hybrid",
-    skills: ["Python", "SQL", "AWS"], views: 456, applications: 23, avgMatch: 82,
-  },
-  {
-    id: "ej2", title: "Product Manager", status: "Draft", postedAt: "Jan 20, 2026",
-    location: "Remote (US)", salaryMin: 140, salaryMax: 175, employmentType: "Full-time", remote: "Remote",
-    skills: ["Roadmapping", "Analytics", "Agile"], views: 0, applications: 0, avgMatch: 0,
-  },
-  {
-    id: "ej3", title: "Data Scientist", status: "Published", postedAt: "Dec 20, 2025",
-    location: "New York, NY", salaryMin: 145, salaryMax: 185, employmentType: "Full-time", remote: "Hybrid",
-    skills: ["Python", "ML", "Statistics"], views: 812, applications: 45, avgMatch: 79,
-  },
-  {
-    id: "ej4", title: "UX Designer", status: "Closed", postedAt: "Nov 2, 2025",
-    location: "Boston, MA", salaryMin: 110, salaryMax: 145, employmentType: "Full-time", remote: "On-site",
-    skills: ["Figma", "Research", "Prototyping"], views: 340, applications: 18, avgMatch: 74,
-  },
-];
-
-export const APPLICANTS: Applicant[] = [
-  { id: "ap1", jobId: "ej1", name: "John Smith", initials: "JS", email: "john@example.com", location: "San Francisco, CA", match: 92, stage: "Applied", appliedAt: "1h ago" },
-  { id: "ap2", jobId: "ej1", name: "Alice Cooper", initials: "AC", email: "alice@example.com", location: "Remote", match: 78, stage: "Applied", appliedAt: "3h ago" },
-  { id: "ap3", jobId: "ej1", name: "Priya Sharma", initials: "PS", email: "priya@example.com", location: "Austin, TX", match: 84, stage: "Applied", appliedAt: "6h ago" },
-  { id: "ap4", jobId: "ej1", name: "Jane Doe", initials: "JD", email: "jane@example.com", location: "New York, NY", match: 87, stage: "Interview", appliedAt: "5d ago" },
-  { id: "ap5", jobId: "ej3", name: "Charlie Kim", initials: "CK", email: "charlie@example.com", location: "Seattle, WA", match: 80, stage: "Interview", appliedAt: "3d ago" },
-  { id: "ap6", jobId: "ej1", name: "Bob Johnson", initials: "BJ", email: "bob@example.com", location: "Chicago, IL", match: 85, stage: "Offer", appliedAt: "2d ago" },
-  { id: "ap7", jobId: "ej3", name: "David Lee", initials: "DL", email: "david@example.com", location: "Portland, OR", match: 88, stage: "Hired", appliedAt: "1w ago" },
-  { id: "ap8", jobId: "ej1", name: "Emma Wilson", initials: "EW", email: "emma@example.com", location: "Denver, CO", match: 72, stage: "Rejected", appliedAt: "4d ago" },
-];
-
-/** 7-month applications-vs-views trend for the analytics chart. */
-export const EMPLOYER_TREND = [
-  { month: "Jan", applications: 8, views: 120 },
-  { month: "Feb", applications: 14, views: 210 },
-  { month: "Mar", applications: 22, views: 340 },
-  { month: "Apr", applications: 18, views: 290 },
-  { month: "May", applications: 31, views: 460 },
-  { month: "Jun", applications: 27, views: 410 },
-  { month: "Jul", applications: 38, views: 540 },
-];
-
-export function jobById(id: string): EmployerJob | undefined {
-  return EMPLOYER_JOBS.find((j) => j.id === id);
-}

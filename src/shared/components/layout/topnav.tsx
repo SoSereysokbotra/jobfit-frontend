@@ -2,7 +2,8 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { Menu, Search, Bell, X } from "lucide-react";
+import { Menu, Search, X } from "lucide-react";
+import { NotificationBell } from "@/features/notification/components/notification-bell";
 
 interface TopNavProps {
   onMenuToggle?: () => void;
@@ -73,17 +74,7 @@ export default function TopNav({ onMenuToggle, className = "" }: TopNavProps) {
       <div className="hidden md:block flex-1" />
 
       {/* Notifications */}
-      <Link
-        href="/notifications"
-        className="relative p-2 rounded-lg hover:bg-neutral-100 transition-colors"
-        style={{ color: "var(--color-text-secondary)" }}
-      >
-        <Bell size={20} />
-        <span
-          className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full"
-          style={{ background: "var(--color-primary-500)" }}
-        />
-      </Link>
+      <NotificationBell />
 
       {/* User Avatar */}
       <Link href="/profile">

@@ -1,34 +1,51 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import { Search, X, FileText, KeyRound, Unlock, Trash2, AlertTriangle } from "lucide-react";
+import { Search, X, KeyRound, Unlock, Trash2, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { cn } from "@/shared/utils/cn";
-import { Badge, type BadgeTone } from "@/shared/components/data-display/badge";
+import { Badge } from "@/shared/components/data-display/badge";
 import { EmptyState } from "@/shared/components/data-display/empty-state";
-import { ADMIN_USERS, type AdminUser } from "@/features/admin/api/admin.api";
+import { Skeleton } from "@/shared/components/feedback/skeleton";
+import { Alert } from "@/shared/components/feedback/alert";
+import { Button } from "@/shared/components/ui/button";
+import { useDebounce } from "@/shared/hooks/use-debounce";
+import {
+  useAdminUsers,
+  useAdminUser,
+  useResetUserPassword,
+  useUnlockUser,
+  useDeleteUser,
+} from "@/features/admin/hooks/use-admin";
+import {
+  USER_STATUS_TONE,
+  userStatus,
+  userInitials,
+  ago,
+  dateLabel,
+} from "@/features/admin/api/admin.mappers";
 
-const STATUS_TONE: Record<AdminUser["status"], BadgeTone> = {
-  active: "success", inactive: "neutral", locked: "error",
-};
-const FILTERS = ["All", "Active", "Inactive", "Locked", "Verified"] as const;
+const FILTERS = ["All", "Active", "Inactive", "Verified"] as const;
 
 export default function UserManagementPage() {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<(typeof FILTERS)[number]>("All");
-  const [selected, setSelected] = useState<AdminUser | null>(null);
-  const [deleteConfirm, setDeleteConfirm] = useState("");
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
+  const debounced = useDebounce(query, 300);
+  // The backend filters email and name separately; route the query by shape.
+  const searchParams = debounced.includes("@") ? { email: debounced } : { name: debounced };
+  const { data, isLoading, isError, error } = useAdminUsers(debounced ? searchParams : {});
+
+  const users = data?.data ?? [];
   const results = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return ADMIN_USERS.filter((u) => {
-      if (q && !`${u.name} ${u.email}`.toLowerCase().includes(q)) return false;
-      if (filter === "Active") return u.status === "active";
-      if (filter === "Inactive") return u.status === "inactive";
-      if (filter === "Locked") return u.status === "locked";
+    return users.filter((u) => {
+      const status = userStatus(u);
+      if (filter === "Active") return status === "active";
+      if (filter === "Inactive") return status === "inactive" || status === "deleted";
       if (filter === "Verified") return u.emailVerified;
       return true;
     });
-  }, [query, filter]);
+  }, [users, filter]);
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-5">
@@ -44,7 +61,7 @@ export default function UserManagementPage() {
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search by name or email…"
+            placeholder="Search by name, or email (with @)…"
             className="w-full pl-9 pr-3 py-2.5 rounded-md border border-border bg-card text-content text-sm outline-none transition-all focus:ring-2 focus:ring-primary-500 focus:border-transparent"
           />
         </div>
@@ -57,10 +74,13 @@ export default function UserManagementPage() {
         </div>
       </div>
 
-      <p className="text-xs text-content-tertiary">Showing {results.length} of {ADMIN_USERS.length} users</p>
+      {isError && <Alert variant="error">{error instanceof Error ? error.message : "Could not load users."}</Alert>}
+      {data && <p className="text-xs text-content-tertiary">Showing {results.length} of {data.total} users</p>}
 
       {/* Table */}
-      {results.length === 0 ? (
+      {isLoading ? (
+        <div className="space-y-2">{[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-14 rounded-lg" />)}</div>
+      ) : results.length === 0 ? (
         <EmptyState icon={<Search size={26} />} title="No users found" description="Try a different search term or filter." />
       ) : (
         <div className="rounded-lg border border-border bg-card shadow-sm overflow-hidden">
@@ -70,22 +90,24 @@ export default function UserManagementPage() {
                 <tr className="text-left text-content-tertiary">
                   <th className="font-semibold text-xs uppercase tracking-wider px-5 py-3">Name</th>
                   <th className="font-semibold text-xs uppercase tracking-wider px-5 py-3 hidden sm:table-cell">Email</th>
+                  <th className="font-semibold text-xs uppercase tracking-wider px-5 py-3">Role</th>
                   <th className="font-semibold text-xs uppercase tracking-wider px-5 py-3">Status</th>
                   <th className="font-semibold text-xs uppercase tracking-wider px-5 py-3 hidden md:table-cell">Last Login</th>
                 </tr>
               </thead>
               <tbody>
                 {results.map((u) => (
-                  <tr key={u.id} onClick={() => { setSelected(u); setDeleteConfirm(""); }} className="border-t border-neutral-100 cursor-pointer transition-colors hover:bg-primary-50">
+                  <tr key={u.id} onClick={() => setSelectedId(u.id)} className="border-t border-neutral-100 cursor-pointer transition-colors hover:bg-primary-50">
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 bg-primary-100 text-primary-700">{u.initials}</div>
-                        <span className="font-semibold text-content">{u.name}</span>
+                        <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 bg-primary-100 text-primary-700">{userInitials(u)}</div>
+                        <span className="font-semibold text-content">{u.name || "—"}</span>
                       </div>
                     </td>
                     <td className="px-5 py-3 hidden sm:table-cell text-content-secondary">{u.email}</td>
-                    <td className="px-5 py-3"><Badge tone={STATUS_TONE[u.status]} dot>{u.status}</Badge></td>
-                    <td className="px-5 py-3 hidden md:table-cell text-content-tertiary">{u.lastLogin}</td>
+                    <td className="px-5 py-3"><Badge tone="neutral">{u.role.replace("_", " ")}</Badge></td>
+                    <td className="px-5 py-3"><Badge tone={USER_STATUS_TONE[userStatus(u)]} dot>{userStatus(u)}</Badge></td>
+                    <td className="px-5 py-3 hidden md:table-cell text-content-tertiary">{ago(u.lastLogin)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -94,56 +116,68 @@ export default function UserManagementPage() {
         </div>
       )}
 
-      {/* Detail drawer */}
-      {selected && (
-        <div className="fixed inset-0 flex justify-end z-50">
-          <div className="flex-1 bg-scrim" onClick={() => setSelected(null)} />
-          <div className="w-full max-w-md h-full overflow-y-auto p-6 animate-slide-up bg-background">
+      {selectedId && <UserDetailDrawer id={selectedId} onClose={() => setSelectedId(null)} />}
+    </div>
+  );
+}
+
+function UserDetailDrawer({ id, onClose }: { id: string; onClose: () => void }) {
+  const { data: user, isLoading } = useAdminUser(id);
+  const resetPassword = useResetUserPassword();
+  const unlock = useUnlockUser();
+  const deleteUser = useDeleteUser();
+  const [deleteConfirm, setDeleteConfirm] = useState("");
+
+  return (
+    <div className="fixed inset-0 flex justify-end z-50">
+      <div className="flex-1 bg-scrim" onClick={onClose} />
+      <div className="w-full max-w-md h-full overflow-y-auto p-6 animate-slide-up bg-background">
+        {isLoading || !user ? (
+          <div className="space-y-4"><Skeleton className="h-14 w-full" /><Skeleton className="h-40 w-full" /></div>
+        ) : (
+          <>
             <div className="flex items-start justify-between mb-6">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full flex items-center justify-center text-base font-bold shrink-0 bg-primary-100 text-primary-700">{selected.initials}</div>
+                <div className="w-12 h-12 rounded-full flex items-center justify-center text-base font-bold shrink-0 bg-primary-100 text-primary-700">{userInitials(user)}</div>
                 <div>
-                  <h2 className="text-lg font-bold text-content">{selected.name}</h2>
-                  <p className="text-xs text-content-tertiary">{selected.email}</p>
+                  <h2 className="text-lg font-bold text-content">{user.name || "—"}</h2>
+                  <p className="text-xs text-content-tertiary">{user.email}</p>
                 </div>
               </div>
-              <button onClick={() => setSelected(null)} aria-label="Close" className="p-2 rounded-md hover:bg-neutral-100 transition-colors text-content-secondary"><X size={18} /></button>
+              <button onClick={onClose} aria-label="Close" className="p-2 rounded-md hover:bg-neutral-100 transition-colors text-content-secondary"><X size={18} /></button>
             </div>
 
             <Section title="Account">
-              <Row label="Status"><Badge tone={STATUS_TONE[selected.status]} dot>{selected.status}</Badge></Row>
-              <Row label="Email verified"><Badge tone={selected.emailVerified ? "success" : "warning"}>{selected.emailVerified ? "Yes" : "No"}</Badge></Row>
-              <Row label="Signup date"><span className="text-content">{selected.signupDate}</span></Row>
-              <Row label="Last login"><span className="text-content">{selected.lastLogin}</span></Row>
+              <Row label="Role"><Badge tone="neutral">{user.role.replace("_", " ")}</Badge></Row>
+              <Row label="Status"><Badge tone={USER_STATUS_TONE[userStatus(user)]} dot>{userStatus(user)}</Badge></Row>
+              <Row label="Email verified"><Badge tone={user.emailVerified ? "success" : "warning"}>{user.emailVerified ? "Yes" : "No"}</Badge></Row>
+              <Row label="Signup date"><span className="text-content">{dateLabel(user.createdAt)}</span></Row>
+              <Row label="Last login"><span className="text-content">{ago(user.lastLogin)}</span></Row>
             </Section>
 
-            <Section title="Profile">
-              <Row label="Location"><span className="text-content">{selected.location}</span></Row>
-              <Row label="Salary expectation"><span className="text-content">{selected.salaryExpectation}</span></Row>
-              <Row label="Completeness"><span className="text-content">{selected.profileCompleteness}%</span></Row>
-              <Row label="Applications"><span className="text-content">{selected.applications}</span></Row>
-            </Section>
-
-            <Section title="Resumes">
-              {selected.resumes.length === 0 ? (
-                <p className="text-sm text-content-tertiary">No resumes uploaded.</p>
-              ) : selected.resumes.map((r) => (
-                <div key={r.id} className="flex items-center gap-2.5 py-1.5">
-                  <FileText size={15} className="text-primary-500" />
-                  <span className="text-sm flex-1 text-content">{r.filename}</span>
-                  {r.current && <Badge tone="primary">Current</Badge>}
-                  <span className="text-xs text-content-tertiary">{r.uploadedAt}</span>
-                </div>
-              ))}
+            <Section title="Activity">
+              <Row label="Applications"><span className="text-content">{user.applicationsCount}</span></Row>
+              <Row label="Resumes"><span className="text-content">{user.resumesCount}</span></Row>
+              <Row label="Locked"><Badge tone={user.isLocked ? "error" : "neutral"}>{user.isLocked ? "Yes" : "No"}</Badge></Row>
             </Section>
 
             {/* Actions */}
             <div className="mt-6 space-y-2">
-              <button className="w-full flex items-center gap-2 px-4 py-2.5 rounded-md border border-border text-sm font-semibold text-content transition-colors hover:bg-neutral-50">
-                <KeyRound size={16} className="text-primary-600" /> Reset Password
+              <button
+                onClick={() => resetPassword.mutate(user.id)}
+                disabled={resetPassword.isPending}
+                className="w-full flex items-center gap-2 px-4 py-2.5 rounded-md border border-border text-sm font-semibold text-content transition-colors hover:bg-neutral-50 disabled:opacity-50"
+              >
+                <KeyRound size={16} className="text-primary-600" /> Send Password Reset
               </button>
-              {selected.status === "locked" && (
-                <button className="w-full flex items-center gap-2 px-4 py-2.5 rounded-md border border-border text-sm font-semibold text-content transition-colors hover:bg-neutral-50">
+              {resetPassword.isSuccess && <Alert variant="success"><span className="inline-flex items-center gap-1"><CheckCircle2 size={13} /> Reset code sent.</span></Alert>}
+
+              {user.isLocked && (
+                <button
+                  onClick={() => unlock.mutate(user.id)}
+                  disabled={unlock.isPending}
+                  className="w-full flex items-center gap-2 px-4 py-2.5 rounded-md border border-border text-sm font-semibold text-content transition-colors hover:bg-neutral-50 disabled:opacity-50"
+                >
                   <Unlock size={16} className="text-success-600" /> Unlock Account
                 </button>
               )}
@@ -160,15 +194,24 @@ export default function UserManagementPage() {
                     placeholder='Type "DELETE" to confirm'
                     className="w-full px-3 py-2 rounded-md border border-error-100 bg-card text-content text-sm outline-none mb-2"
                   />
-                  <button disabled={deleteConfirm !== "DELETE"} className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-md text-sm font-bold text-white transition-all bg-error-500 hover:bg-error-600 disabled:opacity-50 disabled:cursor-not-allowed">
+                  <Button
+                    variant="danger"
+                    fullWidth
+                    loading={deleteUser.isPending}
+                    loadingText="Deleting…"
+                    disabled={deleteConfirm !== "DELETE"}
+                    onClick={() => deleteUser.mutate(user.id, { onSuccess: onClose })}
+                    className="text-sm"
+                  >
                     <Trash2 size={15} /> Delete Account
-                  </button>
+                  </Button>
+                  {deleteUser.isError && <Alert variant="error" className="mt-2">{deleteUser.error instanceof Error ? deleteUser.error.message : "Delete failed."}</Alert>}
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-      )}
+          </>
+        )}
+      </div>
     </div>
   );
 }

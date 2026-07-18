@@ -1,6 +1,8 @@
 import React from "react";
 import { notFound } from "next/navigation";
-import { fetchJobById } from "@/features/job/api/job.api";
+import { jobApi } from "@/features/job/api/job.api";
+import { toJobView } from "@/features/job/api/job.mappers";
+import { ApiError } from "@/lib/api/client";
 import {
   JobDetailHeader,
   MatchScoreWidget,
@@ -8,6 +10,7 @@ import {
   JobCompanyInfo,
   JobRelatedList,
 } from "@/features/job/components";
+import { ApplyButton } from "@/features/application/components/apply-button";
 
 export default async function JobDetailPage({
   params,
@@ -15,11 +18,16 @@ export default async function JobDetailPage({
   params: Promise<{ jobId: string }>;
 }) {
   const { jobId } = await params;
-  const job = await fetchJobById(jobId);
+  // Public endpoint. A 404 becomes Next's notFound(); anything else propagates.
+  const dto = await jobApi.get(jobId).catch((err) => {
+    if (err instanceof ApiError && err.statusCode === 404) return null;
+    throw err;
+  });
 
-  if (!job) {
+  if (!dto) {
     notFound();
   }
+  const job = toJobView(dto);
 
   return (
     <div className="min-h-screen pb-12" style={{ background: "var(--color-bg-secondary)" }}>
@@ -41,6 +49,14 @@ export default async function JobDetailPage({
           {/* Sticky Sidebar Column */}
           <aside className="w-full lg:w-80 shrink-0">
             <div className="sticky top-24 space-y-6">
+              {/* Desktop apply CTA (mobile uses the sticky bottom bar) */}
+              <div
+                className="hidden lg:block p-4 rounded-lg border"
+                style={{ background: "var(--color-card)", borderColor: "var(--color-border)", boxShadow: "var(--shadow-sm)" }}
+              >
+                <ApplyButton jobId={job.id} />
+              </div>
+
               <MatchScoreWidget job={job} />
 
               <div className="hidden lg:block">
@@ -59,12 +75,9 @@ export default async function JobDetailPage({
           className="lg:hidden fixed bottom-0 left-0 right-0 p-4 border-t shadow-lg z-10 flex gap-3 bg-white"
           style={{ borderColor: "var(--color-border)" }}
         >
-          <button
-            className="flex-1 py-3 rounded-md text-sm font-semibold text-white transition-all duration-200 hover:opacity-90 active:scale-[0.97]"
-            style={{ background: "var(--color-primary-600)" }}
-          >
-            Apply Now
-          </button>
+          <div className="flex-1">
+            <ApplyButton jobId={job.id} />
+          </div>
           <button
             className="w-14 h-12 flex items-center justify-center rounded-md border-2 transition-all duration-200 hover:opacity-90 active:scale-[0.97]"
             style={{
