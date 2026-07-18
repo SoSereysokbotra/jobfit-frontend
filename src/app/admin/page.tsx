@@ -23,9 +23,9 @@ export default function AdminDashboardPage() {
 
       {/* Stat tiles */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <StatCard label="Uptime" value={`${SYSTEM_HEALTH.uptimePercent}%`} hint="+0.2% vs last week" trend="up" icon={<Activity size={18} />} accent="bg-success-50 text-success-600" href="/admin/system" />
-        <StatCard label="API Latency" value={`${SYSTEM_HEALTH.apiLatencyMs}ms`} hint="Well under 500ms target" icon={<Gauge size={18} />} accent="bg-info-50 text-info-600" href="/admin/system" />
-        <StatCard label="Active Users" value={`${SYSTEM_HEALTH.activeUsers}`} hint="Currently online" icon={<Users size={18} />} accent="bg-primary-50 text-primary-600" href="/admin/users" />
+        <StatCard label="Uptime" value={`${SYSTEM_HEALTH.uptimePercent}%`} change="+0.2% vs last week" changeUp icon={<Activity size={18} />} accentColor="var(--color-success-600)" accentBg="var(--color-success-50)" href="/admin/system" />
+        <StatCard label="API Latency" value={`${SYSTEM_HEALTH.apiLatencyMs}ms`} change="Well under 500ms target" icon={<Gauge size={18} />} accentColor="var(--color-info-600)" accentBg="var(--color-info-50)" href="/admin/system" />
+        <StatCard label="Active Users" value={`${SYSTEM_HEALTH.activeUsers}`} change="Currently online" icon={<Users size={18} />} accentColor="var(--color-primary-600)" accentBg="var(--color-primary-50)" href="/admin/users" />
       </div>
 
       {/* System alerts */}

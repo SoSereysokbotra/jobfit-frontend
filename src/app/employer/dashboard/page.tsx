@@ -45,10 +45,10 @@ export default function EmployerAnalyticsPage() {
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Active Jobs" value={`${activeJobs}`} hint="Published & accepting" icon={<Briefcase size={18} />} accent="bg-primary-50 text-primary-600" href="/employer/jobs" />
-        <StatCard label="Applicants" value={`${totalApps}`} hint="+4 today" trend="up" icon={<Users size={18} />} accent="bg-info-50 text-info-600" href="/employer/applications" />
-        <StatCard label="Apply Rate" value={`${applyRate}%`} hint="views → applies" icon={<Target size={18} />} accent="bg-success-50 text-success-600" />
-        <StatCard label="Avg Match" value="80%" hint="across all roles" trend="up" icon={<TrendingUp size={18} />} accent="bg-warning-50 text-warning-600" />
+        <StatCard label="Active Jobs" value={`${activeJobs}`} change="Published & accepting" icon={<Briefcase size={18} />} accentColor="var(--color-primary-600)" accentBg="var(--color-primary-50)" href="/employer/jobs" />
+        <StatCard label="Applicants" value={`${totalApps}`} change="+4 today" changeUp icon={<Users size={18} />} accentColor="var(--color-info-600)" accentBg="var(--color-info-50)" href="/employer/applications" />
+        <StatCard label="Apply Rate" value={`${applyRate}%`} change="views → applies" icon={<Target size={18} />} accentColor="var(--color-success-600)" accentBg="var(--color-success-50)" />
+        <StatCard label="Avg Match" value="80%" change="across all roles" changeUp icon={<TrendingUp size={18} />} accentColor="var(--color-warning-600)" accentBg="var(--color-warning-50)" />
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
