@@ -1,46 +1,64 @@
+"use client";
+
 import React from "react";
 import Link from "next/link";
-import { TrendingUp, TrendingDown } from "lucide-react";
+import { TrendingUp } from "lucide-react";
 
 interface StatCardProps {
   label: string;
   value: string;
-  /** Small caption under the value (e.g. "+3 this week"). */
-  hint?: string;
-  /** Trend direction for the hint icon; omit for no icon. */
-  trend?: "up" | "down";
+  change?: string;
+  changeUp?: boolean;
   icon: React.ReactNode;
-  /** Icon tile color classes, e.g. "bg-primary-50 text-primary-600". */
-  accent: string;
+  /** Token-backed accent, e.g. "var(--color-primary-600)". */
+  accentColor: string;
+  accentBg: string;
+  /** When set, the tile is a link. */
   href?: string;
 }
 
-/** KPI tile shared by admin and employer dashboards. */
-export function StatCard({ label, value, hint, trend, icon, accent, href }: StatCardProps) {
+/** KPI tile (ui-reference §12 dashboard components). Shared by dashboard & trackers. */
+export function StatCard({
+  label, value, change, changeUp, icon, accentColor, accentBg, href,
+}: StatCardProps) {
   const body = (
     <>
       <div className="flex items-center justify-between mb-3">
-        <p className="text-xs font-semibold uppercase tracking-wider text-content-tertiary">{label}</p>
-        <div className={`w-9 h-9 rounded-md flex items-center justify-center transition-transform duration-200 group-hover:scale-110 ${accent}`}>
+        <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--color-text-tertiary)" }}>{label}</p>
+        <div
+          className="w-9 h-9 rounded-md flex items-center justify-center transition-transform duration-200 group-hover:scale-110"
+          style={{ background: accentBg, color: accentColor }}
+        >
           {icon}
         </div>
       </div>
-      <p className="text-3xl font-extrabold tracking-tight text-content">{value}</p>
-      {hint && (
-        <p className="text-xs mt-1.5 flex items-center gap-1 text-content-tertiary">
-          {trend === "up" && <TrendingUp size={11} className="text-success-500" />}
-          {trend === "down" && <TrendingDown size={11} className="text-error-500" />}
-          {hint}
+      <p className="text-3xl font-extrabold tracking-tight" style={{ color: "var(--color-text-primary)" }}>{value}</p>
+      {change && (
+        <p className="text-xs mt-1.5 flex items-center gap-1" style={{ color: "var(--color-text-tertiary)" }}>
+          {changeUp && <TrendingUp size={11} style={{ color: "var(--color-success-500)" }} />}
+          {change}
         </p>
       )}
     </>
   );
 
-  const base = "rounded-lg border border-border bg-card shadow-sm p-5 transition-all duration-200 hover:shadow-md group block";
+  const baseClass = "rounded-lg border p-5 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 group block";
+  const baseStyle: React.CSSProperties = {
+    background: "var(--color-card)",
+    borderColor: "var(--color-border)",
+    boxShadow: "var(--shadow-sm)",
+  };
 
-  return href ? (
-    <Link href={href} className={`${base} hover:-translate-y-0.5`}>{body}</Link>
-  ) : (
-    <div className={base}>{body}</div>
+  if (href) {
+    return (
+      <Link href={href} className={baseClass} style={baseStyle}>
+        {body}
+      </Link>
+    );
+  }
+  return (
+    <div className={baseClass} style={baseStyle}>
+      {body}
+    </div>
   );
 }
