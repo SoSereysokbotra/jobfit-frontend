@@ -40,9 +40,13 @@ export const authApi = {
   register: (input: RegisterInput) =>
     apiClient.post<{ message: string }>("/auth/register", input, PUBLIC),
 
-  /** POST /auth/verify-email — email comes from the registration_verification cookie. */
+  /**
+   * POST /auth/verify-email — email comes from the registration_verification cookie.
+   * On success the backend auto-logs-in: it returns an access token in the body and
+   * sets the refresh_token httpOnly cookie (same as login).
+   */
   verifyEmail: (code: string) =>
-    apiClient.post<{ success: boolean }>("/auth/verify-email", { code }, PUBLIC),
+    apiClient.post<AccessTokenResponse>("/auth/verify-email", { code }, PUBLIC),
 
   /** POST /auth/resend-email-verification — always succeeds (enumeration protection). */
   resendEmailVerification: (email: string) =>

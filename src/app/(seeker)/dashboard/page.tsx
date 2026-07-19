@@ -1,20 +1,36 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React from "react";
 import Link from "next/link";
 import {
   Briefcase, Calendar, Award, Target, TrendingUp,
   CheckCircle2, Eye, Star, ArrowRight, Search, Upload,
-  BarChart3, Zap, Clock, ChevronRight,
+  BarChart3, Clock, ChevronRight,
 } from "lucide-react";
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Legend,
 } from "recharts";
 import { JobCard } from "@/features/job/components";
-import { MOCK_JOBS } from "@/features/job/api/job.mock";
 import { useSession, displayName } from "@/features/auth/hooks/use-session";
+import { useMyStats } from "@/features/insights/hooks/use-insights";
+import { useJobs } from "@/features/job/hooks/use-job";
+import { useSavedJobIds, useToggleSavedJob } from "@/features/saved-jobs/hooks/use-saved-jobs";
+import { useProfile } from "@/features/user-profile/hooks/use-profile";
+import { profileCompleteness } from "@/features/user-profile/api/profile.mappers";
 import { StatCard } from "@/shared/components/data-display/stat-card";
+
+/** Small "Sample" pill for sections with no backend endpoint yet. */
+function SamplePill() {
+  return (
+    <span
+      className="text-xs font-semibold px-2 py-0.5 rounded-full"
+      style={{ background: "var(--color-neutral-100)", color: "var(--color-text-tertiary)" }}
+    >
+      Sample
+    </span>
+  );
+}
 
 /* ─── CHART SERIES COLORS ───────────────────────────────────────
    Categorical pair from the brand ramp (primary-600 + primary-400).
@@ -76,17 +92,6 @@ const recentActivity = [
     color: "var(--color-success-600)",
     bg: "var(--color-success-50)",
   },
-];
-
-/* Top 3 matches come from the shared job dataset — same source as /jobs. */
-const topMatches = [...MOCK_JOBS].sort((a, b) => b.match - a.match).slice(0, 3);
-
-const profileChecklist = [
-  { label: "Basic Info", done: true },
-  { label: "Resume Uploaded", done: true },
-  { label: "Skills Added", done: true },
-  { label: "Education", done: false },
-  { label: "Cover Letter", done: false },
 ];
 
 const quickActions = [
@@ -167,25 +172,42 @@ function SectionCard({
    PAGE ROOT
    ═══════════════════════════════════════════════════════════════ */
 export default function DashboardPage() {
-  const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
-
   // Personalize the greeting from the real session (GET /auth/me). `name` is
   // optional at registration, so fall back to a neutral greeting.
   const { user } = useSession();
   const firstName = displayName(user).firstName || "there";
 
+  // Real seeker funnel stats (GET /analytics/my-stats) drive the stat tiles.
+  const { data: stats } = useMyStats();
+  // Saved jobs are now backend-backed; the count feeds the "Saved Jobs" tile.
+  const { ids: savedIds } = useSavedJobIds();
+  const toggleSaved = useToggleSavedJob();
+  const toggleSave = (id: string) => toggleSaved.mutate(id);
+  // Real published jobs — shown as "Recent openings" (match scores await the AI service).
+  const { data: jobs = [] } = useJobs();
+  const topJobs = jobs.slice(0, 3);
+  // Real profile drives the completeness score + checklist.
+  const { profile } = useProfile();
+  const profileScore = profileCompleteness(profile);
+
+  const num = (n: number | undefined) => (typeof n === "number" ? String(n) : "—");
+  const savedCount = savedIds.size;
+
+  // Checklist derived from the real profile (skills/resume/cover-letter have no
+  // reliable field here, so we track the profile fields the backend does store).
+  const profileChecklist = [
+    { label: "Name", done: Boolean(profile?.firstName && profile?.lastName) },
+    { label: "Headline", done: Boolean(profile?.headline) },
+    { label: "Bio", done: Boolean(profile?.bio) },
+    { label: "Location", done: Boolean(profile?.locationLabel) },
+    { label: "Job preferences", done: (profile?.desiredJobLevels.length ?? 0) > 0 },
+    { label: "Salary range", done: Boolean(profile?.salaryRange) },
+  ];
+  const checklistDone = profileChecklist.filter((c) => c.done).length;
+
   const today = new Date().toLocaleDateString("en-US", {
     weekday: "long", month: "long", day: "numeric",
   });
-
-  const toggleSave = (id: string) => {
-    setSavedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6 min-h-full" style={{ background: "var(--color-bg-secondary)" }}>
@@ -211,8 +233,8 @@ export default function DashboardPage() {
               Welcome back, {firstName}!
             </h1>
             <p className="text-sm text-on-primary-muted mt-1.5">
-              You have <span className="text-on-primary font-bold">2 upcoming interviews</span> and{" "}
-              <span className="text-on-primary font-bold">20 new matches</span> waiting for you.
+              You have <span className="text-on-primary font-bold">{num(stats?.totalInterviews)} interviews</span> in progress and{" "}
+              <span className="text-on-primary font-bold">{num(stats?.totalApplications)} applications</span> submitted.
             </p>
             <div className="flex flex-wrap gap-2 mt-4">
               <Link
@@ -237,11 +259,11 @@ export default function DashboardPage() {
                 <circle cx={28} cy={28} r={22} fill="none" stroke="var(--color-border-on-primary)" strokeWidth={6} />
                 <circle
                   cx={28} cy={28} r={22} fill="none" stroke="var(--color-text-on-primary)" strokeWidth={6}
-                  strokeDasharray={`${(75 / 100) * 2 * Math.PI * 22} ${2 * Math.PI * 22}`}
+                  strokeDasharray={`${(profileScore / 100) * 2 * Math.PI * 22} ${2 * Math.PI * 22}`}
                   strokeLinecap="round"
                 />
               </svg>
-              <span className="absolute inset-0 flex items-center justify-center text-on-primary font-extrabold text-sm">75%</span>
+              <span className="absolute inset-0 flex items-center justify-center text-on-primary font-extrabold text-sm">{profileScore}%</span>
             </div>
             <div>
               <p className="text-on-primary font-bold text-sm">Profile Score</p>
@@ -261,9 +283,7 @@ export default function DashboardPage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           label="Applications"
-          value="15"
-          change="+3 this week"
-          changeUp
+          value={num(stats?.totalApplications)}
           icon={<Briefcase size={18} />}
           accentColor="var(--color-primary-600)"
           accentBg="var(--color-primary-50)"
@@ -271,17 +291,15 @@ export default function DashboardPage() {
         />
         <StatCard
           label="Interviews"
-          value="2"
-          change="Next: Tomorrow, 2:00 PM"
+          value={num(stats?.totalInterviews)}
           icon={<Calendar size={18} />}
           accentColor="var(--color-info-600)"
           accentBg="var(--color-info-50)"
-          href="/learning"
+          href="/applications"
         />
         <StatCard
           label="Offers"
-          value="1"
-          change="Respond by Jun 30"
+          value={num(stats?.totalOffers)}
           icon={<Award size={18} />}
           accentColor="var(--color-success-600)"
           accentBg="var(--color-success-50)"
@@ -289,9 +307,7 @@ export default function DashboardPage() {
         />
         <StatCard
           label="Saved Jobs"
-          value="34"
-          change="+12 from last week"
-          changeUp
+          value={String(savedCount)}
           icon={<Target size={18} />}
           accentColor="var(--color-warning-600)"
           accentBg="var(--color-warning-50)"
@@ -305,18 +321,11 @@ export default function DashboardPage() {
         {/* LEFT COLUMN (2/3) */}
         <div className="xl:col-span-2 space-y-6">
 
-          {/* Application Trend Chart */}
+          {/* Application Trend Chart — TODO(backend): no trend endpoint (Phase 10). */}
           <SectionCard
             title="Application Activity"
             subtitle="Applications & interviews over the last 7 months"
-            action={
-              <span
-                className="text-xs font-semibold px-3 py-1 rounded-full"
-                style={{ background: "var(--color-primary-50)", color: "var(--color-primary-700)" }}
-              >
-                Last 7 months
-              </span>
-            }
+            action={<SamplePill />}
           >
             <ResponsiveContainer width="100%" height={230}>
               <AreaChart data={applicationTrendData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
@@ -351,14 +360,14 @@ export default function DashboardPage() {
             </ResponsiveContainer>
           </SectionCard>
 
-          {/* Top Job Matches */}
+          {/* Recent openings — real published jobs. Match scores await the AI service. */}
           <SectionCard
-            title="Top Job Matches"
-            subtitle="AI-curated matches for your profile"
+            title="Recent Openings"
+            subtitle="Latest jobs on JobFits"
             flush
             action={
               <Link
-                href="/recommendations"
+                href="/jobs"
                 className="text-xs font-bold flex items-center gap-1 transition-colors hover:opacity-80"
                 style={{ color: "var(--color-primary-600)" }}
               >
@@ -366,24 +375,31 @@ export default function DashboardPage() {
               </Link>
             }
           >
-            <div className="divide-y" style={{ borderColor: "var(--color-neutral-100)" }}>
-              {topMatches.map((job) => (
-                <JobCard
-                  key={job.id}
-                  job={job}
-                  variant="list"
-                  compact
-                  saved={savedIds.has(job.id)}
-                  onToggleSave={toggleSave}
-                />
-              ))}
-            </div>
+            {topJobs.length === 0 ? (
+              <p className="p-5 text-sm text-center" style={{ color: "var(--color-text-tertiary)" }}>
+                No openings to show yet.
+              </p>
+            ) : (
+              <div className="divide-y" style={{ borderColor: "var(--color-neutral-100)" }}>
+                {topJobs.map((job) => (
+                  <JobCard
+                    key={job.id}
+                    job={job}
+                    variant="list"
+                    compact
+                    saved={savedIds.has(job.id)}
+                    onToggleSave={toggleSave}
+                  />
+                ))}
+              </div>
+            )}
           </SectionCard>
 
           {/* Upcoming Interviews */}
           {upcomingInterviews.length > 0 && (
             <SectionCard
               title="Upcoming Interviews"
+              action={<SamplePill />}
               headerIcon={
                 <div
                   className="w-8 h-8 rounded-md flex items-center justify-center"
@@ -459,7 +475,7 @@ export default function DashboardPage() {
           {/* Profile Completion */}
           <SectionCard
             title="Profile Checklist"
-            action={<span className="text-xs font-bold" style={{ color: "var(--color-primary-600)" }}>3 / 5 done</span>}
+            action={<span className="text-xs font-bold" style={{ color: "var(--color-primary-600)" }}>{checklistDone} / {profileChecklist.length} done</span>}
           >
             <div className="flex items-center gap-4 mb-5">
               <div className="relative w-16 h-16 shrink-0">
@@ -467,19 +483,23 @@ export default function DashboardPage() {
                   <circle cx={32} cy={32} r={26} fill="none" stroke="var(--color-neutral-100)" strokeWidth={7} />
                   <circle
                     cx={32} cy={32} r={26} fill="none" stroke="var(--color-primary-500)" strokeWidth={7}
-                    strokeDasharray={`${(75 / 100) * 2 * Math.PI * 26} ${2 * Math.PI * 26}`}
+                    strokeDasharray={`${(profileScore / 100) * 2 * Math.PI * 26} ${2 * Math.PI * 26}`}
                     strokeLinecap="round"
                   />
                 </svg>
                 <span
                   className="absolute inset-0 flex items-center justify-center text-sm font-extrabold"
                   style={{ color: "var(--color-primary-600)" }}
-                >75%</span>
+                >{profileScore}%</span>
               </div>
               <div>
-                <p className="text-sm font-bold" style={{ color: "var(--color-text-primary)" }}>Almost there!</p>
+                <p className="text-sm font-bold" style={{ color: "var(--color-text-primary)" }}>
+                  {profileScore >= 100 ? "Profile complete!" : "Almost there!"}
+                </p>
                 <p className="text-xs mt-0.5" style={{ color: "var(--color-text-tertiary)" }}>
-                  Complete 2 more items to unlock better matches
+                  {profileScore >= 100
+                    ? "Your profile is fully set up."
+                    : `Complete ${profileChecklist.length - checklistDone} more item${profileChecklist.length - checklistDone === 1 ? "" : "s"} to unlock better matches`}
                 </p>
               </div>
             </div>
@@ -514,7 +534,7 @@ export default function DashboardPage() {
           <SectionCard
             title="Recent Activity"
             flush
-            action={<Zap size={16} style={{ color: "var(--color-primary-400)" }} />}
+            action={<SamplePill />}
           >
             <div className="p-2">
               {recentActivity.map((item) => (

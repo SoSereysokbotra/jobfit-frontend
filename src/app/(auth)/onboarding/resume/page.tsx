@@ -27,6 +27,12 @@ import {
 import { useResumeUpload } from "@/features/resume/hooks/use-resume-upload";
 import { useParsingStatus } from "@/features/resume/hooks/use-resumes";
 import { validateResumeFile, RESUME_ACCEPT_ATTR } from "@/features/resume/api/resume.api";
+import { useSession, displayName } from "@/features/auth/hooks/use-session";
+import { useCreateProfile, useUpdatePreferences, useProfile } from "@/features/user-profile/hooks/use-profile";
+import { parseLocationInput } from "@/features/user-profile/api/profile.mappers";
+import type { EmploymentType, RemoteType } from "@/features/user-profile/api/profile.api";
+import { ApiError } from "@/lib/api/client";
+import { Alert } from "@/shared/components/feedback/alert";
 
 /* ─────────────────────────── TYPES ─────────────────────────── */
 type Step = 1 | 2 | 3;
@@ -55,6 +61,21 @@ const LOCATION_OPTIONS = ["San Francisco, CA", "New York, NY", "Austin, TX", "Se
 const INDUSTRY_OPTIONS = ["Technology", "Finance", "Healthcare", "Education", "E-Commerce", "Media", "Consulting", "Logistics", "Government", "Non-profit"];
 const EMPLOYMENT_TYPES = ["Full-time", "Part-time", "Contract", "Freelance"];
 const REMOTE_OPTIONS = ["On-site", "Hybrid", "Fully Remote", "No preference"];
+
+// Wizard labels -> backend enums. The wizard's labels differ from the canonical
+// label tables (e.g. "Fully Remote" vs "Remote"), so the mapping is explicit.
+const EMPLOYMENT_TYPE_MAP: Record<string, EmploymentType> = {
+  "Full-time": "FULL_TIME",
+  "Part-time": "PART_TIME",
+  Contract: "CONTRACT",
+  Freelance: "FREELANCE",
+};
+const REMOTE_TYPE_MAP: Record<string, RemoteType> = {
+  "On-site": "ON_SITE",
+  Hybrid: "HYBRID",
+  "Fully Remote": "REMOTE",
+  // "No preference" is intentionally absent → no remote preference sent.
+};
 
 const JOB_TITLE_SUGGESTIONS = [
   "Senior Software Engineer",
@@ -649,6 +670,14 @@ function ProfileSetupStep({
   // Field validations
   const [titleError, setTitleError] = useState("");
   const [locError, setLocError] = useState("");
+  const [saveError, setSaveError] = useState("");
+
+  // Real profile persistence — this step doubles as Flow 1 Phase 2 "Quick Profile
+  // Setup", so it must create the backend profile (satisfying the onboarding gate).
+  const { user } = useSession();
+  const { profile: existingProfile } = useProfile();
+  const createProfile = useCreateProfile();
+  const updatePreferences = useUpdatePreferences();
 
   const titleRef = useRef<HTMLDivElement>(null);
   const locRef = useRef<HTMLDivElement>(null);
@@ -725,24 +754,78 @@ function ProfileSetupStep({
     return valid;
   };
 
+  /**
+   * Persist the profile to the backend. Creating the profile (POST /profiles) is
+   * what marks onboarding complete for the seeker gate; preferences are a separate,
+   * non-fatal endpoint so a hiccup there can't strand the user on this step.
+   */
+  const persistProfile = async (data: ProfileData) => {
+    const { firstName, lastName } = displayName(user);
+    // POST /profiles requires non-empty first AND last name; `name` is optional at
+    // signup, so fall back to the email local-part and never send an empty string.
+    const safeFirst = firstName || user?.email?.split("@")[0] || "New";
+    const safeLast = lastName || safeFirst;
+
+    if (!existingProfile) {
+      try {
+        await createProfile.mutateAsync({
+          firstName: safeFirst,
+          lastName: safeLast,
+          headline: data.jobTitle.trim() || undefined,
+          location: parseLocationInput(data.locations[0] ?? ""),
+          minSalary: data.salaryMin * 1000,
+          maxSalary: data.salaryMax * 1000,
+        });
+      } catch (error) {
+        // Already created (e.g. a re-run) — treat as done and carry on.
+        if (!(error instanceof ApiError && error.statusCode === 409)) throw error;
+      }
+    }
+
+    try {
+      const remoteType = REMOTE_TYPE_MAP[data.remotePreference];
+      await updatePreferences.mutateAsync({
+        employmentTypes: data.employmentTypes
+          .map((t) => EMPLOYMENT_TYPE_MAP[t])
+          .filter(Boolean) as EmploymentType[],
+        remoteTypes: remoteType ? [remoteType] : undefined,
+        industries: data.industries,
+      });
+    } catch {
+      /* non-fatal: the profile exists; preferences can be set later on /profile */
+    }
+  };
+
+  const submit = async (data: ProfileData) => {
+    setIsLoading(true);
+    setSaveError("");
+    try {
+      await persistProfile(data);
+      onNext(data);
+    } catch (error) {
+      setSaveError(
+        error instanceof ApiError
+          ? error.messages.join(" ")
+          : "Could not save your profile. Please try again.",
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleContinue = (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm()) return;
-    setIsLoading(true);
-
-    setTimeout(() => {
-      setIsLoading(false);
-      onNext({
-        jobTitle,
-        locations,
-        salaryMin,
-        salaryMax,
-        employmentTypes,
-        remotePreference,
-        industries,
-        completeness: "complete"
-      });
-    }, 1000);
+    void submit({
+      jobTitle,
+      locations,
+      salaryMin,
+      salaryMax,
+      employmentTypes,
+      remotePreference,
+      industries,
+      completeness: "complete",
+    });
   };
 
   const handleSkipOptional = () => {
@@ -751,7 +834,7 @@ function ProfileSetupStep({
       validateForm();
       return;
     }
-    onNext({
+    void submit({
       jobTitle,
       locations,
       salaryMin: 100, // Default values
@@ -759,7 +842,7 @@ function ProfileSetupStep({
       employmentTypes: ["Full-time"],
       remotePreference: "No preference",
       industries: [],
-      completeness: "partial"
+      completeness: "partial",
     });
   };
 
@@ -1037,6 +1120,8 @@ function ProfileSetupStep({
             </div>
           )}
         </div>
+
+        {saveError && <Alert variant="error">{saveError}</Alert>}
 
         {/* Buttons */}
         <div className="flex gap-3 pt-3">

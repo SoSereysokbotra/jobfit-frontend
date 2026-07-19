@@ -4,7 +4,16 @@ import React, { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { CheckCircle2, ArrowRight } from "lucide-react";
+import { OtpInput } from "@/features/auth/components";
+import { authApi } from "@/features/auth/api/auth.api";
+import { useAuth } from "@/providers/auth-provider";
+import { ApiError } from "@/lib/api/client";
+import { Alert } from "@/shared/components/feedback/alert";
 import { Button } from "@/shared/components/ui/button";
+
+/** Mirrors VERIFICATION_CODE_TTL_MINUTES on the backend. */
+const CODE_TTL_SECONDS = 15 * 60;
+const RESEND_COOLDOWN_SECONDS = 30;
 
 // Mail client definitions
 const MAIL_CLIENTS = [
@@ -49,13 +58,37 @@ const MAIL_CLIENTS = [
 
 function VerifyEmailContent() {
   const router = useRouter();
+  const { setAccessToken } = useAuth();
   const searchParams = useSearchParams();
-  const email = searchParams.get("email") ?? "your email address";
+  // The email is passed by signup/login purely to display + power "resend" (the
+  // request body needs it). Verification identity itself rides the httpOnly
+  // registration_verification cookie the browser already holds.
+  const email = searchParams.get("email") ?? "";
 
+  const [code, setCode] = useState("");
   const [isVerified, setIsVerified] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
+
+  const [timeLeft, setTimeLeft] = useState(CODE_TTL_SECONDS);
+  const [resendTimer, setResendTimer] = useState(RESEND_COOLDOWN_SECONDS);
   const [redirectCountdown, setRedirectCountdown] = useState(3);
 
+  // Code expiry countdown
+  useEffect(() => {
+    if (isVerified || timeLeft <= 0) return;
+    const t = setInterval(() => setTimeLeft((p) => p - 1), 1000);
+    return () => clearInterval(t);
+  }, [isVerified, timeLeft]);
+
+  // Resend cooldown
+  useEffect(() => {
+    if (isVerified || resendTimer <= 0) return;
+    const t = setInterval(() => setResendTimer((p) => p - 1), 1000);
+    return () => clearInterval(t);
+  }, [isVerified, resendTimer]);
+
+  // Success redirect
   useEffect(() => {
     if (!isVerified) return;
     if (redirectCountdown <= 0) {
@@ -66,17 +99,49 @@ function VerifyEmailContent() {
     return () => clearInterval(t);
   }, [isVerified, redirectCountdown, router]);
 
-  const simulateVerification = () => {
-    setIsVerifying(true);
-    setTimeout(() => {
-      setIsVerifying(false);
-      setIsVerified(true);
-    }, 1500);
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
   };
 
-  const handleMailClick = (url: string) => {
-    window.open(url, "_blank", "noopener,noreferrer");
-    if (!isVerified && !isVerifying) simulateVerification();
+  const toMessage = (error: unknown, fallback: string) =>
+    error instanceof ApiError ? error.messages.join(" ") : fallback;
+
+  const handleVerify = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsVerifying(true);
+    setErrorMsg("");
+    try {
+      // On success the backend auto-logs-in: adopt the access token (and the
+      // refresh cookie it just set) so onboarding's authenticated calls work.
+      const { accessToken } = await authApi.verifyEmail(code);
+      setAccessToken(accessToken);
+      setIsVerified(true);
+    } catch (error) {
+      // 409 = already verified. There's no session to issue here, so send them
+      // to log in rather than to onboarding (which would 401 without a token).
+      if (error instanceof ApiError && error.statusCode === 409) {
+        router.push(`/login${email ? `?email=${encodeURIComponent(email)}` : ""}`);
+        return;
+      }
+      setErrorMsg(toMessage(error, "Could not verify that code. Please try again."));
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
+  const handleResend = async () => {
+    if (!email || resendTimer > 0) return;
+    setResendTimer(RESEND_COOLDOWN_SECONDS);
+    setErrorMsg("");
+    try {
+      await authApi.resendEmailVerification(email);
+      setTimeLeft(CODE_TTL_SECONDS);
+      setCode("");
+    } catch (error) {
+      setErrorMsg(toMessage(error, "Could not resend the code. Please try again."));
+    }
   };
 
   return (
@@ -105,23 +170,7 @@ function VerifyEmailContent() {
       >
         <div className="p-8 sm:p-10">
 
-          {isVerifying ? (
-            /* ── VERIFYING STATE ── */
-            <div className="space-y-5 text-center py-6">
-              <div className="flex justify-center">
-                <div className="w-12 h-12 rounded-full border-4 border-primary-500 border-t-transparent animate-spin" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold tracking-tight text-neutral-900">
-                  Verifying your link…
-                </h1>
-                <p className="text-sm text-neutral-500 mt-1">
-                  Connecting to the auth server
-                </p>
-              </div>
-            </div>
-
-          ) : isVerified ? (
+          {isVerified ? (
             /* ── SUCCESS STATE ── */
             <div className="space-y-5 text-center py-4">
               <div className="flex justify-center">
@@ -146,7 +195,7 @@ function VerifyEmailContent() {
             </div>
 
           ) : (
-            /* ── DEFAULT: CHECK YOUR INBOX ── */
+            /* ── DEFAULT: ENTER YOUR CODE ── */
             <div className="space-y-6">
 
               {/* Title block */}
@@ -155,14 +204,47 @@ function VerifyEmailContent() {
                   Check your inbox
                 </h1>
                 <p className="text-sm text-neutral-500 leading-relaxed">
-                  We&apos;ve sent a magic link to{" "}
+                  We&apos;ve sent a 6-digit code to{" "}
                   <span className="font-semibold text-neutral-900 break-all">
-                    {email}
+                    {email || "your email address"}
                   </span>
                   .<br />
-                  Please click the link to confirm your address.
+                  Enter it below to confirm your address.
                 </p>
               </div>
+
+              {errorMsg && <Alert variant="error">{errorMsg}</Alert>}
+
+              {/* Code entry */}
+              <form className="space-y-4" onSubmit={handleVerify}>
+                <div>
+                  <div className="flex justify-between items-center mb-1.5">
+                    <label className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider">
+                      Verification Code
+                    </label>
+                    <span className={`text-xs font-medium ${timeLeft <= 0 ? "text-error-600" : "text-neutral-500"}`}>
+                      {timeLeft > 0 ? `Expires in ${formatTime(timeLeft)}` : "Code expired"}
+                    </span>
+                  </div>
+                  <OtpInput
+                    value={code}
+                    onChange={(v) => { setCode(v); if (errorMsg) setErrorMsg(""); }}
+                    disabled={isVerifying || timeLeft <= 0}
+                    autoFocus
+                    fullWidth
+                  />
+                </div>
+
+                <Button
+                  type="submit"
+                  fullWidth
+                  loading={isVerifying}
+                  loadingText="Verifying…"
+                  disabled={code.length !== 6 || timeLeft <= 0}
+                >
+                  Verify Email <ArrowRight className="w-4 h-4" />
+                </Button>
+              </form>
 
               {/* Divider */}
               <div className="relative">
@@ -181,7 +263,8 @@ function VerifyEmailContent() {
                 {MAIL_CLIENTS.map((client) => (
                   <button
                     key={client.id}
-                    onClick={() => handleMailClick(client.url)}
+                    type="button"
+                    onClick={() => window.open(client.url, "_blank", "noopener,noreferrer")}
                     className="group flex flex-col items-center gap-2 p-4 rounded-lg border border-neutral-200 bg-white hover:border-primary-300 hover:bg-primary-50 transition-all duration-200 active:scale-[0.97]"
                   >
                     <span className="text-neutral-500 group-hover:text-primary-700 transition-colors duration-200">
@@ -203,21 +286,21 @@ function VerifyEmailContent() {
                   Can&apos;t see the e-mail? Please check the spam folder.
                 </p>
                 <p className="text-sm text-neutral-500">
+                  <button
+                    type="button"
+                    disabled={!email || resendTimer > 0}
+                    onClick={handleResend}
+                    className="font-semibold text-primary-600 hover:underline disabled:opacity-40 disabled:no-underline disabled:cursor-not-allowed"
+                  >
+                    {resendTimer > 0 ? `Resend code in ${resendTimer}s` : "Resend code"}
+                  </button>
+                </p>
+                <p className="text-sm text-neutral-500">
                   Wrong e-mail?{" "}
                   <Link href="/signup" className="font-semibold text-primary-600 hover:underline">
                     Please re-enter your address.
                   </Link>
                 </p>
-              </div>
-
-              {/* Dev simulator */}
-              <div className="text-center">
-                <button
-                  onClick={simulateVerification}
-                  className="text-xs text-neutral-400 hover:text-primary-600 transition-colors font-medium"
-                >
-                  [ Simulate magic link click ]
-                </button>
               </div>
 
             </div>

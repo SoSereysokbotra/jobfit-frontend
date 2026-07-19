@@ -28,7 +28,7 @@ export default function SeekerLayout({ children }: { children: React.ReactNode }
   const needsOnboarding = isAllowed && isResolved && !hasProfile && pathname !== "/profile";
 
   useEffect(() => {
-    if (needsOnboarding) router.replace("/onboarding/profile");
+    if (needsOnboarding) router.replace("/onboarding/resume");
   }, [needsOnboarding, router]);
 
   // Hold the overlay until we know both the role AND whether onboarding is due,

@@ -1,46 +1,32 @@
 /**
- * Saved jobs.
- *
- * TODO(backend): there is no saved-jobs endpoint. Rather than fake it, this persists
- * the saved job IDs in localStorage — a genuinely working, if device-local, feature.
- * When a backend lands, swap the three functions below for HTTP calls and everything
- * above (hooks, pages) keeps working unchanged. (INTEGRATION_PLAN.md Phase 10.)
+ * Saved jobs — backed by the live `saved-jobs` endpoints (JWT-scoped to the
+ * current user). Each call resolves to the user's full list of saved job ids
+ * (most-recently-saved first); mutations return the refreshed list so the caller
+ * can replace its cache wholesale. The hooks/pages above are unchanged.
  */
 
-const STORAGE_KEY = "jobfits_saved_jobs";
+import { apiClient } from "@/lib/api/client";
 
-function read(): string[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    const parsed = raw ? (JSON.parse(raw) as unknown) : [];
-    return Array.isArray(parsed) ? parsed.filter((x): x is string => typeof x === "string") : [];
-  } catch {
-    return [];
-  }
-}
-
-function write(ids: string[]): void {
-  if (typeof window === "undefined") return;
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(ids));
+/** Body of every saved-jobs response (after the client unwraps the envelope). */
+interface SavedJobsResponse {
+  jobIds: string[];
 }
 
 export const savedJobsApi = {
   /** All saved job IDs (most-recently-saved first). */
-  list: async (): Promise<string[]> => read(),
+  list: async (): Promise<string[]> =>
+    (await apiClient.get<SavedJobsResponse>("/saved-jobs")).jobIds,
 
   /** Toggle a job's saved state; resolves to the new full list. */
-  toggle: async (jobId: string): Promise<string[]> => {
-    const ids = read();
-    const next = ids.includes(jobId) ? ids.filter((id) => id !== jobId) : [jobId, ...ids];
-    write(next);
-    return next;
-  },
+  toggle: async (jobId: string): Promise<string[]> =>
+    (
+      await apiClient.post<SavedJobsResponse>(
+        `/saved-jobs/${jobId}/toggle`,
+        undefined,
+      )
+    ).jobIds,
 
-  /** Remove a job from the saved list. */
-  remove: async (jobId: string): Promise<string[]> => {
-    const next = read().filter((id) => id !== jobId);
-    write(next);
-    return next;
-  },
+  /** Remove a job from the saved list; resolves to the new full list. */
+  remove: async (jobId: string): Promise<string[]> =>
+    (await apiClient.delete<SavedJobsResponse>(`/saved-jobs/${jobId}`)).jobIds,
 };
