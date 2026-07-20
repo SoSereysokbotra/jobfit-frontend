@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import {
   Home, Search, Star, Bookmark, Briefcase, Calendar,
   Award, User, FileText, BarChart3, Bell, HelpCircle,
-  Settings, LogOut, PanelLeftClose
+  Settings, LogOut, PanelLeftClose, PanelLeftOpen
 } from "lucide-react";
 import { useAuth } from "@/providers/auth-provider";
 import { useSidebarCollapsed } from "@/stores/ui-store";
@@ -110,16 +110,22 @@ export default function Sidebar({
           <button
             type="button"
             onClick={() => setCollapsed(false)}
-            className="rounded-lg p-1 flex-shrink-0 cursor-pointer transition-all duration-150 hover:bg-neutral-100 hover:scale-105"
+            className="group relative w-8 h-8 flex-shrink-0 cursor-pointer"
             title="Expand sidebar"
             aria-label="Expand sidebar"
           >
             <img
               src="/logo.png"
               alt="JobFits Logo"
-              className="w-8 h-8 rounded-lg object-contain bg-neutral-50 p-1 border"
+              className="absolute inset-0 w-8 h-8 rounded-lg object-contain bg-neutral-50 p-1 border transition-opacity duration-150 group-hover:opacity-0"
               style={{ borderColor: "var(--color-border)" }}
             />
+            <span
+              className="absolute inset-0 flex items-center justify-center rounded-lg opacity-0 transition-opacity duration-150 group-hover:opacity-100"
+              style={{ color: "var(--color-primary-700)" }}
+            >
+              <PanelLeftOpen size={18} />
+            </span>
           </button>
         ) : (
           <img
