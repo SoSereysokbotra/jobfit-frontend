@@ -19,6 +19,7 @@ import { useSavedJobIds, useToggleSavedJob } from "@/features/saved-jobs/hooks/u
 import { useProfile } from "@/features/user-profile/hooks/use-profile";
 import { profileCompleteness } from "@/features/user-profile/api/profile.mappers";
 import { StatCard } from "@/shared/components/data-display/stat-card";
+import { SectionCard } from "@/shared/components/layout/section-card";
 
 /** Small "Sample" pill for sections with no backend endpoint yet. */
 function SamplePill() {
@@ -136,37 +137,7 @@ function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: 
   );
 }
 
-/* ─── SECTION CARD ──────────────────────────────────────────── */
-function SectionCard({
-  title, subtitle, action, children, headerIcon, flush = false,
-}: {
-  title: string;
-  subtitle?: string;
-  action?: React.ReactNode;
-  headerIcon?: React.ReactNode;
-  children: React.ReactNode;
-  /** Remove body padding (for list rows that span full width). */
-  flush?: boolean;
-}) {
-  return (
-    <div
-      className="rounded-lg border overflow-hidden"
-      style={{ background: "var(--color-card)", borderColor: "var(--color-border)", boxShadow: "var(--shadow-sm)" }}
-    >
-      <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: "var(--color-neutral-100)" }}>
-        <div className="flex items-center gap-3">
-          {headerIcon}
-          <div>
-            <h2 className="text-base font-bold" style={{ color: "var(--color-text-primary)" }}>{title}</h2>
-            {subtitle && <p className="text-xs mt-0.5" style={{ color: "var(--color-text-tertiary)" }}>{subtitle}</p>}
-          </div>
-        </div>
-        {action}
-      </div>
-      <div className={flush ? "" : "p-5"}>{children}</div>
-    </div>
-  );
-}
+
 
 /* ═══════════════════════════════════════════════════════════════
    PAGE ROOT

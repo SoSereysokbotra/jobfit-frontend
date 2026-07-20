@@ -11,6 +11,7 @@ import { Button } from "@/shared/components/ui/button";
 import { Badge } from "@/shared/components/ui/badge";
 import { Alert } from "@/shared/components/feedback/alert";
 import { Skeleton } from "@/shared/components/feedback/skeleton";
+import { StatCard } from "@/shared/components/data-display/stat-card";
 import { cn } from "@/shared/utils/cn";
 import {
   useResumes,
@@ -413,7 +414,7 @@ export default function ResumesPage() {
   const uploadErrorMsg = localError || uploadError;
 
   return (
-    <div className="p-4 md:p-8 max-w-6xl mx-auto space-y-6">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6 min-h-full" style={{ background: "var(--color-bg-secondary)" }}>
 
       {/* ── PAGE HEADER ── */}
       <div className="flex items-start justify-between gap-4 flex-wrap">
@@ -437,26 +438,34 @@ export default function ResumesPage() {
 
       {/* ── STATS ROW ── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        {[
-          { label: "Total Resumes", value: `${resumes.length}`, icon: FileText, color: "var(--color-primary-600)", bg: "var(--color-primary-50)" },
-          { label: "Avg ATS Score", value: avgAts !== null ? `${avgAts}` : "—", icon: Shield, color: "var(--color-success-600)", bg: "var(--color-success-50)" },
-          { label: "Best Score", value: bestAts !== null ? `${bestAts}/100` : "—", icon: Zap, color: "var(--color-warning-600)", bg: "var(--color-warning-50)" },
-          { label: "Parsed", value: `${parsedCount}`, icon: TrendingUp, color: "var(--color-info-600)", bg: "var(--color-info-50)" },
-        ].map(({ label, value, icon: Icon, color, bg }) => (
-          <div
-            key={label}
-            className="rounded-xl border p-4 flex items-center gap-3"
-            style={{ background: "var(--color-card)", borderColor: "var(--color-border)", boxShadow: "var(--shadow-sm)" }}
-          >
-            <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: bg }}>
-              <Icon className="w-5 h-5" style={{ color }} />
-            </div>
-            <div>
-              <p className="text-lg font-bold leading-none" style={{ color: "var(--color-text-primary)" }}>{value}</p>
-              <p className="text-xs mt-0.5" style={{ color: "var(--color-text-tertiary)" }}>{label}</p>
-            </div>
-          </div>
-        ))}
+        <StatCard
+          label="Total Resumes"
+          value={`${resumes.length}`}
+          icon={<FileText className="w-[18px] h-[18px]" />}
+          accentColor="var(--color-primary-600)"
+          accentBg="var(--color-primary-50)"
+        />
+        <StatCard
+          label="Avg ATS Score"
+          value={avgAts !== null ? `${avgAts}` : "—"}
+          icon={<Shield className="w-[18px] h-[18px]" />}
+          accentColor="var(--color-success-600)"
+          accentBg="var(--color-success-50)"
+        />
+        <StatCard
+          label="Best Score"
+          value={bestAts !== null ? `${bestAts}/100` : "—"}
+          icon={<Zap className="w-[18px] h-[18px]" />}
+          accentColor="var(--color-warning-600)"
+          accentBg="var(--color-warning-50)"
+        />
+        <StatCard
+          label="Parsed"
+          value={`${parsedCount}`}
+          icon={<TrendingUp className="w-[18px] h-[18px]" />}
+          accentColor="var(--color-info-600)"
+          accentBg="var(--color-info-50)"
+        />
       </div>
 
       {/* ── UPLOAD PANEL ── */}

@@ -8,9 +8,10 @@ import { NotificationBell } from "@/features/notification/components/notificatio
 interface TopNavProps {
   onMenuToggle?: () => void;
   className?: string;
+  user?: { initials: string; name?: string; email?: string };
 }
 
-export default function TopNav({ onMenuToggle, className = "" }: TopNavProps) {
+export default function TopNav({ onMenuToggle, className = "", user }: TopNavProps) {
   const [searchOpen, setSearchOpen] = useState(false);
 
   return (
@@ -82,7 +83,7 @@ export default function TopNav({ onMenuToggle, className = "" }: TopNavProps) {
           className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold cursor-pointer hover:opacity-90 transition-opacity"
           style={{ background: "linear-gradient(135deg, var(--color-primary-700), var(--color-primary-500))" }}
         >
-          JD
+          {user?.initials || "JD"}
         </div>
       </Link>
 

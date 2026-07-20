@@ -2,15 +2,26 @@
 
 import React from "react";
 import { LayoutDashboard, Users, Activity, Mail, Loader2 } from "lucide-react";
-import { DashboardShell, type DashboardNavItem } from "@/shared/components/layout/dashboard-shell";
+import { DashboardShell } from "@/shared/components/layout/dashboard-shell";
+import { SidebarMenuGroup } from "@/shared/components/layout/sidebar";
 import { useRequireAuth, displayName } from "@/features/auth/hooks/use-session";
 import { useAuth } from "@/providers/auth-provider";
 
-const ADMIN_NAV: DashboardNavItem[] = [
-  { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/admin/users", label: "Users", icon: Users },
-  { href: "/admin/system", label: "System Health", icon: Activity },
-  { href: "/admin/email", label: "Email Tracking", icon: Mail },
+const ADMIN_MENU_GROUPS: SidebarMenuGroup[] = [
+  {
+    group: "",
+    items: [
+      { href: "/admin", label: "Dashboard", icon: <LayoutDashboard size={18} />, exact: true },
+    ]
+  },
+  {
+    group: "ADMINISTRATION",
+    items: [
+      { href: "/admin/users", label: "Users", icon: <Users size={18} /> },
+      { href: "/admin/system", label: "System Health", icon: <Activity size={18} /> },
+      { href: "/admin/email", label: "Email Tracking", icon: <Mail size={18} /> },
+    ]
+  }
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -34,7 +45,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     <DashboardShell
       brand="JobFits Admin"
       brandSublabel="Control Panel"
-      nav={ADMIN_NAV}
+      menuGroups={ADMIN_MENU_GROUPS}
       user={{ name: fullName || user.email, email: user.email, initials }}
       onLogout={logout}
     >

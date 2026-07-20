@@ -10,16 +10,36 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/providers/auth-provider";
 
+export interface SidebarMenuGroup {
+  group: string;
+  items: {
+    href: string;
+    label: string;
+    icon: React.ReactNode;
+    badge?: number;
+    exact?: boolean;
+  }[];
+}
+
 interface SidebarProps {
   onLogout?: () => void;
   className?: string;
+  workspaceName?: string;
+  menuGroups?: SidebarMenuGroup[];
+  user?: { initials: string; name: string; email: string };
 }
 
-export default function Sidebar({ onLogout, className = "" }: SidebarProps) {
+export default function Sidebar({
+  onLogout,
+  className = "",
+  workspaceName = "Seeker Workspace",
+  menuGroups,
+  user,
+}: SidebarProps) {
   const pathname = usePathname();
   const { logout } = useAuth();
 
-  const menuGroups = [
+  const defaultMenuGroups: SidebarMenuGroup[] = [
     {
       group: "",
       items: [
@@ -60,6 +80,9 @@ export default function Sidebar({ onLogout, className = "" }: SidebarProps) {
     }
   ];
 
+  const groupsToRender = menuGroups || defaultMenuGroups;
+  const displayUser = user || { name: "John Doe", email: "john@example.com", initials: "JD" };
+
   // Defaults to the real session logout (revokes the refresh token and clears
   // the in-memory access token); callers can still override it.
   const handleLogout = onLogout ?? logout;
@@ -81,13 +104,13 @@ export default function Sidebar({ onLogout, className = "" }: SidebarProps) {
           <h1 className="text-base font-extrabold tracking-tight" style={{ color: "var(--color-primary-900)" }}>
             JobFits
           </h1>
-          <span className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider">Seeker Workspace</span>
+          <span className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider">{workspaceName}</span>
         </div>
       </div>
 
       {/* Navigation Items */}
       <div className="flex-1 overflow-y-auto p-4 space-y-6">
-        {menuGroups.map((group, gIdx) => (
+        {groupsToRender.map((group, gIdx) => (
           <div key={gIdx} className="space-y-1">
             {group.group && (
               <p
@@ -98,7 +121,9 @@ export default function Sidebar({ onLogout, className = "" }: SidebarProps) {
               </p>
             )}
             {group.items.map((item) => {
-              const isActive = pathname === item.href || pathname?.startsWith(item.href + "/");
+              const isActive = item.exact 
+                ? pathname === item.href 
+                : pathname === item.href || pathname?.startsWith(item.href + "/");
               return (
                 <Link
                   key={item.href}
@@ -135,11 +160,11 @@ export default function Sidebar({ onLogout, className = "" }: SidebarProps) {
       <div className="p-4 border-t" style={{ borderColor: "var(--color-neutral-100)" }}>
         <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-neutral-50 transition-colors">
           <div className="w-9 h-9 rounded-full bg-primary-100 flex items-center justify-center font-bold text-primary-700 text-sm">
-            JD
+            {displayUser.initials}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-bold truncate text-neutral-800">John Doe</p>
-            <p className="text-[10px] text-neutral-400 truncate">john@example.com</p>
+            <p className="text-xs font-bold truncate text-neutral-800">{displayUser.name}</p>
+            <p className="text-[10px] text-neutral-400 truncate">{displayUser.email}</p>
           </div>
           <button
             onClick={handleLogout}

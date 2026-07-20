@@ -7,6 +7,7 @@ import { useMyStats } from "@/features/insights/hooks/use-insights";
 import { EmptyState } from "@/shared/components/data-display/empty-state";
 import { Skeleton } from "@/shared/components/feedback/skeleton";
 import { Alert } from "@/shared/components/feedback/alert";
+import { StatCard } from "@/shared/components/data-display/stat-card";
 
 const pct = (fraction: number) => `${Math.round(fraction * 100)}%`;
 
@@ -46,10 +47,10 @@ export default function InsightsPage() {
         <>
           {/* Funnel counts */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <Tile label="Applications" value={stats.totalApplications} icon={<Send size={18} />} accent="var(--color-primary-600)" bg="var(--color-primary-50)" />
-            <Tile label="Interviews" value={stats.totalInterviews} icon={<CalendarCheck size={18} />} accent="var(--color-info-600)" bg="var(--color-info-50)" />
-            <Tile label="Offers" value={stats.totalOffers} icon={<Award size={18} />} accent="var(--color-success-600)" bg="var(--color-success-50)" />
-            <Tile label="Profile Views" value={stats.profileViewCount} icon={<Eye size={18} />} accent="var(--color-warning-600)" bg="var(--color-warning-50)" />
+            <StatCard label="Applications" value={`${stats.totalApplications}`} icon={<Send size={18} />} accentColor="var(--color-primary-600)" accentBg="var(--color-primary-50)" />
+            <StatCard label="Interviews" value={`${stats.totalInterviews}`} icon={<CalendarCheck size={18} />} accentColor="var(--color-info-600)" accentBg="var(--color-info-50)" />
+            <StatCard label="Offers" value={`${stats.totalOffers}`} icon={<Award size={18} />} accentColor="var(--color-success-600)" accentBg="var(--color-success-50)" />
+            <StatCard label="Profile Views" value={`${stats.profileViewCount}`} icon={<Eye size={18} />} accentColor="var(--color-warning-600)" accentBg="var(--color-warning-50)" />
           </div>
 
           {/* Funnel + conversion */}
@@ -95,18 +96,6 @@ export default function InsightsPage() {
           </div>
         </>
       )}
-    </div>
-  );
-}
-
-function Tile({ label, value, icon, accent, bg }: { label: string; value: number; icon: React.ReactNode; accent: string; bg: string }) {
-  return (
-    <div className="rounded-lg border p-5" style={{ background: "var(--color-card)", borderColor: "var(--color-border)", boxShadow: "var(--shadow-sm)" }}>
-      <div className="flex items-center justify-between mb-3">
-        <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--color-text-tertiary)" }}>{label}</p>
-        <div className="w-9 h-9 rounded-md flex items-center justify-center" style={{ background: bg, color: accent }}>{icon}</div>
-      </div>
-      <p className="text-3xl font-extrabold tracking-tight" style={{ color: "var(--color-text-primary)" }}>{value}</p>
     </div>
   );
 }

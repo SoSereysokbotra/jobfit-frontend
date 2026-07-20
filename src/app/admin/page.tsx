@@ -45,9 +45,9 @@ export default function AdminDashboardPage() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">{[1, 2, 3].map((i) => <Skeleton key={i} className="h-28 rounded-lg" />)}</div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <StatCard label="Uptime" value={uptimeLabel(health.uptimeSeconds)} change={health.databaseUp ? "Database up" : "Database down"} icon={<Activity size={18} />} accentColor="var(--color-success-600)" accentBg="var(--color-success-50)" href="/admin/system" />
-          <StatCard label="DB Latency" value={`${health.databaseLatencyMs}ms`} change="Round-trip probe" icon={<Gauge size={18} />} accentColor="var(--color-info-600)" accentBg="var(--color-info-50)" href="/admin/system" />
-          <StatCard label="Active Users" value={`${health.activeUsers}`} change="Last 15 minutes" icon={<Users size={18} />} accentColor="var(--color-primary-600)" accentBg="var(--color-primary-50)" href="/admin/users" />
+          <StatCard label="Uptime" value={uptimeLabel(health.uptimeSeconds)} icon={<Activity size={18} />} accentColor="var(--color-success-600)" accentBg="var(--color-success-50)" href="/admin/system" />
+          <StatCard label="DB Latency" value={`${health.databaseLatencyMs}ms`} icon={<Gauge size={18} />} accentColor="var(--color-info-600)" accentBg="var(--color-info-50)" href="/admin/system" />
+          <StatCard label="Active Users" value={`${health.activeUsers}`} icon={<Users size={18} />} accentColor="var(--color-primary-600)" accentBg="var(--color-primary-50)" href="/admin/users" />
         </div>
       )}
 
