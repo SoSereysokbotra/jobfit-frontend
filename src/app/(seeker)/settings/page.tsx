@@ -107,7 +107,6 @@ export default function SettingsPage() {
     { id: "account", label: "Account Settings", icon: User, desc: "Email, phone & profile context" },
     { id: "security", label: "Sign-In & Security", icon: Lock, desc: "Password, 2FA & protection" },
     { id: "integrations", label: "Connected Accounts", icon: Link2, desc: "Linked OAuth applications" },
-    { id: "sessions", label: "Sessions & Activity Log", icon: Shield, desc: "Active logins & actions" },
   ] as const;
 
   return (
@@ -315,37 +314,6 @@ export default function SettingsPage() {
                   </Button>
                 </form>
               </div>
-
-              {/* 2FA Card */}
-              <div className="rounded-xl border p-6 space-y-4"
-                style={{ background: "var(--color-card)", borderColor: "var(--color-border)", boxShadow: "var(--shadow-sm)" }}>
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <h2 className="text-base font-bold" style={{ color: "var(--color-text-primary)" }}>Two-Factor Authentication</h2>
-                    <p className="text-xs mt-0.5" style={{ color: "var(--color-text-tertiary)" }}>
-                      Add an extra layer of security by requiring a code from your mobile authenticator app.
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => setTwoFactorEnabled(!twoFactorEnabled)}
-                    className={cn(
-                      "w-12 h-6 rounded-full p-0.5 transition-colors duration-200 focus:outline-none",
-                      twoFactorEnabled ? "bg-primary-600" : "bg-neutral-200"
-                    )}
-                  >
-                    <div
-                      className={cn(
-                        "w-5 h-5 rounded-full bg-white shadow-sm transition-transform duration-200",
-                        twoFactorEnabled ? "translate-x-6" : ""
-                      )}
-                    />
-                  </button>
-                </div>
-                <div className="flex items-center gap-2 text-xs" style={{ color: "var(--color-text-tertiary)" }}>
-                  <Info className="w-3.5 h-3.5" />
-                  <span>Two-factor codes are requested on login from unrecognized browsers or IPs.</span>
-                </div>
-              </div>
             </div>
           )}
 
@@ -428,97 +396,6 @@ export default function SettingsPage() {
                     )}
                   </div>
                 ))}
-              </div>
-            </div>
-          )}
-
-          {/* 4. SESSIONS & ACTIVITY PANEL */}
-          {activeSection === "sessions" && (
-            <div className="space-y-6">
-
-              {/* Sessions list */}
-              <div className="rounded-xl border p-6 space-y-4"
-                style={{ background: "var(--color-card)", borderColor: "var(--color-border)", boxShadow: "var(--shadow-sm)" }}>
-                <div>
-                  <h2 className="text-base font-bold" style={{ color: "var(--color-text-primary)" }}>Active Logins</h2>
-                  <p className="text-xs mt-0.5" style={{ color: "var(--color-text-tertiary)" }}>
-                    Manage device credentials currently connected to this account
-                  </p>
-                </div>
-
-                <div className="space-y-3">
-                  {MOCK_SESSIONS.map(session => {
-                    const Icon = session.icon;
-                    return (
-                      <div
-                        key={session.id}
-                        className="flex items-center justify-between p-3.5 rounded-lg border"
-                        style={{ borderColor: "var(--color-border)", background: "var(--color-surface)" }}
-                      >
-                        <div className="flex items-start gap-3">
-                          <div className="w-9 h-9 rounded-lg flex items-center justify-center mt-0.5"
-                            style={{ background: "var(--color-primary-50)" }}>
-                            <Icon className="w-4.5 h-4.5" style={{ color: "var(--color-primary-600)" }} />
-                          </div>
-                          <div>
-                            <p className="text-sm font-bold flex items-center gap-2" style={{ color: "var(--color-text-primary)" }}>
-                              {session.device}
-                              {session.current && <Badge variant="primary">Current Session</Badge>}
-                            </p>
-                            <p className="text-xs" style={{ color: "var(--color-text-secondary)" }}>
-                              {session.location} · {session.ip}
-                            </p>
-                            <p className="text-[10px] mt-0.5" style={{ color: "var(--color-text-tertiary)" }}>
-                              Last active: {session.lastActive}
-                            </p>
-                          </div>
-                        </div>
-
-                        {!session.current && (
-                          <Button
-                            variant="ghost"
-                            className="text-xs py-1.5 text-error-600 hover:bg-error-50"
-                            onClick={() => {}}
-                          >
-                            Log Out
-                          </Button>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Activity log */}
-              <div className="rounded-xl border p-6 space-y-4"
-                style={{ background: "var(--color-card)", borderColor: "var(--color-border)", boxShadow: "var(--shadow-sm)" }}>
-                <div>
-                  <h2 className="text-base font-bold" style={{ color: "var(--color-text-primary)" }}>Security Activity Log</h2>
-                  <p className="text-xs mt-0.5" style={{ color: "var(--color-text-tertiary)" }}>
-                    Past security events logged in your workspace
-                  </p>
-                </div>
-
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="border-b" style={{ borderColor: "var(--color-border)" }}>
-                        <th className="py-2.5 text-xs font-bold uppercase tracking-wider" style={{ color: "var(--color-text-tertiary)" }}>Event Action</th>
-                        <th className="py-2.5 text-xs font-bold uppercase tracking-wider" style={{ color: "var(--color-text-tertiary)" }}>IP Address</th>
-                        <th className="py-2.5 text-xs font-bold uppercase tracking-wider text-right" style={{ color: "var(--color-text-tertiary)" }}>Timestamp</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {MOCK_ACTIVITY_LOG.map((log, i) => (
-                        <tr key={i} className="border-b last:border-0" style={{ borderColor: "var(--color-border)" }}>
-                          <td className="py-3 text-xs font-semibold" style={{ color: "var(--color-text-primary)" }}>{log.action}</td>
-                          <td className="py-3 text-xs" style={{ color: "var(--color-text-secondary)" }}>{log.ip}</td>
-                          <td className="py-3 text-xs text-right" style={{ color: "var(--color-text-tertiary)" }}>{log.time}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
               </div>
             </div>
           )}

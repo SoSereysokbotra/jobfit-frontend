@@ -127,7 +127,6 @@ export default function OffersPage() {
             <section className="space-y-4">
               <div className="flex items-center justify-between gap-3">
                 <h2 className="text-sm font-bold uppercase tracking-wider flex items-center gap-2" style={{ color: "var(--color-text-secondary)" }}>
-                  <Sparkles size={15} style={{ color: "var(--color-primary-500)" }} />
                   Active Offers · {offers.active.length}
                 </h2>
                 <label className="flex items-center gap-1.5 text-xs" style={{ color: "var(--color-text-tertiary)" }}>

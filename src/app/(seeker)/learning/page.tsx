@@ -70,7 +70,6 @@ export default function LearningPage() {
           {/* Recommended gaps */}
           <div>
             <div className="flex items-center gap-2 mb-3">
-              <Sparkles size={18} style={{ color: "var(--color-warning-500)" }} />
               <h2 className="text-base font-bold" style={{ color: "var(--color-text-primary)" }}>Recommended for you</h2>
             </div>
             {data.gapSkills.length === 0 ? (

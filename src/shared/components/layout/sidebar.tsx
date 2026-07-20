@@ -107,7 +107,7 @@ export default function Sidebar({ onLogout, className = "" }: SidebarProps) {
                   style={{
                     background: isActive ? "var(--color-primary-50)" : "transparent",
                     color: isActive ? "var(--color-primary-700)" : "var(--color-text-secondary)",
-                    borderLeft: isActive ? "3px solid var(--color-primary-500)" : "3px solid transparent",
+                    // borderLeft: isActive ? "3px solid var(--color-primary-500)" : "3px solid transparent",
                   }}
                 >
                   <div className="flex items-center gap-2.5">
