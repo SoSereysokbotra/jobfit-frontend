@@ -100,3 +100,29 @@ export function useAddApplicantNotes() {
     onSuccess: () => qc.invalidateQueries({ queryKey: qk.employer.all }),
   });
 }
+
+// ── Job ingestion (FR-JOBS-001) ───────────────────────────────────────────────
+const importedJobsKey = [...qk.employer.all, "imported-jobs"] as const;
+
+/** Trigger a TheMuse ingestion run; the mutation resolves to the run summary. */
+export function useIngestJobs() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (pages: number) => employerApi.ingestThemuse(pages),
+    onSuccess: () => {
+      // Ingested jobs join the shared pool; refresh both the public board and
+      // the employer's "Imported Jobs" list.
+      qc.invalidateQueries({ queryKey: qk.jobs.all });
+      qc.invalidateQueries({ queryKey: importedJobsKey });
+    },
+  });
+}
+
+/** The externally-ingested jobs, for the employer "Imported Jobs" view. */
+export function useImportedJobs() {
+  return useQuery({
+    queryKey: importedJobsKey,
+    queryFn: () => employerApi.importedJobs(),
+    staleTime: 30_000,
+  });
+}

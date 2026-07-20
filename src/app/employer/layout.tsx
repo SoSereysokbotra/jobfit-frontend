@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Building2, Briefcase, Inbox, BarChart3, Loader2 } from "lucide-react";
+import { Building2, Briefcase, Inbox, BarChart3, DownloadCloud, Loader2 } from "lucide-react";
 import { DashboardShell, type DashboardNavItem } from "@/shared/components/layout/dashboard-shell";
 import { useRequireAuth, displayName } from "@/features/auth/hooks/use-session";
 import { useAuth } from "@/providers/auth-provider";
@@ -9,6 +9,7 @@ import { useAuth } from "@/providers/auth-provider";
 const EMPLOYER_NAV: DashboardNavItem[] = [
   { href: "/employer/dashboard", label: "Analytics", icon: BarChart3 },
   { href: "/employer/jobs", label: "Jobs", icon: Briefcase },
+  { href: "/employer/imported-jobs", label: "Imported Jobs", icon: DownloadCloud },
   { href: "/employer/applications", label: "Applications", icon: Inbox },
   { href: "/employer/company", label: "Company Profile", icon: Building2 },
 ];

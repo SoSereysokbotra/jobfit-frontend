@@ -1,16 +1,99 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import Link from "next/link";
-import { Briefcase, Users, Target, TrendingUp, ArrowRight } from "lucide-react";
+import { Briefcase, Users, Target, TrendingUp, ArrowRight, DownloadCloud, Loader2, CheckCircle2, AlertTriangle } from "lucide-react";
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from "recharts";
 import { StatCard } from "@/shared/components/data-display/stat-card";
 import { Badge } from "@/shared/components/data-display/badge";
 import { Skeleton } from "@/shared/components/feedback/skeleton";
-import { useEmployerJobs, useEmployerApplications } from "@/features/employer/hooks/use-employer";
+import { useEmployerJobs, useEmployerApplications, useIngestJobs } from "@/features/employer/hooks/use-employer";
 import { EMPLOYER_TREND_PLACEHOLDER } from "@/features/employer/api/employer.mappers";
+import { ApiError } from "@/lib/api/client";
+
+/**
+ * Job ingestion control (FR-JOBS-001). Pulls external jobs from TheMuse into the
+ * shared job pool and shows a run summary. Employer-managed per product decision.
+ */
+function JobIngestionPanel() {
+  const ingest = useIngestJobs();
+  const [pages, setPages] = useState(1);
+  const result = ingest.data;
+  const errorMsg = ingest.error
+    ? ingest.error instanceof ApiError
+      ? ingest.error.messages.join(" ")
+      : "Ingestion failed. Please try again."
+    : "";
+
+  return (
+    <div className="rounded-lg border border-border bg-card shadow-sm p-5 sm:p-6">
+      <div className="flex items-start justify-between gap-3 mb-4">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-md flex items-center justify-center bg-primary-50 text-primary-600">
+            <DownloadCloud size={16} />
+          </div>
+          <div>
+            <h2 className="text-base font-bold text-content">Import External Jobs</h2>
+            <p className="text-xs mt-0.5 text-content-tertiary">Pull live postings from TheMuse into the job board.</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-3">
+        <label className="text-xs font-semibold text-content-secondary flex items-center gap-2">
+          Pages
+          <select
+            value={pages}
+            onChange={(e) => setPages(Number(e.target.value))}
+            disabled={ingest.isPending}
+            className="text-xs font-semibold rounded-md border border-border bg-bg px-2 py-1.5 outline-none cursor-pointer text-content"
+          >
+            {[1, 2, 3, 5].map((n) => <option key={n} value={n}>{n}</option>)}
+          </select>
+        </label>
+        <button
+          onClick={() => ingest.mutate(pages)}
+          disabled={ingest.isPending}
+          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md text-xs font-bold text-white bg-primary-600 hover:bg-primary-700 transition-colors disabled:opacity-50"
+        >
+          {ingest.isPending ? <><Loader2 size={13} className="animate-spin" /> Fetching…</> : <><DownloadCloud size={13} /> Fetch jobs</>}
+        </button>
+      </div>
+
+      {errorMsg && (
+        <div className="mt-4 flex items-center gap-2 text-xs font-semibold text-error-600">
+          <AlertTriangle size={13} /> {errorMsg}
+        </div>
+      )}
+
+      {result && !ingest.isPending && (
+        <div className="mt-4 rounded-md border border-success-100 bg-success-50 p-3">
+          <div className="flex items-center gap-2 text-xs font-bold text-success-700 mb-2">
+            <CheckCircle2 size={14} /> Ingestion complete
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+            {[
+              { label: "Fetched", value: result.fetched },
+              { label: "Created", value: result.created },
+              { label: "Updated", value: result.updated },
+              { label: "Skipped", value: result.skipped },
+            ].map((s) => (
+              <div key={s.label} className="rounded bg-card border border-border px-2.5 py-1.5">
+                <p className="text-sm font-bold text-content leading-none">{s.value}</p>
+                <p className="text-content-tertiary mt-0.5">{s.label}</p>
+              </div>
+            ))}
+          </div>
+          {result.errors.length > 0 && (
+            <p className="text-xs text-warning-600 mt-2">{result.errors.length} error(s) during this run — see server logs.</p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 const SERIES = { applications: "var(--color-primary-600)", views: "var(--color-primary-400)" };
 const DOT_CLASS: Record<string, string> = { Applications: "bg-primary-600", Views: "bg-primary-400" };
@@ -60,6 +143,8 @@ export default function EmployerAnalyticsPage() {
         <StatCard label="Total Jobs" value={`${jobs.length}`} change="draft + published" icon={<Target size={18} />} accentColor="var(--color-success-600)" accentBg="var(--color-success-50)" href="/employer/jobs" />
         <StatCard label="Avg Match" value={avgMatch !== null ? `${avgMatch}%` : "—"} change="scored candidates" icon={<TrendingUp size={18} />} accentColor="var(--color-warning-600)" accentBg="var(--color-warning-50)" />
       </div>
+
+      <JobIngestionPanel />
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         {/* Chart — TODO(backend): no trend endpoint; placeholder series. */}

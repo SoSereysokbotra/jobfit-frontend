@@ -123,4 +123,35 @@ export const employerApi = {
       `/employer/applications/${id}/notes`,
       { notes },
     ),
+
+  // ── Job ingestion (FR-JOBS-001) ──
+  ingestThemuse: (pages = 1) =>
+    apiClient.post<IngestionResult>(`/employer/ingest/themuse?pages=${pages}`),
+  /** Externally-ingested jobs (most-recently-seen first). */
+  importedJobs: () => apiClient.get<ImportedJob[]>("/employer/ingest/jobs"),
 };
+
+/** Summary returned by a job-ingestion run. */
+export interface IngestionResult {
+  source: string;
+  fetched: number;
+  created: number;
+  updated: number;
+  skipped: number;
+  errors: string[];
+  ranAt: string;
+}
+
+/** A stored, externally-ingested job. */
+export interface ImportedJob {
+  id: string;
+  title: string;
+  companyName: string;
+  location: string | null;
+  remoteType: string;
+  source: string;
+  externalId: string;
+  externalUrl: string | null;
+  createdAt: string;
+  lastSeenAt: string | null;
+}
