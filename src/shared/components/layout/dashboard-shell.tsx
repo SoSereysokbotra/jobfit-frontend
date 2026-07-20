@@ -39,6 +39,7 @@ export function DashboardShell({ brandSublabel, nav, menuGroups, user, onLogout,
           menuGroups={groups}
           user={user}
           onLogout={onLogout}
+          collapsible
         />
       </div>
 

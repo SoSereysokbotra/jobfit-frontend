@@ -61,7 +61,7 @@ export default function SeekerLayout({ children }: { children: React.ReactNode }
 
       {/* Desktop Sidebar */}
       <div className="hidden md:flex flex-shrink-0">
-        <Sidebar />
+        <Sidebar collapsible />
       </div>
 
       {/* Mobile Sidebar Overlay */}
