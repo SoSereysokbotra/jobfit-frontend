@@ -9,8 +9,11 @@ import { JobCard, JobSearchBar, JobFilters } from "@/features/job/components";
 import { useJobs } from "@/features/job/hooks/use-job";
 import { useJobSearch, type JobSortKey } from "@/features/job/hooks/use-job-search";
 import { useSavedJobIds, useToggleSavedJob } from "@/features/saved-jobs/hooks/use-saved-jobs";
+import { useSubmitApplication } from "@/features/application/hooks/use-applications";
 import { EmptyState } from "@/shared/components/data-display/empty-state";
 import { JobCardSkeleton } from "@/shared/components/feedback/skeleton";
+import { Alert } from "@/shared/components/feedback/alert";
+import { ApiError } from "@/lib/api/client";
 
 const SORT_OPTIONS: { value: JobSortKey; label: string }[] = [
   { value: "match", label: "Match score" },
@@ -27,6 +30,22 @@ export default function JobSearchPage() {
   const { ids: savedIds } = useSavedJobIds();
   const toggle = useToggleSavedJob();
   const toggleSave = (id: string) => toggle.mutate(id);
+
+  // One-click apply from a card (POST /applications). Feedback shows in a banner.
+  const submitApplication = useSubmitApplication();
+  const [applyMsg, setApplyMsg] = useState<{ tone: "success" | "error"; text: string } | null>(null);
+  const handleApply = (id: string) => {
+    const job = jobs.find((j) => j.id === id);
+    submitApplication.mutate(
+      { jobId: id },
+      {
+        onSuccess: () =>
+          setApplyMsg({ tone: "success", text: `Applied to ${job?.title ?? "this job"}. Track it under Applications.` }),
+        onError: (e) =>
+          setApplyMsg({ tone: "error", text: e instanceof ApiError ? e.message : "Could not apply. Please try again." }),
+      },
+    );
+  };
 
   const search = useJobSearch(jobs, 5);
 
@@ -56,6 +75,8 @@ export default function JobSearchPage() {
 
       {/* ── SEARCH BAR ────────────────────────────────────── */}
       <JobSearchBar value={search.filters.query} onChange={(v) => search.setFilter("query", v)} />
+
+      {applyMsg && <Alert variant={applyMsg.tone}>{applyMsg.text}</Alert>}
 
       {/* ── MAIN LAYOUT: FILTERS + RESULTS ────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-5 items-start">
@@ -221,6 +242,7 @@ export default function JobSearchPage() {
                   variant="list"
                   saved={savedIds.has(job.id)}
                   onToggleSave={toggleSave}
+                  onApply={handleApply}
                 />
               ))}
             </div>
@@ -233,6 +255,7 @@ export default function JobSearchPage() {
                   variant="grid"
                   saved={savedIds.has(job.id)}
                   onToggleSave={toggleSave}
+                  onApply={handleApply}
                 />
               ))}
             </div>

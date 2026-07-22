@@ -1,16 +1,34 @@
 /**
  * Recommendations / matching.
  *
- * TODO(backend): personalized recommendations depend on the AI matching service
- * (sibling `jobfits-ai-service`), which is not yet wired to the backend. Until then
- * this serves the mock job set behind a real async interface so the recommendations
- * UI works and swapping in the live source is a one-file change (Phase 10).
+ * Backed by GET /recommendations (semantic match over BGE-M3 embeddings, scored
+ * skills/experience/location/salary). The endpoint returns JobDto-shaped rows
+ * plus a `match` score, so we reuse the job feature's `toJobView` mapper and
+ * overlay the real match score.
  */
 
+import { apiClient } from "@/lib/api/client";
 import type { Job } from "@/shared/types/shared.types";
-import { MOCK_JOBS } from "@/features/job/api/job.mock";
+import type { JobDto } from "@/features/job/api/job.api";
+import { toJobView } from "@/features/job/api/job.mappers";
+
+/** GET /recommendations item: a JobDto plus match metadata. */
+export interface RecommendedJobDto extends JobDto {
+  match: number;
+  reason?: string;
+  breakdown?: Record<string, number>;
+}
 
 export const matchingApi = {
-  /** Recommended jobs for the current user (mock until the AI service lands). */
-  recommendations: async (): Promise<Job[]> => [...MOCK_JOBS],
+  /** Recommended jobs for the current user, ranked by match score. */
+  recommendations: async (): Promise<Job[]> => {
+    const dtos = await apiClient.get<RecommendedJobDto[]>("/recommendations");
+    // toJobView defaults match to 0; overlay the real score + breakdown + reason.
+    return dtos.map((dto) => ({
+      ...toJobView(dto),
+      match: dto.match,
+      matchBreakdown: dto.breakdown,
+      matchReason: dto.reason,
+    }));
+  },
 };

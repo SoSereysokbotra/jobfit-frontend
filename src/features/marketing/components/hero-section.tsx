@@ -5,6 +5,7 @@ import {
   MapPin, DollarSign,
 } from "lucide-react";
 import MatchScoreBadge from "@/shared/components/data-display/match-score-badge";
+import { Reveal } from "@/shared/components/motion/reveal";
 import { LogoMarquee, type MarqueeLogo } from "./logo-marquee";
 
 const NAV_LINKS = [
@@ -101,37 +102,41 @@ export function HeroSection() {
         <div className="flex flex-col items-center text-center pt-12 lg:pt-16">
 
           {/* Headline */}
-          <h1
+          <Reveal
+            as="h1"
+            delay={80}
             className="mt-8 text-5xl sm:text-6xl font-extrabold tracking-tight leading-tight max-w-4xl"
             style={{ color: "var(--color-text-primary)" }}
           >
             The smartest way to find
             <br className="hidden sm:block" />{" "}
             a job that{" "}
-            <span className="text-gradient">truly fits</span>
-          </h1>
+            <span className="text-gradient-animated">truly fits</span>
+          </Reveal>
 
           {/* Subheadline */}
-          <p
+          <Reveal
+            as="p"
+            delay={200}
             className="mt-6 text-lg leading-relaxed max-w-3xl"
             style={{ color: "var(--color-text-secondary)" }}
           >
             JobFits analyzes your resume against 12,000+ live roles from 500+ hiring
             companies and scores every match — skills, experience, salary, and location —
             so you apply where you&apos;ll actually win. Upload once, get matched instantly.
-          </p>
+          </Reveal>
 
           {/* CTAs */}
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+          <Reveal delay={320} className="mt-8 flex flex-wrap items-center justify-center gap-3">
             <Link
               href="/signup"
-              className="px-6 py-3 rounded-md text-sm font-bold text-white bg-primary-600 hover:bg-primary-700 transition-all duration-200 active:scale-[0.98] inline-flex items-center gap-2"
+              className="px-6 py-3 rounded-md text-sm font-bold text-white bg-primary-600 hover:bg-primary-700 transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.98] inline-flex items-center gap-2 group"
             >
-              Get Started Free <ArrowRight size={15} />
+              Get Started Free <ArrowRight size={15} className="transition-transform duration-200 group-hover:translate-x-1" />
             </Link>
             <Link
               href="/jobs"
-              className="px-6 py-3 rounded-md text-sm font-bold border transition-all duration-200 active:scale-[0.98] hover:bg-neutral-50"
+              className="px-6 py-3 rounded-md text-sm font-bold border transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.98] hover:bg-neutral-50"
               style={{
                 borderColor: "var(--color-border)",
                 color: "var(--color-text-primary)",
@@ -141,18 +146,18 @@ export function HeroSection() {
             >
               Browse Jobs
             </Link>
-          </div>
+          </Reveal>
 
           {/* Trusted-by marquee (auto-scrolling platform logos) */}
-          <div className="mt-12 w-full max-w-4xl">
+          <Reveal delay={440} variant="fade" className="mt-12 w-full max-w-4xl">
             <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--color-text-disabled)" }}>
               Aggregating jobs from the platforms you know
             </p>
             <LogoMarquee logos={PLATFORM_LOGOS} className="mt-5" />
-          </div>
+          </Reveal>
 
           {/* ── PRODUCT PREVIEW (cropped at section bottom) ── */}
-          <div className="relative w-full max-w-4xl mt-24 pb-20">
+          <Reveal variant="scale" delay={120} className="relative w-full max-w-4xl mt-24 pb-20">
             {/* Back panel peeking behind */}
             <div
               className="absolute -right-10 top-10 hidden lg:block w-72 h-96 rounded-xl border rotate-2"
@@ -165,7 +170,7 @@ export function HeroSection() {
 
             {/* Browser window frame */}
             <div
-              className="relative rounded-xl border overflow-hidden text-left"
+              className="relative rounded-xl border overflow-hidden text-left hover-lift"
               style={{
                 background: "var(--color-card)",
                 borderColor: "var(--color-border)",
@@ -250,7 +255,7 @@ export function HeroSection() {
                 </div>
               </div>
             </div>
-          </div>
+          </Reveal>
         </div>
       </div>
     </section>

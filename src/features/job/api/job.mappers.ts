@@ -47,6 +47,10 @@ export function toJobView(dto: JobDto): Job {
     industry: "Technology", // TODO(backend)
     postedDaysAgo: daysSince(dto.createdAt),
     description: dto.description,
+    responsibilities: dto.responsibilities ?? [],
+    requirements: dto.requirements ?? [],
+    benefits: dto.benefits ?? [],
+    bonusPct: dto.bonusPct ?? undefined,
   };
 }
 

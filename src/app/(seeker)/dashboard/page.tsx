@@ -365,55 +365,6 @@ export default function DashboardPage() {
               </div>
             )}
           </SectionCard>
-
-          {/* Upcoming Interviews */}
-          {upcomingInterviews.length > 0 && (
-            <SectionCard
-              title="Upcoming Interviews"
-              action={<SamplePill />}
-              headerIcon={
-                <div
-                  className="w-8 h-8 rounded-md flex items-center justify-center"
-                  style={{ background: "var(--color-info-50)", color: "var(--color-info-600)" }}
-                >
-                  <Calendar size={16} />
-                </div>
-              }
-            >
-              {upcomingInterviews.map((iv) => (
-                <div
-                  key={iv.company}
-                  className="p-4 rounded-lg border-l-4"
-                  style={{ background: "var(--color-info-50)", borderLeftColor: "var(--color-info-500)" }}
-                >
-                  <div className="flex items-center justify-between mb-1">
-                    <span
-                      className="text-xs font-bold px-2.5 py-0.5 rounded-full"
-                      style={{ background: "var(--color-info-100)", color: "var(--color-info-600)" }}
-                    >
-                      {iv.type} — {iv.date}
-                    </span>
-                    <span className="flex items-center gap-1 text-xs" style={{ color: "var(--color-text-tertiary)" }}>
-                      <Clock size={11} /> {iv.time}
-                    </span>
-                  </div>
-                  <h3 className="font-bold text-sm mt-2" style={{ color: "var(--color-text-primary)" }}>{iv.company}</h3>
-                  <p className="text-xs mt-0.5" style={{ color: "var(--color-text-secondary)" }}>{iv.role}</p>
-                  <div className="flex gap-2 mt-3">
-                    <Link
-                      href="/learning"
-                      className="px-4 py-1.5 rounded-md text-xs font-bold text-white bg-primary-600 hover:bg-primary-700 transition-all duration-200 active:scale-95"
-                    >
-                      Prep for Interview
-                    </Link>
-                    <button className="px-4 py-1.5 rounded-md text-xs font-bold border border-neutral-200 text-neutral-600 hover:bg-neutral-50 transition-all duration-200 active:scale-95 bg-white">
-                      Add to Calendar
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </SectionCard>
-          )}
         </div>
 
         {/* RIGHT COLUMN (1/3) */}
@@ -499,49 +450,6 @@ export default function DashboardPage() {
             >
               Complete Profile <ArrowRight size={13} />
             </Link>
-          </SectionCard>
-
-          {/* Recent Activity */}
-          <SectionCard
-            title="Recent Activity"
-            flush
-            action={<SamplePill />}
-          >
-            <div className="p-2">
-              {recentActivity.map((item) => (
-                <div
-                  key={item.text}
-                  className="flex items-start gap-3 p-3 rounded-md hover:bg-neutral-50 transition-colors"
-                >
-                  <div
-                    className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-0.5"
-                    style={{ background: item.bg, color: item.color }}
-                  >
-                    {item.icon}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-semibold leading-snug" style={{ color: "var(--color-text-primary)" }}>
-                      {item.text}
-                    </p>
-                    <p className="text-xs mt-0.5" style={{ color: "var(--color-text-tertiary)" }}>
-                      {item.sub}
-                    </p>
-                    <p className="text-xs mt-1" style={{ color: "var(--color-text-disabled)" }}>
-                      {item.time}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="px-5 py-3 border-t text-center" style={{ borderColor: "var(--color-neutral-100)" }}>
-              <Link
-                href="/notifications"
-                className="text-xs font-bold inline-flex items-center gap-1 hover:opacity-80 transition-opacity"
-                style={{ color: "var(--color-primary-600)" }}
-              >
-                View all activity <ArrowRight size={12} />
-              </Link>
-            </div>
           </SectionCard>
         </div>
       </div>

@@ -5,6 +5,7 @@ import {
   Calendar, Award, Upload, ArrowRight, MapPin, type LucideIcon,
 } from "lucide-react";
 import MatchScoreBadge from "@/shared/components/data-display/match-score-badge";
+import { Reveal } from "@/shared/components/motion/reveal";
 
 /* ─── PER-FEATURE MOCKUP VISUALS ─────────────────────────────────
    Branded, token-only "product screenshots". Swap any of these for a
@@ -13,7 +14,7 @@ import MatchScoreBadge from "@/shared/components/data-display/match-score-badge"
 function MockCard({ children }: { children: React.ReactNode }) {
   return (
     <div
-      className="rounded-xl border p-5"
+      className="rounded-xl border p-5 hover-lift"
       style={{ background: "var(--color-card)", borderColor: "var(--color-border)", boxShadow: "var(--shadow-lg)" }}
     >
       {children}
@@ -296,7 +297,7 @@ function FeaturePanel({ feature, index }: { feature: Feature; index: number }) {
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
 
           {/* TEXT */}
-          <div className={reverse ? "lg:order-2" : ""}>
+          <Reveal variant={reverse ? "right" : "left"} className={reverse ? "lg:order-2" : ""}>
             <div className="flex items-center gap-3">
               <div className="w-11 h-11 rounded-lg flex items-center justify-center" style={{ background: "var(--color-primary-50)", color: "var(--color-primary-600)" }}>
                 <Icon size={20} />
@@ -329,10 +330,10 @@ function FeaturePanel({ feature, index }: { feature: Feature; index: number }) {
             >
               {cta.label} <ArrowRight size={15} />
             </Link>
-          </div>
+          </Reveal>
 
           {/* VISUAL */}
-          <div className={reverse ? "lg:order-1" : ""}>
+          <Reveal variant={reverse ? "left" : "right"} delay={120} className={reverse ? "lg:order-1" : ""}>
             <div className="relative rounded-2xl p-6 sm:p-10" style={{ background: "var(--color-primary-50)" }}>
               {/* Decorative accents */}
               <div className="absolute top-4 right-4 w-24 h-24 rounded-full opacity-60 pointer-events-none" style={{ background: "var(--color-primary-100)" }} />
@@ -340,7 +341,7 @@ function FeaturePanel({ feature, index }: { feature: Feature; index: number }) {
                 <Visual />
               </div>
             </div>
-          </div>
+          </Reveal>
 
         </div>
       </div>
@@ -354,7 +355,7 @@ export function FeaturesSection() {
     <section id="features" className="scroll-mt-16">
       {/* Intro */}
       <div className="pt-5 pb-8 lg:pt-24 lg:pb-10 text-center" style={{ background: "var(--color-bg)" }}>
-        <div className="max-w-3xl mx-auto px-6 lg:px-8">
+        <Reveal className="max-w-3xl mx-auto px-6 lg:px-8">
           <h2 className="mt-4 text-3xl sm:text-4xl font-extrabold tracking-tight" style={{ color: "var(--color-text-primary)" }}>
             Everything you need to land the right role
           </h2>
@@ -366,7 +367,7 @@ export function FeaturesSection() {
               <span key={f.num} className="w-2 h-2 rounded-full" style={{ background: "var(--color-primary-200)" }} />
             ))}
           </div>
-        </div>
+        </Reveal>
       </div>
 
       {/* One full-height panel per feature */}

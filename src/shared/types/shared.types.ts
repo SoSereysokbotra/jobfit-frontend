@@ -24,6 +24,16 @@ export interface Job {
   industry: string;
   postedDaysAgo: number;
   description: string;
+  /** Employer-authored structured content (absent/empty when unset). */
+  responsibilities?: string[];
+  requirements?: string[];
+  benefits?: string[];
+  /** Target annual bonus, % of base. */
+  bonusPct?: number;
+  /** Sub-scores behind `match` (0–100 each) when this job came from recommendations. */
+  matchBreakdown?: Record<string, number>;
+  /** Human-readable "why this matched", when available. */
+  matchReason?: string;
 }
 
 export function formatSalaryRange(job: Pick<Job, "salaryMin" | "salaryMax">): string {

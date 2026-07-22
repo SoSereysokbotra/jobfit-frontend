@@ -6,6 +6,15 @@ import { MapPin, DollarSign, Heart, X, ChevronDown, ChevronUp, Check, AlertTrian
 import { cn } from "@/shared/utils/cn";
 import { formatSalaryRange, type Job } from "@/shared/types/shared.types";
 
+/** Display labels for the match sub-scores returned by the backend. */
+const BREAKDOWN_LABELS: Record<string, string> = {
+  skills: "Skills",
+  experience: "Experience",
+  location: "Location",
+  salary: "Salary",
+  other: "Industry",
+};
+
 interface JobRecommendationCardProps {
   job: Job;
   saved?: boolean;
@@ -30,6 +39,12 @@ export function JobRecommendationCard({
     setDismissed(true);
     onDismiss?.(job.id);
   };
+
+  // Real sub-scores from the recommendations endpoint (skills/experience/location/…).
+  const breakdownEntries = Object.entries(job.matchBreakdown ?? {});
+  const strong = breakdownEntries.filter(([, v]) => v >= 70);
+  const gaps = breakdownEntries.filter(([, v]) => v < 50);
+  const label = (k: string) => BREAKDOWN_LABELS[k] ?? k;
 
   return (
     <div
@@ -114,7 +129,7 @@ export function JobRecommendationCard({
           </div>
           
           <p className="text-sm font-medium mb-4" style={{ color: "var(--color-text-secondary)" }}>
-            Quick Stats: {Math.floor(job.match / 10)} of 10 required skills match
+            {job.matchReason ?? `Semantic match score: ${job.match}%`}
           </p>
 
           <div className="flex flex-wrap gap-2">
@@ -147,31 +162,50 @@ export function JobRecommendationCard({
         </div>
       </div>
 
-      {/* Expandable Breakdown */}
+      {/* Expandable Breakdown — driven by the real backend sub-scores. */}
       {expanded && (
         <div className="mt-6 pt-5 border-t" style={{ borderColor: "var(--color-neutral-100)" }}>
           <h4 className="text-sm font-bold mb-3" style={{ color: "var(--color-text-primary)" }}>Match Breakdown</h4>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="p-3 rounded-lg bg-neutral-50 border border-neutral-100">
-              <p className="text-xs font-bold text-success-700 mb-2 flex items-center gap-1.5">
-                <Check size={14} /> Strong Alignments
-              </p>
-              <ul className="text-xs space-y-1.5 text-neutral-600">
-                <li>• Skills Match: 95% (React, TypeScript, Next.js)</li>
-                <li>• Experience: 88% (Senior Level fit)</li>
-                <li>• Location: 100% (Remote preference matches)</li>
-              </ul>
-            </div>
-            <div className="p-3 rounded-lg bg-warning-50 border border-warning-100">
-              <p className="text-xs font-bold text-warning-700 mb-2 flex items-center gap-1.5">
-                <AlertTriangle size={14} /> Minor Gaps
-              </p>
-              <ul className="text-xs space-y-1.5 text-neutral-600">
-                <li>• Missing Skill: GraphQL (Learnable in 1-2 weeks)</li>
-                <li>• Missing Skill: AWS (Preferred, not required)</li>
-              </ul>
-            </div>
-          </div>
+          {breakdownEntries.length === 0 ? (
+            <p className="text-xs text-neutral-500">No breakdown available for this recommendation.</p>
+          ) : (
+            <>
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mb-4">
+                {breakdownEntries.map(([key, value]) => (
+                  <div key={key} className="p-2.5 rounded-lg bg-neutral-50 border border-neutral-100 text-center">
+                    <p className="text-lg font-extrabold" style={{ color: "var(--color-text-primary)" }}>{value}%</p>
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">{label(key)}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-3 rounded-lg bg-neutral-50 border border-neutral-100">
+                  <p className="text-xs font-bold text-success-700 mb-2 flex items-center gap-1.5">
+                    <Check size={14} /> Strong Alignments
+                  </p>
+                  <ul className="text-xs space-y-1.5 text-neutral-600">
+                    {strong.length > 0 ? (
+                      strong.map(([key, value]) => <li key={key}>• {label(key)}: {value}%</li>)
+                    ) : (
+                      <li className="text-neutral-400">No standout strengths yet.</li>
+                    )}
+                  </ul>
+                </div>
+                <div className="p-3 rounded-lg bg-warning-50 border border-warning-100">
+                  <p className="text-xs font-bold text-warning-700 mb-2 flex items-center gap-1.5">
+                    <AlertTriangle size={14} /> Areas to Improve
+                  </p>
+                  <ul className="text-xs space-y-1.5 text-neutral-600">
+                    {gaps.length > 0 ? (
+                      gaps.map(([key, value]) => <li key={key}>• {label(key)}: {value}%</li>)
+                    ) : (
+                      <li className="text-neutral-400">No significant gaps.</li>
+                    )}
+                  </ul>
+                </div>
+              </div>
+            </>
+          )}
         </div>
       )}
     </div>

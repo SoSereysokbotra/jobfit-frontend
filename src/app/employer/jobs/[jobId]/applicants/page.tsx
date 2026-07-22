@@ -1,19 +1,21 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, BadgeDollarSign } from "lucide-react";
 import { Badge } from "@/shared/components/data-display/badge";
 import { EmptyState } from "@/shared/components/data-display/empty-state";
 import { Skeleton } from "@/shared/components/feedback/skeleton";
 import { useEmployerApplications } from "@/features/employer/hooks/use-employer";
 import { STAGE_TONE } from "@/features/employer/api/employer.mappers";
+import { MakeOfferModal } from "@/features/employer/components/make-offer-modal";
 
 export default function JobApplicantsPage() {
   const params = useParams<{ jobId: string }>();
   const { data: applicants = [], isLoading } = useEmployerApplications(params.jobId);
   const jobTitle = applicants[0]?.jobTitle ?? "Job";
+  const [offerFor, setOfferFor] = useState<{ id: string; name: string } | null>(null);
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-5">
@@ -40,6 +42,7 @@ export default function JobApplicantsPage() {
                   <th className="font-semibold text-xs uppercase tracking-wider px-5 py-3">Match</th>
                   <th className="font-semibold text-xs uppercase tracking-wider px-5 py-3">Stage</th>
                   <th className="font-semibold text-xs uppercase tracking-wider px-5 py-3 hidden sm:table-cell">Applied</th>
+                  <th className="font-semibold text-xs uppercase tracking-wider px-5 py-3 text-right">Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -57,6 +60,16 @@ export default function JobApplicantsPage() {
                     <td className="px-5 py-3 font-extrabold text-primary-600">{a.match > 0 ? `${a.match}%` : "—"}</td>
                     <td className="px-5 py-3"><Badge tone={STAGE_TONE[a.stage]}>{a.stage}</Badge></td>
                     <td className="px-5 py-3 hidden sm:table-cell text-content-tertiary">{a.appliedAt}</td>
+                    <td className="px-5 py-3 text-right">
+                      {a.stage !== "Rejected" && a.stage !== "Hired" && (
+                        <button
+                          onClick={() => setOfferFor({ id: a.id, name: a.name })}
+                          className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-md border border-border text-primary-600 transition-colors hover:bg-primary-50"
+                        >
+                          <BadgeDollarSign size={13} /> {a.stage === "Offer" ? "Edit offer" : "Make offer"}
+                        </button>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -64,6 +77,13 @@ export default function JobApplicantsPage() {
           </div>
         </div>
       )}
+
+      <MakeOfferModal
+        open={offerFor !== null}
+        onClose={() => setOfferFor(null)}
+        applicationId={offerFor?.id ?? ""}
+        candidateName={offerFor?.name ?? ""}
+      />
     </div>
   );
 }

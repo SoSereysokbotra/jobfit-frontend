@@ -10,6 +10,9 @@ import {
 import { useJobSearch } from "@/features/job/hooks/use-job-search";
 import { useRecommendations } from "@/features/matching/hooks/use-recommendations";
 import { useSavedJobIds, useToggleSavedJob } from "@/features/saved-jobs/hooks/use-saved-jobs";
+import { useSubmitApplication } from "@/features/application/hooks/use-applications";
+import { Alert } from "@/shared/components/feedback/alert";
+import { ApiError } from "@/lib/api/client";
 
 type ViewMode = "list" | "grid";
 
@@ -22,6 +25,22 @@ export default function RecommendationsPage() {
   const { data: recommendations = [], isFetching, refetch } = useRecommendations();
   const { ids: savedJobs } = useSavedJobIds();
   const toggleSaved = useToggleSavedJob();
+
+  // One-click apply (POST /applications) with a feedback banner.
+  const submitApplication = useSubmitApplication();
+  const [applyMsg, setApplyMsg] = useState<{ tone: "success" | "error"; text: string } | null>(null);
+  const handleApply = (id: string) => {
+    const job = recommendations.find((j) => j.id === id);
+    submitApplication.mutate(
+      { jobId: id },
+      {
+        onSuccess: () =>
+          setApplyMsg({ tone: "success", text: `Applied to ${job?.title ?? "this job"}. Track it under Applications.` }),
+        onError: (e) =>
+          setApplyMsg({ tone: "error", text: e instanceof ApiError ? e.message : "Could not apply. Please try again." }),
+      },
+    );
+  };
 
   const {
     filters,
@@ -100,6 +119,11 @@ export default function RecommendationsPage() {
 
           {/* MAIN CONTENT */}
           <main className="flex-1 min-w-0">
+            {applyMsg && (
+              <div className="mb-4">
+                <Alert variant={applyMsg.tone}>{applyMsg.text}</Alert>
+              </div>
+            )}
             {/* Results summary + controls */}
             <div className="flex items-center justify-between mb-4 gap-4 flex-wrap">
               <div>
@@ -222,7 +246,7 @@ export default function RecommendationsPage() {
                     variant="grid"
                     saved={savedJobs.has(job.id)}
                     onToggleSave={handleToggleSave}
-                    onApply={(id) => console.log("Apply:", id)}
+                    onApply={handleApply}
                   />
                 ))}
               </div>
@@ -235,7 +259,7 @@ export default function RecommendationsPage() {
                     job={job}
                     saved={savedJobs.has(job.id)}
                     onToggleSave={handleToggleSave}
-                    onApply={(id) => console.log("Apply:", id)}
+                    onApply={handleApply}
                     onDismiss={handleDismiss}
                   />
                 ))}

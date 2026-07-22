@@ -14,6 +14,7 @@ import {
   type ApplicantView,
   type ApplicationStage,
 } from "@/features/employer/api/employer.mappers";
+import { MakeOfferModal } from "@/features/employer/components/make-offer-modal";
 
 /* Board stages (Rejected is handled outside the pipeline). */
 const STAGES: ApplicationStage[] = ["Applied", "Interview", "Offer", "Hired"];
@@ -33,6 +34,7 @@ export default function ApplicationsKanbanPage() {
   const [jobFilter, setJobFilter] = useState<string>("all");
   const [dragId, setDragId] = useState<string | null>(null);
   const [overStage, setOverStage] = useState<ApplicationStage | null>(null);
+  const [offerFor, setOfferFor] = useState<{ id: string; name: string } | null>(null);
 
   const visible = useMemo(
     () =>
@@ -51,6 +53,12 @@ export default function ApplicationsKanbanPage() {
     if (!id) return;
     const card = applicants.find((a) => a.id === id);
     if (!card || card.stage === stage) return;
+    // Dropping into "Offer" extends a real offer (opens the comp form) — that's what
+    // creates the offer the candidate sees on /offers. Other columns just move status.
+    if (stage === "Offer") {
+      setOfferFor({ id: card.id, name: card.name });
+      return;
+    }
     updateStatus.mutate({ id, newStatus: STAGE_TO_STATUS[stage] });
   };
 
@@ -130,6 +138,13 @@ export default function ApplicationsKanbanPage() {
           })}
         </div>
       )}
+
+      <MakeOfferModal
+        open={offerFor !== null}
+        onClose={() => setOfferFor(null)}
+        applicationId={offerFor?.id ?? ""}
+        candidateName={offerFor?.name ?? ""}
+      />
     </div>
   );
 }

@@ -94,4 +94,14 @@ export const applicationApi = {
   /** POST /applications/{id}/contact-person — returns { id }. */
   addContactPerson: (id: string, input: ContactPersonInput) =>
     apiClient.post<{ id: string }>(`/applications/${id}/contact-person`, input),
+
+  /**
+   * POST /applications/{id}/cover-letter — generate + persist an AI cover letter
+   * (heuristic template fallback if the AI service is down). Premium-only (403 for FREE).
+   */
+  generateCoverLetter: (id: string, tone?: string) =>
+    apiClient.post<{ coverLetter: string; generatedBy: "ai" | "template" }>(
+      `/applications/${id}/cover-letter`,
+      tone ? { tone } : {},
+    ),
 };

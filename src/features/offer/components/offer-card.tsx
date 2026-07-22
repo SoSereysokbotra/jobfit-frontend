@@ -58,8 +58,8 @@ function CompRow({ label, value, sub, strong }: { label: string; value: string; 
 }
 
 /** Market comparison bar — offer position within the salary band. */
-function MarketBar({ offer }: { offer: Offer }) {
-  const pos = marketPosition(offer.baseSalary, offer.market);
+function MarketBar({ offer, market }: { offer: Offer; market: MarketBenchmark }) {
+  const pos = marketPosition(offer.baseSalary, market);
   return (
     <div>
       <div className="flex items-center justify-between mb-2">
@@ -79,9 +79,9 @@ function MarketBar({ offer }: { offer: Offer }) {
         />
       </div>
       <div className="flex justify-between mt-1.5 text-xs" style={{ color: "var(--color-text-tertiary)" }}>
-        <span>{formatCurrencyShort(offer.market.p25)}</span>
-        <span>{formatCurrencyShort(offer.market.p50)} median</span>
-        <span>{formatCurrencyShort(offer.market.p90)}</span>
+        <span>{formatCurrencyShort(market.p25)}</span>
+        <span>{formatCurrencyShort(market.p50)} median</span>
+        <span>{formatCurrencyShort(market.p90)}</span>
       </div>
     </div>
   );
@@ -199,7 +199,7 @@ export function OfferCard({ offer, past = false, onAccept, onReject, onUpdateNot
           </div>
 
           {/* Market comparison */}
-          <MarketBar offer={offer} />
+          {offer.market && <MarketBar offer={offer} market={offer.market} />}
 
           {/* Notes */}
           <div>
