@@ -7,11 +7,9 @@
  *   - The score endpoints 400 with "Resume has not been parsed yet" until
  *     parsing reaches SUCCESS, so never fetch them before then.
  *
- * TODO(backend): PARSED DATA IS MOCKED. `ParsedResumeData` (fullName, email,
- * skills, experiences, …) exists in the database but no endpoint returns it:
- * ResumeResponseDto has no `parsedData` field and none of the 10 resume routes
- * expose it. Per INTEGRATION_PLAN.md locked decision #3, `getParsedData` below
- * serves mock data behind this interface — swap it when the backend exposes it.
+ * Parsed data is served by GET /resumes/{id}/parsed-data (ParsedResumeDataResponseDto),
+ * which deserializes the DB's JSON columns and normalizes AI (structured) and
+ * heuristic (raw-line) shapes into one UI-friendly form.
  */
 
 import { apiClient, uploadWithProgress, type UploadProgress } from "@/lib/api/client";
@@ -71,6 +69,8 @@ export interface ParsedResumeDataDto {
   experiences: { company: string; title: string; dates?: string }[];
   educations: { institution: string; degree: string; dates?: string }[];
   certifications: string[];
+  /** Which pipeline produced the data — "ai" (Qwen) or "heuristic" (regex fallback). */
+  parsedBy?: "ai" | "heuristic";
 }
 
 /** Client-side guard so an oversized/wrong file never costs an upload round-trip. */
@@ -135,36 +135,7 @@ export const resumeApi = {
   calculateScore: (resumeId: string) =>
     apiClient.post<{ atsScore: number; qualityScore: number }>(`/resumes/${resumeId}/score`),
 
-  /**
-   * TODO(backend): no endpoint returns ParsedResumeData. Mock until one exists;
-   * the return shape already matches the DB model so the swap is one function.
-   */
-  getParsedData: (_resumeId: string): Promise<ParsedResumeDataDto> =>
-    new Promise((resolve) =>
-      setTimeout(
-        () =>
-          resolve({
-            fullName: "Jane Doe",
-            email: "jane.doe@example.com",
-            phone: "+855 12 345 678",
-            location: "Phnom Penh, Cambodia",
-            summary:
-              "Frontend engineer with 6 years building accessible, performant web applications.",
-            skills: ["React", "TypeScript", "Node.js", "GraphQL", "Testing Library"],
-            experiences: [
-              { company: "Acme Inc", title: "Senior Frontend Engineer", dates: "2022 — Present" },
-              { company: "Globex", title: "Frontend Engineer", dates: "2019 — 2022" },
-            ],
-            educations: [
-              {
-                institution: "Royal University of Phnom Penh",
-                degree: "BSc Computer Science",
-                dates: "2015 — 2019",
-              },
-            ],
-            certifications: ["AWS Certified Developer"],
-          }),
-        200,
-      ),
-    ),
+  /** GET /resumes/{id}/parsed-data — 400s unless parsingStatus is SUCCESS. */
+  getParsedData: (resumeId: string): Promise<ParsedResumeDataDto> =>
+    apiClient.get<ParsedResumeDataDto>(`/resumes/${resumeId}/parsed-data`),
 };

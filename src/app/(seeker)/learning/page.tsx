@@ -34,9 +34,9 @@ export default function LearningPage() {
       ) : !data ? null : (
         <>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            <div className="lg:col-span-1">
+            {/* <div className="lg:col-span-1">
               <ProgressTracker currentCount={data.currentSkills.length} gapCount={data.gapSkills.length} />
-            </div>
+            </div> */}
 
             {/* Current skills */}
             <div

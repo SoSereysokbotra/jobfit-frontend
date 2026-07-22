@@ -18,6 +18,14 @@ const REMOTE_TYPES: { label: string; value: CreateJobInput["remoteType"] }[] = [
 
 const INPUT = "w-full px-3 py-2.5 rounded-md border border-border bg-background text-content text-sm outline-none transition-all focus:ring-2 focus:ring-primary-500 focus:border-transparent";
 
+/** Turn a textarea (one item per line) into a clean string[]. */
+function toLines(s: string): string[] {
+  return s
+    .split("\n")
+    .map((l) => l.trim().replace(/^[-•*]\s*/, ""))
+    .filter(Boolean);
+}
+
 export default function CreateJobPage() {
   const router = useRouter();
   const createJob = useCreateJob();
@@ -25,10 +33,13 @@ export default function CreateJobPage() {
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [responsibilities, setResponsibilities] = useState("");
   const [requirements, setRequirements] = useState("");
+  const [benefits, setBenefits] = useState("");
   const [location, setLocation] = useState("");
   const [minSalary, setMinSalary] = useState("");
   const [maxSalary, setMaxSalary] = useState("");
+  const [bonus, setBonus] = useState("");
   const [remote, setRemote] = useState<CreateJobInput["remoteType"]>("HYBRID");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<null | "draft" | "publish">(null);
@@ -39,17 +50,18 @@ export default function CreateJobPage() {
       return null;
     }
     setError(null);
-    const fullDescription = requirements.trim()
-      ? `${description.trim()}\n\nRequirements:\n${requirements.trim()}`
-      : description.trim();
     // Form collects $K; the backend stores absolute yearly amounts.
     return {
       title: title.trim(),
-      description: fullDescription,
+      description: description.trim(),
       remoteType: remote,
       location: location.trim() || undefined,
       minSalary: minSalary ? Number(minSalary) * 1000 : undefined,
       maxSalary: maxSalary ? Number(maxSalary) * 1000 : undefined,
+      responsibilities: toLines(responsibilities),
+      requirements: toLines(requirements),
+      benefits: toLines(benefits),
+      bonusPct: bonus ? Number(bonus) : undefined,
     };
   };
 
@@ -81,11 +93,21 @@ export default function CreateJobPage() {
       <div className="rounded-lg border border-border bg-card shadow-sm p-5 sm:p-6 space-y-5">
         <Field label="Job Title"><input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Senior Software Engineer" className={INPUT} /></Field>
         <Field label="Job Description"><textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={4} placeholder="Describe the role, team, and mission…" className={cn(INPUT, "resize-y")} /></Field>
-        <Field label="Requirements"><textarea value={requirements} onChange={(e) => setRequirements(e.target.value)} rows={3} placeholder="e.g. 5+ years experience, strong Python skills…" className={cn(INPUT, "resize-y")} /></Field>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <Field label="Responsibilities" hint="One per line">
+          <textarea value={responsibilities} onChange={(e) => setResponsibilities(e.target.value)} rows={4} placeholder={"Design and build scalable services\nCollaborate with product and design\nMentor junior engineers"} className={cn(INPUT, "resize-y")} />
+        </Field>
+        <Field label="Requirements & Qualifications" hint="One per line">
+          <textarea value={requirements} onChange={(e) => setRequirements(e.target.value)} rows={4} placeholder={"5+ years with React and TypeScript\nStrong REST API design\nExcellent communication"} className={cn(INPUT, "resize-y")} />
+        </Field>
+        <Field label="Benefits & Perks" hint="One per line">
+          <textarea value={benefits} onChange={(e) => setBenefits(e.target.value)} rows={4} placeholder={"Health, dental, and vision insurance\n401(k) matching\n20 days PTO"} className={cn(INPUT, "resize-y")} />
+        </Field>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <Field label="Salary Min ($K)"><input value={minSalary} onChange={(e) => setMinSalary(e.target.value)} type="number" placeholder="150" className={INPUT} /></Field>
           <Field label="Salary Max ($K)"><input value={maxSalary} onChange={(e) => setMaxSalary(e.target.value)} type="number" placeholder="190" className={INPUT} /></Field>
+          <Field label="Bonus (% of base)"><input value={bonus} onChange={(e) => setBonus(e.target.value)} type="number" placeholder="15" className={INPUT} /></Field>
         </div>
 
         <Field label="Location"><input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="e.g. San Francisco, CA" className={INPUT} /></Field>
@@ -111,10 +133,13 @@ export default function CreateJobPage() {
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="block text-xs font-bold uppercase tracking-wider mb-2 text-content-tertiary">{label}</label>
+      <label className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider mb-2 text-content-tertiary">
+        {label}
+        {hint && <span className="font-medium normal-case tracking-normal text-content-disabled">· {hint}</span>}
+      </label>
       {children}
     </div>
   );

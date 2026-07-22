@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import {
-  fetchOffers, yearOneComp,
+  fetchOffers, offerApi, yearOneComp,
   ACTIVE_STATUSES, PAST_STATUSES,
   type Offer, type OfferStatus,
 } from "../api/offer.api";
@@ -67,11 +67,20 @@ export function useOffers() {
   }, [items]);
 
   /* ── Decisions & edits ─────────────────────────────────────── */
-  const updateStatus = (id: string, status: OfferStatus) => {
-    setItems((prev) => prev.map((o) => (o.id === id ? { ...o, status } : o)));
-    if (status === "Accepted") {
-      const offer = items.find((o) => o.id === id);
-      if (offer) setJustAccepted({ company: offer.job.company, startDate: offer.startDate });
+  // Accept/decline hit the live API, then we re-fetch so the server's side effects
+  // (e.g. accepting one offer auto-archives the others) are reflected wholesale.
+  const updateStatus = async (id: string, status: OfferStatus) => {
+    const offer = items.find((o) => o.id === id);
+    try {
+      if (status === "Accepted") await offerApi.accept(id);
+      else if (status === "Rejected") await offerApi.decline(id);
+      const fresh = await fetchOffers();
+      setItems(fresh);
+      if (status === "Accepted" && offer) {
+        setJustAccepted({ company: offer.job.company, startDate: offer.startDate });
+      }
+    } catch {
+      // Surface nothing destructive on failure; the list stays as-is.
     }
   };
 

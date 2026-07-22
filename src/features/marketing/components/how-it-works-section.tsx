@@ -1,5 +1,6 @@
 import React from "react";
 import Link from "next/link";
+import { Reveal } from "@/shared/components/motion/reveal";
 
 const STEPS = [
   {
@@ -19,6 +20,10 @@ const STEPS = [
 /* Column stagger (top padding) — must stay in sync with the curve's node
    y-positions in the SVG path below so the dots sit on the line. */
 const STEP_OFFSETS = ["lg:pt-64", "lg:pt-32", "lg:pt-0"];
+
+/* Vertical position of the giant ghost number behind each step. Steps 1 & 2
+   sit higher; step 3 stays lower to hug its text. */
+const GHOST_TOPS = ["lg:-top-40", "lg:-top-40", "lg:-top-24"];
 
 function StepNode() {
   return (
@@ -48,7 +53,7 @@ export function HowItWorksSection() {
       <div className="relative max-w-7xl mx-auto px-6 lg:px-8">
 
           {/* ── Left-aligned intro ─────────────────────────── */}
-          <div className="relative z-10 max-w-md">
+          <Reveal variant="left" className="relative z-10 max-w-md">
             <p
               className="text-xs font-bold uppercase tracking-wider"
               style={{ color: "var(--color-primary-600)" }}
@@ -71,7 +76,7 @@ export function HowItWorksSection() {
             >
               Get Started
             </Link>
-          </div>
+          </Reveal>
 
           {/* ── Journey curve + steps ──────────────────────── */}
           <div className="relative mt-12 lg:mt-0 lg:-mx-8">
@@ -99,17 +104,17 @@ export function HowItWorksSection() {
 
             <div className="relative grid grid-cols-1 lg:grid-cols-3 gap-10 lg:gap-8">
               {STEPS.map((step, i) => (
-                <div key={step.title} className={`relative ${STEP_OFFSETS[i]}`}>
-                  {/* Ghost number behind the step */}
-                  <span
-                    aria-hidden="true"
-                    className="absolute -top-14 left-24 text-9xl font-extrabold leading-none select-none pointer-events-none"
-                    style={{ color: "var(--color-neutral-100)" }}
-                  >
-                    {i + 1}
-                  </span>
-
+                <Reveal key={step.title} delay={i * 160} className={`relative ${STEP_OFFSETS[i]}`}>
                   <div className="relative z-10">
+                    {/* Ghost number behind the step — sits with the content
+                        so it follows each column's staggered offset. */}
+                    <span
+                      aria-hidden="true"
+                      className={`absolute -top-24 ${GHOST_TOPS[i]} left-16 -z-10 text-9xl font-extrabold leading-none select-none pointer-events-none`}
+                      style={{ color: "var(--color-neutral-100)" }}
+                    >
+                      {i + 1}
+                    </span>
                     <StepNode />
                     <h3 className="text-base font-bold" style={{ color: "var(--color-text-primary)" }}>
                       {step.title}
@@ -121,7 +126,7 @@ export function HowItWorksSection() {
                       {step.description}
                     </p>
                   </div>
-                </div>
+                </Reveal>
               ))}
             </div>
           </div>

@@ -29,6 +29,10 @@ export interface JobDto {
   location?: string;
   salaryRange?: { min: number; max: number; currency: string };
   skillIds: string[];
+  responsibilities?: string[];
+  requirements?: string[];
+  benefits?: string[];
+  bonusPct?: number | null;
   createdAt: string;
   updatedAt: string;
 }

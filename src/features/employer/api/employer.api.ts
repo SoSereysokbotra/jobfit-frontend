@@ -66,6 +66,10 @@ export interface CreateJobInput {
   minSalary?: number;
   maxSalary?: number;
   skillIds?: string[];
+  responsibilities?: string[];
+  requirements?: string[];
+  benefits?: string[];
+  bonusPct?: number;
 }
 
 export type UpdateJobInput = Partial<CreateJobInput>;

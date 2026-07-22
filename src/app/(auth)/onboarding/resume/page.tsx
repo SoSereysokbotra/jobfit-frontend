@@ -25,8 +25,12 @@ import {
   HelpCircle
 } from "lucide-react";
 import { useResumeUpload } from "@/features/resume/hooks/use-resume-upload";
-import { useParsingStatus } from "@/features/resume/hooks/use-resumes";
-import { validateResumeFile, RESUME_ACCEPT_ATTR } from "@/features/resume/api/resume.api";
+import { useParsingStatus, useParsedData } from "@/features/resume/hooks/use-resumes";
+import {
+  validateResumeFile,
+  RESUME_ACCEPT_ATTR,
+  type ParsedResumeDataDto,
+} from "@/features/resume/api/resume.api";
 import { useSession, displayName } from "@/features/auth/hooks/use-session";
 import { useCreateProfile, useUpdatePreferences, useProfile } from "@/features/user-profile/hooks/use-profile";
 import { parseLocationInput } from "@/features/user-profile/api/profile.mappers";
@@ -42,6 +46,25 @@ interface ParsedResume {
   experience: { title: string; company: string; years: string }[];
   education: string;
   confidence: number;
+}
+
+/** Map the backend's parsed-data DTO onto this wizard's ParsedResume shape. */
+function toWizardParsed(d: ParsedResumeDataDto): ParsedResume {
+  return {
+    skills: d.skills ?? [],
+    experience: (d.experiences ?? []).map((e) => ({
+      title: e.title || "—",
+      company: e.company || "",
+      years: e.dates ?? "",
+    })),
+    education:
+      (d.educations ?? [])
+        .map((ed) => [ed.degree, ed.institution].filter(Boolean).join(" — "))
+        .filter(Boolean)
+        .join("; ") || "—",
+    // AI parses are higher-fidelity than the regex fallback; surface that as confidence.
+    confidence: d.parsedBy === "ai" ? 92 : 75,
+  };
 }
 
 interface ProfileData {
@@ -191,6 +214,12 @@ function ResumeUploadStep({
   );
   const parsing = Boolean(uploadedResume) && parsingStatus !== "SUCCESS" && parsingStatus !== "FAILED";
 
+  // Real structured data extracted by the backend (AI, or heuristic fallback).
+  const { parsed: parsedData_ } = useParsedData(
+    uploadedResume?.id,
+    parsingStatus === "SUCCESS",
+  );
+
   const errorMsg = localError || uploadError;
   const parseSteps = ["Extracting text…", "Finding skills…", "Parsing experience…", "Extracting education…"];
   // Cosmetic only: the backend reports a single status, not per-stage progress.
@@ -208,25 +237,13 @@ function ResumeUploadStep({
     await upload(f, f.name.replace(/\.(pdf|docx)$/i, ""));
   };
 
-  /**
-   * TODO(backend): no endpoint returns ParsedResumeData, so the extracted
-   * details shown in the next steps are still placeholders. The upload itself
-   * is real — only this projection is mocked. See resume.api.ts getParsedData.
-   */
+  // Project the real parsed data into the wizard once both parsing has settled
+  // SUCCESS and the parsed-data fetch has returned.
   useEffect(() => {
-    if (parsingStatus !== "SUCCESS") return;
-    onSetParsedData({
-      skills: ["Python", "SQL", "AWS", "Docker", "Kubernetes", "TypeScript", "React", "Node.js", "CI/CD", "Git", "Agile", "REST APIs"],
-      experience: [
-        { title: "Senior Software Engineer", company: "DataTech Systems", years: "2022–Present" },
-        { title: "Software Engineer", company: "Innovate Labs", years: "2020–2022" },
-        { title: "Junior Developer", company: "ByteSized Co.", years: "2018–2020" },
-      ],
-      education: "BS Computer Science — Stanford University",
-      confidence: 95,
-    });
+    if (parsingStatus !== "SUCCESS" || !parsedData_) return;
+    onSetParsedData(toWizardParsed(parsedData_));
     setSkipResume(false);
-  }, [parsingStatus, onSetParsedData, setSkipResume]);
+  }, [parsingStatus, parsedData_, onSetParsedData, setSkipResume]);
 
   const onDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();

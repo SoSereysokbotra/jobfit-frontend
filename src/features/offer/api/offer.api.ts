@@ -1,14 +1,20 @@
-import type { Job } from "@/shared/types/shared.types";
-import { MOCK_JOBS } from "@/features/job/api/job.mock";
-import type { BadgeVariant } from "@/shared/components/ui/badge";
+/**
+ * Offers & Decisions — backed by the live `offers` endpoints (JWT-scoped to the
+ * current user). Employers extend offers from the applicant pipeline; this feature
+ * lists them and drives accept / decline / negotiate.
+ *
+ * Note: market-benchmark data has no backend source, so `market` is optional and the
+ * card hides that section when it's absent (product decision — dropped for now).
+ */
 
-/* Offers & Decisions (FR-SALARY-001/002) — Path 3C of the User Flows Guide.
-   An offer wraps a Job with the full compensation package plus the user's
-   decision state (status, deadline, notes). */
+import type { Job } from "@/shared/types/shared.types";
+import type { BadgeVariant } from "@/shared/components/ui/badge";
+import { apiClient } from "@/lib/api/client";
+import { daysSince, initialsFrom, logoBgFor, toSalaryK } from "@/lib/utils/format";
 
 export type OfferStatus = "New" | "Reviewing" | "Negotiating" | "Accepted" | "Rejected";
 
-/** Market salary benchmark for the role/location (percentile breakpoints). */
+/** Market salary benchmark (optional — no backend source today). */
 export interface MarketBenchmark {
   p25: number;
   p50: number;
@@ -21,23 +27,18 @@ export interface Offer {
   job: Job;
   status: OfferStatus;
   receivedDaysAgo: number;
-  /** Days until the offer deadline (drives the countdown). */
   deadlineInDays: number;
-  /** Human start date, e.g. "Aug 4". */
   startDate: string;
-  /** Base salary in whole dollars/year. */
   baseSalary: number;
   signingBonus?: number;
-  /** Target annual bonus as a percentage of base. */
   annualBonusPct?: number;
-  /** Equity grant. */
   stockShares?: number;
   stockPrice?: number;
-  market: MarketBenchmark;
+  /** Absent when no benchmark is available. */
+  market?: MarketBenchmark;
   notes: string;
 }
 
-/** Active = still being decided; Past = archived history. */
 export const ACTIVE_STATUSES: OfferStatus[] = ["New", "Reviewing", "Negotiating"];
 export const PAST_STATUSES: OfferStatus[] = ["Accepted", "Rejected"];
 
@@ -50,110 +51,122 @@ export const OFFER_STATUS_CONFIG: Record<OfferStatus, { label: string; badge: Ba
 };
 
 /* ── Compensation math ──────────────────────────────────────── */
-
-/** Estimated target annual bonus in dollars. */
 export function annualBonusValue(offer: Offer): number {
   return offer.annualBonusPct ? (offer.baseSalary * offer.annualBonusPct) / 100 : 0;
 }
-
-/** Estimated equity value per year (grant spread across a 4-year vest). */
 export function annualEquityValue(offer: Offer): number {
   if (!offer.stockShares || !offer.stockPrice) return 0;
   return (offer.stockShares * offer.stockPrice) / 4;
 }
-
-/**
- * Year-one total compensation: base + signing bonus + target annual bonus.
- * Equity is excluded from year 1 (standard 1-year cliff), matching the guide.
- */
 export function yearOneComp(offer: Offer): number {
   return offer.baseSalary + (offer.signingBonus ?? 0) + annualBonusValue(offer);
 }
 
-const byId = (id: string): Job => {
-  const job = MOCK_JOBS.find((j) => j.id === id);
-  if (!job) throw new Error(`Unknown mock job id: ${id}`);
-  return job;
+/* ── Backend contract ───────────────────────────────────────── */
+type BackendOfferStatus = "EXTENDED" | "NEGOTIATING" | "ACCEPTED" | "DECLINED" | "WITHDRAWN";
+
+interface OfferDto {
+  id: string;
+  applicationId: string;
+  status: BackendOfferStatus;
+  baseSalary: number;
+  currency: string;
+  signingBonus: number | null;
+  annualBonusPct: number | null;
+  equityShares: number | null;
+  equityPrice: number | null;
+  startDate: string | null;
+  responseDeadline: string | null;
+  notes: string | null;
+  createdAt: string;
+  decidedAt: string | null;
+  job: {
+    id: string;
+    title: string;
+    companyName: string | null;
+    location: string | null;
+    remoteType: string;
+    minSalary: number | null;
+    maxSalary: number | null;
+  };
+}
+
+const STATUS_MAP: Record<BackendOfferStatus, OfferStatus> = {
+  EXTENDED: "New",
+  NEGOTIATING: "Negotiating",
+  ACCEPTED: "Accepted",
+  DECLINED: "Rejected",
+  WITHDRAWN: "Rejected",
 };
 
-/* Mock offers — reuse the shared job dataset so the dashboard, /applications
-   and /offers stay consistent (HealthHub offer matches the Applications one). */
-export const MOCK_OFFERS: Offer[] = [
-  {
-    id: "o1",
-    job: byId("j6"), // HealthHub — Product Designer
-    status: "New",
-    receivedDaysAgo: 2,
-    deadlineInDays: 5,
-    startDate: "Aug 18",
-    baseSalary: 135000,
-    signingBonus: 10000,
-    annualBonusPct: 12,
-    stockShares: 400,
-    stockPrice: 60,
-    market: { p25: 120000, p50: 135000, p75: 150000, p90: 165000 },
-    notes: "Base is at market median — ask about equity refresh before responding.",
-  },
-  {
-    id: "o2",
-    job: byId("j5"), // CloudBase — DevOps Lead
-    status: "Negotiating",
-    receivedDaysAgo: 6,
-    deadlineInDays: 2,
-    startDate: "Aug 4",
-    baseSalary: 175000,
-    signingBonus: 15000,
-    annualBonusPct: 20,
-    stockShares: 1000,
-    stockPrice: 100,
-    market: { p25: 150000, p50: 165000, p75: 185000, p90: 205000 },
-    notes: "Countered at $185K citing 75th-percentile market data. Waiting to hear back.",
-  },
-  {
-    id: "o3",
-    job: byId("j12"), // GreenGrid — Full-Stack Engineer
-    status: "Reviewing",
-    receivedDaysAgo: 4,
-    deadlineInDays: 9,
-    startDate: "Sep 1",
-    baseSalary: 140000,
-    annualBonusPct: 15,
-    stockShares: 600,
-    stockPrice: 45,
-    market: { p25: 125000, p50: 140000, p75: 158000, p90: 175000 },
-    notes: "",
-  },
-  {
-    id: "o4",
-    job: byId("j9"), // Nexus AI — Machine Learning Engineer
-    status: "Accepted",
-    receivedDaysAgo: 40,
-    deadlineInDays: -12,
-    startDate: "Jul 7",
-    baseSalary: 190000,
-    signingBonus: 20000,
-    annualBonusPct: 18,
-    stockShares: 1200,
-    stockPrice: 110,
-    market: { p25: 165000, p50: 185000, p75: 210000, p90: 235000 },
-    notes: "Negotiated base from $180K to $190K. Team culture was the deciding factor.",
-  },
-  {
-    id: "o5",
-    job: byId("j7"), // FinEdge — Frontend Developer (Contract)
-    status: "Rejected",
-    receivedDaysAgo: 30,
-    deadlineInDays: -20,
-    startDate: "—",
-    baseSalary: 105000,
-    annualBonusPct: 0,
-    market: { p25: 100000, p50: 115000, p75: 130000, p90: 145000 },
-    notes: "Below market and contract-only. Declined in favour of full-time roles.",
-  },
-];
+const REMOTE_LABEL: Record<string, Job["remote"]> = {
+  REMOTE: "Remote",
+  HYBRID: "Hybrid",
+  ON_SITE: "On-site",
+  ONSITE: "On-site",
+};
 
-/** Simulated network fetch for the user's offers. */
+function daysUntil(iso: string | null): number {
+  if (!iso) return 14; // no deadline set — soft default for the countdown
+  return Math.ceil((new Date(iso).getTime() - Date.now()) / 86_400_000);
+}
+
+function shortDate(iso: string | null): string {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? "—" : d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+/** Build the offer's Job view from the embedded (minimal) job projection. */
+function jobOf(j: OfferDto["job"]): Job {
+  return {
+    id: j.id,
+    title: j.title,
+    company: j.companyName?.trim() || "Company",
+    logo: initialsFrom(j.companyName ?? j.title),
+    logoBg: logoBgFor(j.id),
+    location: j.location?.trim() || (REMOTE_LABEL[j.remoteType] === "Remote" ? "Remote" : "—"),
+    salaryMin: toSalaryK(j.minSalary ?? undefined),
+    salaryMax: toSalaryK(j.maxSalary ?? undefined),
+    match: 0,
+    type: "Full-time",
+    remote: REMOTE_LABEL[(j.remoteType ?? "").toUpperCase()] ?? "On-site",
+    level: "Mid-level",
+    industry: "Technology",
+    postedDaysAgo: 0,
+    description: "",
+  };
+}
+
+export function toOffer(dto: OfferDto): Offer {
+  return {
+    id: dto.id,
+    job: jobOf(dto.job),
+    status: STATUS_MAP[dto.status] ?? "New",
+    receivedDaysAgo: daysSince(dto.createdAt),
+    deadlineInDays: daysUntil(dto.responseDeadline),
+    startDate: shortDate(dto.startDate),
+    baseSalary: dto.baseSalary,
+    signingBonus: dto.signingBonus ?? undefined,
+    annualBonusPct: dto.annualBonusPct ?? undefined,
+    stockShares: dto.equityShares ?? undefined,
+    stockPrice: dto.equityPrice ?? undefined,
+    market: undefined, // TODO(backend): no salary-benchmark source
+    notes: dto.notes ?? "",
+  };
+}
+
+export const offerApi = {
+  /** GET /offers → the current user's offers. */
+  list: () => apiClient.get<OfferDto[]>("/offers"),
+  accept: (id: string) => apiClient.post<OfferDto>(`/offers/${id}/accept`),
+  decline: (id: string) => apiClient.post<OfferDto>(`/offers/${id}/decline`),
+  negotiate: (id: string, notes: string) =>
+    apiClient.post<OfferDto>(`/offers/${id}/negotiate`, { notes }),
+};
+
+/** The user's offers, mapped to the view model. Keeps the old call-site name. */
 export async function fetchOffers(): Promise<Offer[]> {
-  await new Promise((r) => setTimeout(r, 600));
-  return MOCK_OFFERS;
+  const dtos = await offerApi.list();
+  return dtos.map(toOffer);
 }
