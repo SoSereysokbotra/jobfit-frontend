@@ -53,10 +53,7 @@ export default function LoginPage() {
   };
 
   return (
-    <AuthShell
-      quote="Choose a job you love, and you will never have to work a day in your life."
-      author="Confucius"
-    >
+    <AuthShell>
       {isLocked ? (
         /* ACCOUNT LOCKED — the backend locks after repeated failures and unlocks
            on its own timer. TODO(backend): no self-serve unlock endpoint exists
@@ -173,19 +170,21 @@ export default function LoginPage() {
           {/* DIVIDER */}
           <div className="relative my-4">
             <div className="absolute inset-0 flex items-center" aria-hidden="true">
-              <div className="w-full border-t border-neutral-200" />
+              <div className="w-full border-t" style={{ borderColor: "var(--color-border)" }} />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-white px-3 text-neutral-500">Or continue with</span>
+              <span
+                className="px-3"
+                style={{ background: "var(--color-card)", color: "var(--color-text-tertiary)" }}
+              >
+                Or continue with
+              </span>
             </div>
           </div>
 
           {/* TODO(backend): no OAuth endpoints exist. Kept visible but disabled
               rather than removed, so the UI is ready when they land. */}
-          <SocialAuthButtons onGoogle={() => {}} onLinkedIn={() => {}} disabled />
-          <p className="text-center text-xs text-neutral-400 mt-2">
-            Social sign-in is coming soon.
-          </p>
+          <SocialAuthButtons onGoogle={() => { }} onLinkedIn={() => { }} disabled />
 
           {/* SIGN UP LINK */}
           <div className="text-center text-xs mt-4">

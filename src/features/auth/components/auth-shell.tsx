@@ -1,52 +1,135 @@
 import React from "react";
 
 interface AuthShellProps {
-  /** Motivational quote shown in the branding panel. */
-  quote: string;
+  /** Motivational quote shown beneath the form card. */
+  quote?: string;
   /** Attribution for the quote. */
-  author: string;
-  /** Form content rendered in the right panel (already width-constrained). */
+  author?: string;
+  /** Form content rendered inside the centered card. */
   children: React.ReactNode;
 }
 
 /**
- * Split-screen auth layout: branded gradient panel on the left, form on the
- * right. Shared by every page under (auth) so branding stays identical.
+ * Full-screen auth layout: a fixed gradient + orb layer sits behind a
+ * separate scrollable layer that holds the centered card.
+ * Splitting them prevents the "orb slides over card" artifact on scroll.
+ * All colors/shadows use only the tokens defined in globals.css.
  */
 export function AuthShell({ quote, author, children }: AuthShellProps) {
   return (
-    <div className="min-h-screen w-full flex flex-col md:flex-row bg-white font-sans overflow-hidden">
-      {/* LEFT — BRANDING */}
+    <>
+      {/* ── LAYER 1: fixed background — never moves during scroll ── */}
       <div
-        className="w-full md:w-1/2 p-8 md:p-16 flex flex-col items-center justify-center text-center text-white relative min-h-screen"
-        style={{ background: "linear-gradient(135deg, var(--color-primary-900), var(--color-primary-800), var(--color-primary-700))" }}
+        className="fixed inset-0 pointer-events-none"
+        style={{
+          background:
+            "linear-gradient(135deg, var(--color-primary-900) 0%, var(--color-primary-800) 40%, var(--color-primary-700) 70%, var(--color-primary-600) 100%)",
+          zIndex: 0,
+        }}
       >
-        <div className="relative z-10 flex flex-col items-center max-w-sm">
-          <img
-            src="/logo.png"
-            alt="JobFits Logo"
-            className="w-32 h-32 rounded-full border-2 border-on-primary-border shadow-2xl bg-on-primary-surface backdrop-blur-sm p-4 object-contain hover:scale-105 transition-transform duration-300"
-          />
-          <h1 className="text-3xl font-extrabold tracking-tight text-on-primary mt-6">JobFits</h1>
-          <p className="text-sm text-primary-200 mt-2">Discover your perfect career matches</p>
+        {/* decorative blur orbs */}
+        <div
+          className="absolute top-0 right-0 w-96 h-96 rounded-full"
+          style={{
+            background: "var(--color-primary-500)",
+            filter: "blur(120px)",
+            opacity: 0.18,
+          }}
+        />
+        <div
+          className="absolute bottom-0 left-0 w-80 h-80 rounded-full"
+          style={{
+            background: "var(--color-primary-400)",
+            filter: "blur(100px)",
+            opacity: 0.14,
+          }}
+        />
+        <div
+          className="absolute top-1/2 left-1/4 w-64 h-64 rounded-full"
+          style={{
+            background: "var(--color-primary-300)",
+            filter: "blur(140px)",
+            opacity: 0.10,
+          }}
+        />
+      </div>
 
-          <div className="w-16 h-0.5 bg-on-primary-border my-8 rounded" />
-
-          <blockquote className="space-y-2">
-            <p className="text-base italic text-primary-100 font-medium leading-relaxed">
-              &ldquo;{quote}&rdquo;
+      {/* ── LAYER 2: scrollable content wrapper ── */}
+      <div
+        className="relative min-h-screen w-full flex flex-col items-center justify-center py-8 px-4 sm:px-6 font-sans"
+        style={{ zIndex: 1 }}
+      >
+        {/* ── centered card ── */}
+        <div
+          className="w-full max-w-md rounded-2xl p-8 sm:p-10 animate-slide-up"
+          style={{
+            background: "var(--color-card)",
+            boxShadow: "var(--shadow-xl)",
+            border: "1px solid var(--color-border)",
+          }}
+        >
+          {/* ── brand header ── */}
+          <div className="flex flex-col items-center mb-8">
+            <img
+              src="/logo.png"
+              alt="JobFits Logo"
+              className="w-16 h-16 rounded-xl object-contain transition-transform duration-300 hover:scale-105"
+              style={{
+                background: "linear-gradient(135deg, var(--color-primary-900), var(--color-primary-700))",
+                padding: "var(--spacing-sm)",
+                boxShadow: "var(--shadow-lg)",
+              }}
+            />
+            <h1
+              className="mt-4 text-xl font-extrabold tracking-tight"
+              style={{ color: "var(--color-primary-900)" }}
+            >
+              JobFits
+            </h1>
+            <p
+              className="mt-1 text-xs font-medium"
+              style={{ color: "var(--color-text-tertiary)" }}
+            >
+              Discover your perfect career matches
             </p>
-            <cite className="block text-xs font-semibold text-primary-300 not-italic uppercase tracking-wider">
-              — {author}
-            </cite>
-          </blockquote>
+
+            {/* gradient accent rule */}
+            <div
+              className="mt-5 w-12 h-px rounded"
+              style={{
+                background: "linear-gradient(to right, var(--color-primary-500), transparent)",
+              }}
+            />
+          </div>
+
+          {/* ── page-specific form content ── */}
+          <div className="space-y-5">{children}</div>
+
+          {/* ── optional motivational quote ── */}
+          {quote && (
+            <blockquote
+              className="mt-8 pt-6 text-center space-y-1"
+              style={{ borderTop: "1px solid var(--color-border)" }}
+            >
+              <p
+                className="text-xs italic leading-relaxed"
+                style={{ color: "var(--color-text-tertiary)" }}
+              >
+                &ldquo;{quote}&rdquo;
+              </p>
+              {author && (
+                <cite
+                  className="block text-xs font-semibold not-italic uppercase tracking-widest"
+                  style={{ color: "var(--color-text-disabled)" }}
+                >
+                  — {author}
+                </cite>
+              )}
+            </blockquote>
+          )}
         </div>
       </div>
-
-      {/* RIGHT — FORM */}
-      <div className="w-full md:w-1/2 bg-white flex flex-col justify-center items-center p-8 sm:p-12 md:p-16 min-h-screen">
-        <div className="w-full max-w-md space-y-6">{children}</div>
-      </div>
-    </div>
+    </>
   );
 }
+
