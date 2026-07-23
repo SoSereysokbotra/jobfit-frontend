@@ -125,9 +125,9 @@ function StepIndicator({ current }: { current: Step }) {
   return (
     <div className="w-full max-w-2xl mx-auto mb-8 px-4">
       {/* Tracker headers */}
-      <div className="flex justify-between items-center text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-3">
+      <div className="relative flex items-center justify-center text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-3">
         <span>Onboarding Progress</span>
-        <span>Step {current} of 3</span>
+        <span className="absolute right-0">Step {current} of 3</span>
       </div>
       {/* Tracker Visual */}
       <div className="flex items-center justify-between relative">
@@ -285,7 +285,7 @@ function ResumeUploadStep({
           upload and parsing status are real now. */}
       {!isSkipping ? (
         <>
-          <div>
+          <div className="text-center">
             <h2 className="text-2xl font-bold text-neutral-900 tracking-tight">Let&apos;s get you started – upload your resume</h2>
             <p className="text-sm text-neutral-500 mt-1">
               We&apos;ll analyze it to find better matches
@@ -1510,13 +1510,11 @@ export default function OnboardingResumePage() {
         {/* Logo & Brand */}
         <div className="text-center mb-6">
           <div className="inline-flex items-center gap-3 mb-3">
-            <div className="w-12 h-12 rounded-xl bg-white shadow-lg flex items-center justify-center p-1.5 border border-white/25">
-              <img
+            <img
                 src="/logo.png"
                 alt="JobFits Logo"
-                className="w-full h-full object-contain"
+                className="w-12 h-12 rounded-full object-cover shadow-lg"
               />
-            </div>
             <span className="text-xl font-extrabold text-white tracking-tight">JobFits</span>
           </div>
           {/* Step Quote */}

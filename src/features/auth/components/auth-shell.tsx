@@ -73,10 +73,8 @@ export function AuthShell({ quote, author, children }: AuthShellProps) {
             <img
               src="/logo.png"
               alt="JobFits Logo"
-              className="w-16 h-16 rounded-xl object-contain transition-transform duration-300 hover:scale-105"
+              className="w-16 h-16 rounded-full object-cover transition-transform duration-300 hover:scale-105"
               style={{
-                background: "linear-gradient(135deg, var(--color-primary-900), var(--color-primary-700))",
-                padding: "var(--spacing-sm)",
                 boxShadow: "var(--shadow-lg)",
               }}
             />

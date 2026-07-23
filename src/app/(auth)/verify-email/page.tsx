@@ -157,9 +157,11 @@ function VerifyEmailContent() {
 
       {/* Logo at top */}
       <div className="relative z-10 flex flex-col items-center mb-8">
-        <div className="w-14 h-14 rounded-xl bg-white shadow-lg flex items-center justify-center p-1.5 border border-white/25 mb-3 hover:scale-105 transition-transform duration-300">
-          <img src="/logo.png" alt="JobFits Logo" className="w-full h-full object-contain" />
-        </div>
+        <img
+            src="/logo.png"
+            alt="JobFits Logo"
+            className="w-14 h-14 rounded-full object-cover shadow-lg mb-3 hover:scale-105 transition-transform duration-300"
+          />
         <span className="text-lg font-extrabold text-white tracking-tight">JobFits</span>
       </div>
 
