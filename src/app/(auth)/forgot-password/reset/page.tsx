@@ -35,21 +35,21 @@ export default function ForgotPasswordResetPage() {
   const passwordTooShort = password.length > 0 && password.length < 8;
   const passwordsMatch = password === confirmPassword;
 
-  // Auto-redirect to /login after success
+  // Auto-redirect to /login after success. The interval only decrements the
+  // countdown; navigation happens in a separate effect that reacts to it hitting
+  // zero — calling router.push() inside the setState updater navigates during
+  // render, which React rejects ("Cannot update Router while rendering …").
   useEffect(() => {
     if (!success) return;
     const timer = setInterval(() => {
-      setCountdown((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          router.push("/login");
-          return 0;
-        }
-        return prev - 1;
-      });
+      setCountdown((prev) => (prev <= 1 ? 0 : prev - 1));
     }, 1000);
     return () => clearInterval(timer);
-  }, [success, router]);
+  }, [success]);
+
+  useEffect(() => {
+    if (success && countdown === 0) router.push("/login");
+  }, [success, countdown, router]);
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
