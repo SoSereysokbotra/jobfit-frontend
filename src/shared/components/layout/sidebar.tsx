@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/providers/auth-provider";
 import { useSidebarCollapsed } from "@/stores/ui-store";
+import { useSession, displayName } from "@/features/auth/hooks/use-session";
 
 export interface SidebarMenuGroup {
   group: string;
@@ -90,7 +91,13 @@ export default function Sidebar({
   ];
 
   const groupsToRender = menuGroups || defaultMenuGroups;
-  const displayUser = user || { name: "John Doe", email: "john@example.com", initials: "JD" };
+  
+  const { user: authUser } = useSession();
+  const fallbackUser = authUser 
+    ? { name: displayName(authUser).fullName || "User", email: authUser.email, initials: displayName(authUser).initials }
+    : { name: "John Doe", email: "john@example.com", initials: "JD" };
+
+  const displayUser = user || fallbackUser;
 
   // Defaults to the real session logout (revokes the refresh token and clears
   // the in-memory access token); callers can still override it.

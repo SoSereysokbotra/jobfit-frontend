@@ -74,9 +74,6 @@ export default function TopNav({ onMenuToggle, className = "", user }: TopNavPro
       {/* Spacer for desktop */}
       <div className="hidden md:block flex-1" />
 
-      {/* Notifications */}
-      <NotificationBell />
-
       {/* User Avatar */}
       <Link href="/profile">
         <div
