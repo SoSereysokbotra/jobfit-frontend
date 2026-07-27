@@ -118,7 +118,7 @@
                 0 8px 10px -6px rgba(36, 0, 70, 0.06);
 
   /* ─── TYPOGRAPHY ────────────────────────────────────────── */
-  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-family: var(--font-rubik), 'Rubik', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 
   --font-size-xs:   0.75rem;
   --font-size-sm:   0.875rem;

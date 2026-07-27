@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Rubik } from "next/font/google";
 import "./globals.css";
 import { QueryProvider } from "@/providers/query-provider";
 import { AuthProvider } from "@/providers/auth-provider";
 
-const inter = Inter({
+const rubik = Rubik({
   subsets: ["latin"],
   display: "swap",
-  variable: "--font-inter",
+  variable: "--font-rubik",
 });
 
 export const metadata: Metadata = {
@@ -22,7 +22,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={inter.variable}>
+    <html lang="en" className={rubik.variable}>
       <body style={{ fontFamily: "var(--font-family)" }}>
         {/* QueryProvider wraps AuthProvider: the auth provider itself uses
             useQuery/useQueryClient for /auth/me. */}
