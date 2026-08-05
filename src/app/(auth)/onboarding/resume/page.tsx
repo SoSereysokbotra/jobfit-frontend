@@ -45,7 +45,8 @@ interface ParsedResume {
   skills: string[];
   experience: { title: string; company: string; years: string }[];
   education: string;
-  confidence: number;
+  projects: { name: string; years: string; technologies: string[] }[];
+  parsedBy?: string;
 }
 
 /** Map the backend's parsed-data DTO onto this wizard's ParsedResume shape. */
@@ -62,8 +63,14 @@ function toWizardParsed(d: ParsedResumeDataDto): ParsedResume {
         .map((ed) => [ed.degree, ed.institution].filter(Boolean).join(" — "))
         .filter(Boolean)
         .join("; ") || "—",
-    // AI parses are higher-fidelity than the regex fallback; surface that as confidence.
-    confidence: d.parsedBy === "ai" ? 92 : 75,
+    // On student CVs this is where the real technical signal lives — the SKILLS
+    // section is often soft skills only.
+    projects: (d.projects ?? []).map((p) => ({
+      name: p.name || "—",
+      years: p.dates ?? "",
+      technologies: p.technologies ?? [],
+    })),
+    parsedBy: d.parsedBy,
   };
 }
 
@@ -273,7 +280,6 @@ function ResumeUploadStep({
         ...parsedData,
         skills: skillsArray,
         education: editEducation,
-        confidence: 85 // Boost confidence on manual validation
       });
     }
     onNext();
@@ -486,8 +492,11 @@ function ResumeUploadStep({
               <div className="bg-green-50 px-4 py-3 flex items-center gap-2 border-b border-green-100">
                 <CheckCircle2 className="w-5 h-5 text-green-600" />
                 <span className="text-sm font-semibold text-green-800">Resume parsed successfully</span>
+                {/* Says which pipeline produced this, not a confidence score. The old
+                    badge showed a hardcoded "92%" that was never measured — it read 92%
+                    over a parse that got most fields wrong. */}
                 <span className="ml-auto text-xs text-green-700 font-bold bg-green-100 px-2.5 py-0.5 rounded-full border border-green-200">
-                  {parsedData.confidence}% confidence
+                  {parsedData.parsedBy === "ai" ? "AI-parsed" : "Basic parse"}
                 </span>
               </div>
               
@@ -559,13 +568,39 @@ function ResumeUploadStep({
                         <div key={idx} className="flex justify-between items-start text-xs py-1 border-b border-neutral-100 last:border-0">
                           <div>
                             <span className="font-semibold text-neutral-800">{exp.title}</span>
-                            <span className="text-neutral-500"> at {exp.company}</span>
+                            {/* Many CVs never name the employer; don't render a dangling "at". */}
+                            {exp.company && <span className="text-neutral-500"> at {exp.company}</span>}
                           </div>
                           <span className="text-neutral-400 shrink-0 ml-2 font-mono">{exp.years}</span>
                         </div>
                       ))}
                     </div>
                   </div>
+                  {/* Hidden when empty: plenty of CVs have no projects section. */}
+                  {parsedData.projects.length > 0 && (
+                    <div>
+                      <p className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider mb-2">Projects ({parsedData.projects.length})</p>
+                      <div className="space-y-2.5">
+                        {parsedData.projects.map((proj, idx) => (
+                          <div key={idx} className="text-xs py-1 border-b border-neutral-100 last:border-0">
+                            <div className="flex justify-between items-start">
+                              <span className="font-semibold text-neutral-800">{proj.name}</span>
+                              <span className="text-neutral-400 shrink-0 ml-2 font-mono">{proj.years}</span>
+                            </div>
+                            {proj.technologies.length > 0 && (
+                              <div className="flex flex-wrap gap-1 mt-1.5">
+                                {proj.technologies.map((t) => (
+                                  <span key={t} className="text-[11px] font-semibold text-neutral-700 bg-neutral-100 border border-neutral-200 rounded px-1.5 py-0.5">
+                                    {t}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                   <div>
                     <p className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider mb-1">Education</p>
                     <p className="text-xs text-neutral-700 font-medium">{parsedData.education}</p>

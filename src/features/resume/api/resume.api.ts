@@ -68,9 +68,22 @@ export interface ParsedResumeDataDto {
   skills: string[];
   experiences: { company: string; title: string; dates?: string }[];
   educations: { institution: string; degree: string; dates?: string }[];
+  /**
+   * Personal/academic/technical work, separate from employment. On student CVs this is
+   * where most of the technical signal lives — the SKILLS section is often soft skills
+   * only. Optional so a response from an older backend still parses.
+   */
+  projects?: {
+    name: string;
+    description?: string;
+    dates?: string;
+    technologies: string[];
+  }[];
   certifications: string[];
   /** Which pipeline produced the data — "ai" (Qwen) or "heuristic" (regex fallback). */
   parsedBy?: "ai" | "heuristic";
+  /** Which resume_parse_<v>.txt prompt produced this parse. */
+  promptVersion?: string;
 }
 
 /** Client-side guard so an oversized/wrong file never costs an upload round-trip. */
