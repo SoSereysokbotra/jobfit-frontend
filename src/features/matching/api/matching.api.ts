@@ -19,7 +19,34 @@ export interface RecommendedJobDto extends JobDto {
   breakdown?: Record<string, number>;
 }
 
+/** Why a skill gap may be empty — an empty `missing` list means different things. */
+export type SkillGapStatus = "OK" | "JOB_HAS_NO_REQUIREMENTS" | "NO_PARSED_RESUME";
+
+/** Whether the requirements are the employer's own words or the model's reading. */
+export type RequirementsSource = "EMPLOYER" | "AI_EXTRACTED" | "NONE";
+
+export interface SkillGapDto {
+  status: SkillGapStatus;
+  requirementsSource: RequirementsSource;
+  requirements: { text: string; matchedSkills: string[] }[];
+  /** Requirements with no supporting skill — what the user should act on. */
+  missing: string[];
+  matchedCount: number;
+  skillsConsidered: string[];
+}
+
 export const matchingApi = {
+  /**
+   * Which of a job's stated requirements the user's résumé does not evidence.
+   *
+   * Deliberately carries NO match percentage: the LLM fitScore was measured as
+   * uncorrelated with real fit, so the backend serves only the requirement lists.
+   */
+  skillGap: (jobId: string): Promise<SkillGapDto> =>
+    apiClient.get<SkillGapDto>(
+      `/recommendations/skill-gap?jobId=${encodeURIComponent(jobId)}`,
+    ),
+
   /** Recommended jobs for the current user, ranked by match score. */
   recommendations: async (): Promise<Job[]> => {
     const dtos = await apiClient.get<RecommendedJobDto[]>("/recommendations");

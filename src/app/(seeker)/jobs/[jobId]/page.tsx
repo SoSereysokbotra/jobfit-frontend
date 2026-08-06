@@ -11,6 +11,7 @@ import {
   JobRelatedList,
 } from "@/features/job/components";
 import { ApplyButton } from "@/features/application/components/apply-button";
+import { SkillGapPanel } from "@/features/matching/components/skill-gap-panel";
 
 export default async function JobDetailPage({
   params,
@@ -60,6 +61,8 @@ export default async function JobDetailPage({
                   externalUrl={job.externalUrl}
                 />
               </div>
+
+              <SkillGapPanel jobId={job.id} />
 
               <MatchScoreWidget job={job} />
 

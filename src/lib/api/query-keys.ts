@@ -121,6 +121,7 @@ export const qk = {
     recommendations: (filters: Record<string, unknown> = {}) =>
       [...qk.matching.all, "recommendations", filters] as const,
     breakdown: (jobId: string) => [...qk.matching.all, "breakdown", jobId] as const,
+    skillGap: (jobId: string) => [...qk.matching.all, "skill-gap", jobId] as const,
   },
 
   /** TODO(backend): no billing backend. */
