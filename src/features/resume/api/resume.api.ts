@@ -66,7 +66,13 @@ export interface ParsedResumeDataDto {
   location?: string;
   summary?: string;
   skills: string[];
-  experiences: { company: string; title: string; dates?: string }[];
+  experiences: {
+    company: string;
+    title: string;
+    dates?: string;
+    /** The role's bullet points — the concrete achievements a CV is judged on. */
+    highlights?: string[];
+  }[];
   educations: { institution: string; degree: string; dates?: string }[];
   /**
    * Personal/academic/technical work, separate from employment. On student CVs this is

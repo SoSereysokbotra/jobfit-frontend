@@ -43,9 +43,16 @@ type Step = 1 | 2 | 3;
 
 interface ParsedResume {
   skills: string[];
-  experience: { title: string; company: string; years: string }[];
+  experience: {
+    title: string;
+    company: string;
+    years: string;
+    highlights: string[];
+  }[];
   education: string;
+  educations: { degree: string; institution: string; years: string }[];
   projects: { name: string; years: string; technologies: string[] }[];
+  summary?: string;
   parsedBy?: string;
 }
 
@@ -57,12 +64,22 @@ function toWizardParsed(d: ParsedResumeDataDto): ParsedResume {
       title: e.title || "—",
       company: e.company || "",
       years: e.dates ?? "",
+      highlights: e.highlights ?? [],
     })),
+    // Kept for the editable low-confidence view, which edits education as free text.
     education:
       (d.educations ?? [])
         .map((ed) => [ed.degree, ed.institution].filter(Boolean).join(" — "))
         .filter(Boolean)
         .join("; ") || "—",
+    // Structured form, so the read-only view can show one row per qualification
+    // instead of a single run-on string.
+    educations: (d.educations ?? []).map((ed) => ({
+      degree: ed.degree || "—",
+      institution: ed.institution || "",
+      years: ed.dates ?? "",
+    })),
+    summary: d.summary,
     // On student CVs this is where the real technical signal lives — the SKILLS
     // section is often soft skills only.
     projects: (d.projects ?? []).map((p) => ({
@@ -549,8 +566,14 @@ function ResumeUploadStep({
                   </div>
                 </div>
               ) : (
-                /* HIGH CONFIDENCE READ-ONLY SUMMARY VIEW */
+                /* READ-ONLY SUMMARY VIEW */
                 <div className="p-5 space-y-4">
+                  {parsedData.summary && (
+                    <div>
+                      <p className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider mb-1">Summary</p>
+                      <p className="text-xs text-neutral-700 leading-relaxed">{parsedData.summary}</p>
+                    </div>
+                  )}
                   <div>
                     <p className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider mb-2">Skills ({parsedData.skills.length} found)</p>
                     <div className="flex flex-wrap gap-1.5">
@@ -563,15 +586,26 @@ function ResumeUploadStep({
                   </div>
                   <div>
                     <p className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider mb-2">Experience ({parsedData.experience.length} positions)</p>
-                    <div className="space-y-2">
+                    <div className="space-y-2.5">
                       {parsedData.experience.map((exp, idx) => (
-                        <div key={idx} className="flex justify-between items-start text-xs py-1 border-b border-neutral-100 last:border-0">
-                          <div>
-                            <span className="font-semibold text-neutral-800">{exp.title}</span>
-                            {/* Many CVs never name the employer; don't render a dangling "at". */}
-                            {exp.company && <span className="text-neutral-500"> at {exp.company}</span>}
+                        <div key={idx} className="text-xs py-1 border-b border-neutral-100 last:border-0">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <span className="font-semibold text-neutral-800">{exp.title}</span>
+                              {/* Many CVs never name the employer; don't render a dangling "at". */}
+                              {exp.company && <span className="text-neutral-500"> at {exp.company}</span>}
+                            </div>
+                            <span className="text-neutral-400 shrink-0 ml-2 font-mono">{exp.years}</span>
                           </div>
-                          <span className="text-neutral-400 shrink-0 ml-2 font-mono">{exp.years}</span>
+                          {/* The achievements the CV is actually judged on. These were
+                              parsed all along but dropped before reaching the client. */}
+                          {exp.highlights.length > 0 && (
+                            <ul className="mt-1 ml-3.5 space-y-0.5 list-disc marker:text-neutral-300">
+                              {exp.highlights.map((h, i) => (
+                                <li key={i} className="text-[11px] text-neutral-600 leading-relaxed">{h}</li>
+                              ))}
+                            </ul>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -602,8 +636,20 @@ function ResumeUploadStep({
                     </div>
                   )}
                   <div>
-                    <p className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider mb-1">Education</p>
-                    <p className="text-xs text-neutral-700 font-medium">{parsedData.education}</p>
+                    <p className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider mb-2">Education ({parsedData.educations.length})</p>
+                    {/* One row per qualification; the single joined string made two
+                        degrees read as one. */}
+                    <div className="space-y-1.5">
+                      {parsedData.educations.map((ed, idx) => (
+                        <div key={idx} className="flex justify-between items-start text-xs py-1 border-b border-neutral-100 last:border-0">
+                          <div>
+                            <span className="font-semibold text-neutral-800">{ed.degree}</span>
+                            {ed.institution && <span className="text-neutral-500"> — {ed.institution}</span>}
+                          </div>
+                          <span className="text-neutral-400 shrink-0 ml-2 font-mono">{ed.years}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
               )}
