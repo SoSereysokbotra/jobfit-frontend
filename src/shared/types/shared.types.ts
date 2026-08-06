@@ -34,6 +34,13 @@ export interface Job {
   matchBreakdown?: Record<string, number>;
   /** Human-readable "why this matched", when available. */
   matchReason?: string;
+  /**
+   * INTERNAL — apply inside JobFits. EXTERNAL — ingested from another site; the user must
+   * apply at `externalUrl`, and the server rejects in-app applications to it.
+   */
+  sourceType?: "INTERNAL" | "EXTERNAL";
+  /** The original posting, for EXTERNAL jobs. */
+  externalUrl?: string;
 }
 
 export function formatSalaryRange(job: Pick<Job, "salaryMin" | "salaryMax">): string {

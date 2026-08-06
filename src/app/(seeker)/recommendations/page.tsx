@@ -11,6 +11,7 @@ import { useJobSearch } from "@/features/job/hooks/use-job-search";
 import { useRecommendations } from "@/features/matching/hooks/use-recommendations";
 import { useSavedJobIds, useToggleSavedJob } from "@/features/saved-jobs/hooks/use-saved-jobs";
 import { useSubmitApplication } from "@/features/application/hooks/use-applications";
+import { isExternalApply, openExternalPosting } from "@/features/application/lib/external-apply";
 import { Alert } from "@/shared/components/feedback/alert";
 import { ApiError } from "@/lib/api/client";
 
@@ -31,6 +32,12 @@ export default function RecommendationsPage() {
   const [applyMsg, setApplyMsg] = useState<{ tone: "success" | "error"; text: string } | null>(null);
   const handleApply = (id: string) => {
     const job = recommendations.find((j) => j.id === id);
+    // EXTERNAL jobs can't be applied to here; the server rejects them. Send the user to
+    // the real posting instead of showing them an error.
+    if (isExternalApply(job)) {
+      setApplyMsg(openExternalPosting(job));
+      return;
+    }
     submitApplication.mutate(
       { jobId: id },
       {

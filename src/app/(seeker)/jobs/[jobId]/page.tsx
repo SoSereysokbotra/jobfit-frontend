@@ -54,7 +54,11 @@ export default async function JobDetailPage({
                 className="hidden lg:block p-4 rounded-lg border"
                 style={{ background: "var(--color-card)", borderColor: "var(--color-border)", boxShadow: "var(--shadow-sm)" }}
               >
-                <ApplyButton jobId={job.id} />
+                <ApplyButton
+                  jobId={job.id}
+                  sourceType={job.sourceType}
+                  externalUrl={job.externalUrl}
+                />
               </div>
 
               <MatchScoreWidget job={job} />
@@ -76,7 +80,11 @@ export default async function JobDetailPage({
           style={{ borderColor: "var(--color-border)" }}
         >
           <div className="flex-1">
-            <ApplyButton jobId={job.id} />
+            <ApplyButton
+                  jobId={job.id}
+                  sourceType={job.sourceType}
+                  externalUrl={job.externalUrl}
+                />
           </div>
           <button
             className="w-14 h-12 flex items-center justify-center rounded-md border-2 transition-all duration-200 hover:opacity-90 active:scale-[0.97]"

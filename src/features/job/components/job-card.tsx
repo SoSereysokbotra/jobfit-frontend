@@ -2,7 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { MapPin, DollarSign, Clock, Heart } from "lucide-react";
+import { MapPin, DollarSign, Clock, Heart, ExternalLink } from "lucide-react";
 import { cn } from "@/shared/utils/cn";
 import MatchScoreBadge from "@/shared/components/data-display/match-score-badge";
 import { formatPostedDate, formatSalaryRange, type Job } from "@/shared/types/shared.types";
@@ -80,6 +80,20 @@ export function JobCard({
       </span>
       <TypePill>{job.type}</TypePill>
       <TypePill tone="neutral">{job.remote}</TypePill>
+      {/* Set expectations before the user opens the job: applying to this one means
+          leaving JobFits, and the application can't be tracked here. */}
+      {job.sourceType === "EXTERNAL" && (
+        <span
+          className="inline-flex items-center gap-1 text-[11px] font-semibold px-1.5 py-0.5 rounded border"
+          style={{
+            color: "var(--color-text-tertiary)",
+            borderColor: "var(--color-border)",
+          }}
+          title="Posted on another site — you'll apply there"
+        >
+          <ExternalLink size={10} /> External
+        </span>
+      )}
     </div>
   );
 

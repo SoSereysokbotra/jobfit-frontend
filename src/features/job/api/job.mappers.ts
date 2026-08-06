@@ -51,6 +51,10 @@ export function toJobView(dto: JobDto): Job {
     requirements: dto.requirements ?? [],
     benefits: dto.benefits ?? [],
     bonusPct: dto.bonusPct ?? undefined,
+    // Decides "Apply Now" vs "Apply Externally". Absent on an older backend, in which case
+    // the job is treated as INTERNAL — the server stays the real gate either way.
+    sourceType: dto.sourceType,
+    externalUrl: dto.externalUrl,
   };
 }
 

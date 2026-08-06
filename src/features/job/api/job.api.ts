@@ -33,6 +33,15 @@ export interface JobDto {
   requirements?: string[];
   benefits?: string[];
   bonusPct?: number | null;
+  /**
+   * INTERNAL — apply inside JobFits. EXTERNAL — ingested from another site; the user must
+   * apply at `externalUrl`. The server REJECTS applications to EXTERNAL jobs, so the UI
+   * must send the user onward rather than showing an apply button that will fail.
+   * Optional so a response from an older backend still parses (treated as INTERNAL).
+   */
+  sourceType?: "INTERNAL" | "EXTERNAL";
+  /** The original posting, for EXTERNAL jobs. */
+  externalUrl?: string;
   createdAt: string;
   updatedAt: string;
 }
