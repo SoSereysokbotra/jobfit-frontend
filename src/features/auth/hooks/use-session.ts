@@ -68,7 +68,15 @@ export function useRequireAuth(options: RequireAuthOptions = {}): RequireAuthSta
   return { user, isLoading, isAuthenticated, isAllowed };
 }
 
-/** Landing route for a role — used after login and on wrong-area redirects. */
+/**
+ * Landing route for a role — used after login and on wrong-area redirects.
+ *
+ * The `default` arm is a safety net, not a normal path. An absent or unrecognised role
+ * silently landing on the seeker dashboard is what hid a real bug: a stale cached
+ * identity produced no role, this returned "/dashboard", and an employer was sent to the
+ * seeker area until they refreshed. Warn so the next occurrence is visible rather than
+ * looking like a routing quirk.
+ */
 export function homeForRole(role: UserRole): string {
   switch (role) {
     case "ADMIN":
@@ -76,7 +84,11 @@ export function homeForRole(role: UserRole): string {
     case "EMPLOYER":
       return "/employer/dashboard";
     case "JOB_SEEKER":
+      return "/dashboard";
     default:
+      console.warn(
+        `[auth] No landing route for role ${JSON.stringify(role)} — using the seeker home.`,
+      );
       return "/dashboard";
   }
 }

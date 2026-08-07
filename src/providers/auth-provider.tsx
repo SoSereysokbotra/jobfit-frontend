@@ -140,11 +140,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         { email, password },
         { skipAuth: true, skipRefresh: true },
       );
+      // A new identity must inherit NOTHING from the previous one.
+      //
+      // `logout` clears the cache, but a session can end without it — an expired token, a
+      // closed tab, or simply navigating to /login while signed in. The old user's data
+      // then survives, and every cached query is per-user: recommendations, applications,
+      // saved jobs, /auth/me itself.
+      //
+      // Concretely, this is why logging in as an employer landed on the SEEKER dashboard:
+      // `fetchQuery` honours staleTime (5 min here), so it returned the PREVIOUS user's
+      // cached /auth/me instead of fetching. `homeForRole` saw JOB_SEEKER and routed
+      // there. A refresh then re-fetched /auth/me for the real token, the layout guard
+      // saw EMPLOYER on a seeker route, and bounced to /employer/dashboard — which is
+      // exactly the "wrong page until I refresh" symptom.
+      queryClient.clear();
       setAccessToken(accessToken);
+
       // Fetch eagerly so callers can route on role without a second render pass.
+      // staleTime 0: never serve a cached identity to a login.
       const me = await queryClient.fetchQuery({
         queryKey: qk.auth.me(),
         queryFn: () => apiClient.get<AuthUser>("/auth/me"),
+        staleTime: 0,
       });
       return me;
     },
