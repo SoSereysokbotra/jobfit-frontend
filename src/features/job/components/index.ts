@@ -1,7 +1,6 @@
 export { JobCard } from "./job-card";
 export { JobSearchBar } from "./job-search-bar";
 export { JobFilters } from "./job-filters";
-export { MatchScoreWidget } from "./match-score-widget";
 export { JobDetailHeader } from "./job-detail-header";
 export { JobSalaryBadges } from "./job-salary-badges";
 export { JobDescriptionSections } from "./job-description-sections";

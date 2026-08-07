@@ -5,7 +5,6 @@ import { toJobView } from "@/features/job/api/job.mappers";
 import { ApiError } from "@/lib/api/client";
 import {
   JobDetailHeader,
-  MatchScoreWidget,
   JobDescriptionSections,
   JobCompanyInfo,
   JobRelatedList,
@@ -62,9 +61,12 @@ export default async function JobDetailPage({
                 />
               </div>
 
+              {/* MatchScoreWidget removed: it rendered a "Fair Match" percentage derived
+                  from job.match, which is hardcoded to 0 on this page, plus literal HTML
+                  claiming "React, TypeScript, and Node.js align perfectly" and "Missing
+                  GraphQL" for every job and every user. SkillGapPanel above answers the
+                  same question from real data. */}
               <SkillGapPanel jobId={job.id} />
-
-              <MatchScoreWidget job={job} />
 
               <div className="hidden lg:block">
                 <JobCompanyInfo job={job} />
