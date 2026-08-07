@@ -112,8 +112,20 @@ export interface ApplicantView {
   name: string;
   initials: string;
   email: string;
-  /** TODO(backend): match score depends on the AI service — 0 when unavailable. */
-  match: number;
+  /**
+   * Deterministic match score, or null when screening never ran. NOT the ranking signal —
+   * measured across a senior engineer and a graphic designer it moved only 50 → 46.
+   */
+  match: number | null;
+  /** How many of the job's stated requirements the résumé evidences. Ranks the list. */
+  requirementsCovered: number;
+  requirementsTotal: number;
+  /** Requirements with no supporting skill — what the employer should probe in interview. */
+  missing: string[];
+  /** Whether the employer wrote the requirements or AI read them from the description. */
+  requirementsSource: "EMPLOYER" | "AI_EXTRACTED" | "NONE";
+  /** False when screening never ran, so "0 of 0" is never mistaken for a bad candidate. */
+  screened: boolean;
   stage: ApplicationStage;
   status: ApplicationStatus;
   appliedAt: string;
@@ -129,7 +141,12 @@ export function toApplicantView(dto: EmployerApplicationDto): ApplicantView {
     name,
     initials: initialsFrom(name),
     email: dto.candidate.email,
-    match: dto.matchScore ?? 0,
+    match: dto.screening.matchScore,
+    requirementsCovered: dto.screening.requirementsCovered,
+    requirementsTotal: dto.screening.requirementsTotal,
+    missing: dto.screening.missingRequirements,
+    requirementsSource: dto.screening.requirementsSource,
+    screened: dto.screening.screenedAt !== null,
     stage: STATUS_TO_STAGE[dto.status] ?? "Applied",
     status: dto.status,
     appliedAt: postedLabel(dto.appliedAt),

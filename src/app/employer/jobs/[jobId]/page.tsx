@@ -131,7 +131,7 @@ export default function EmployerJobDetailPage() {
                     <p className="text-sm font-bold truncate text-content">{a.name}</p>
                     <p className="text-xs text-content-tertiary">{a.email} · {a.appliedAt}</p>
                   </div>
-                  {a.match > 0 && <span className="text-sm font-extrabold text-primary-600">{a.match}%</span>}
+                  {a.match !== null && <span className="text-sm font-extrabold text-primary-600">{a.match}%</span>}
                 </div>
               ))}
             </div>

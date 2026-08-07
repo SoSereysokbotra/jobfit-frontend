@@ -54,7 +54,25 @@ export interface EmployerApplicationDto {
   candidate: { id: string; name: string; email: string };
   status: ApplicationStatus;
   employerNotes: string | null;
-  matchScore: number | null;
+  /**
+   * What automatic screening found when this candidate applied — a snapshot of that
+   * moment, never recomputed. Replaces the old top-level `matchScore`, which read from a
+   * table with zero rows and so could never hold a value.
+   */
+  screening: {
+    screenedAt: string | null;
+    /**
+     * Deterministic scorer, never the LLM fitScore. A TIEBREAK, not the ranking:
+     * measured across a senior engineer and a graphic designer it moved only 50 → 46,
+     * while requirement coverage separated them cleanly.
+     */
+    matchScore: number | null;
+    requirementsTotal: number;
+    /** The ranking signal. */
+    requirementsCovered: number;
+    missingRequirements: string[];
+    requirementsSource: "EMPLOYER" | "AI_EXTRACTED" | "NONE";
+  };
   appliedAt: string;
 }
 

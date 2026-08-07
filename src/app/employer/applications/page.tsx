@@ -125,7 +125,7 @@ export default function ApplicationsKanbanPage() {
                           <p className="text-sm font-bold truncate text-content">{a.name}</p>
                           <p className="text-xs text-content-tertiary truncate">{a.jobTitle}</p>
                         </div>
-                        {a.match > 0 && <span className="text-sm font-extrabold shrink-0 text-primary-600">{a.match}%</span>}
+                        {a.match !== null && <span className="text-sm font-extrabold shrink-0 text-primary-600">{a.match}%</span>}
                       </div>
                     </div>
                   ))}

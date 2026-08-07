@@ -119,7 +119,8 @@ export default function EmployerAnalyticsPage() {
 
   const activeJobs = jobs.filter((j) => j.status === "Published").length;
   const totalApps = applicants.length;
-  const scored = applicants.filter((a) => a.match > 0);
+  // Unscreened applicants have no score; averaging them in as 0 would misreport the pipeline.
+  const scored = applicants.filter((a): a is typeof a & { match: number } => a.match !== null);
   const avgMatch = scored.length ? Math.round(scored.reduce((s, a) => s + a.match, 0) / scored.length) : null;
 
   const countByJob = useMemo(() => {
@@ -190,7 +191,7 @@ export default function EmployerAnalyticsPage() {
                     <p className="text-sm font-bold truncate text-content">{a.name}</p>
                     <p className="text-xs text-content-tertiary truncate">{a.jobTitle} · {a.appliedAt}</p>
                   </div>
-                  {a.match > 0 && <span className="text-sm font-extrabold text-primary-600">{a.match}%</span>}
+                  {a.match !== null && <span className="text-sm font-extrabold text-primary-600">{a.match}%</span>}
                 </div>
               ))}
             </div>
