@@ -3,7 +3,9 @@
 import React, { useMemo, useState } from "react";
 import { cn } from "@/shared/utils/cn";
 import { Skeleton } from "@/shared/components/feedback/skeleton";
+import { Alert } from "@/shared/components/feedback/alert";
 import { EmptyState } from "@/shared/components/data-display/empty-state";
+import { ApiError } from "@/lib/api/client";
 import {
   useEmployerApplications,
   useEmployerJobs,
@@ -35,6 +37,7 @@ export default function ApplicationsKanbanPage() {
   const [dragId, setDragId] = useState<string | null>(null);
   const [overStage, setOverStage] = useState<ApplicationStage | null>(null);
   const [offerFor, setOfferFor] = useState<{ id: string; name: string } | null>(null);
+  const [moveError, setMoveError] = useState<string | null>(null);
 
   const visible = useMemo(
     () =>
@@ -50,6 +53,7 @@ export default function ApplicationsKanbanPage() {
     const id = dragId;
     setDragId(null);
     setOverStage(null);
+    setMoveError(null);
     if (!id) return;
     const card = applicants.find((a) => a.id === id);
     if (!card || card.stage === stage) return;
@@ -59,7 +63,18 @@ export default function ApplicationsKanbanPage() {
       setOfferFor({ id: card.id, name: card.name });
       return;
     }
-    updateStatus.mutate({ id, newStatus: STAGE_TO_STATUS[stage] });
+    // Surface the backend's refusal verbatim. It explains WHY the move is not allowed
+    // ("ACCEPTED is the candidate's decision to record, not yours."), which a generic
+    // message would throw away — and until then the card just snapped back in silence.
+    updateStatus.mutate(
+      { id, newStatus: STAGE_TO_STATUS[stage] },
+      {
+        onError: (e) =>
+          setMoveError(
+            e instanceof ApiError ? e.message : "Could not move this candidate.",
+          ),
+      },
+    );
   };
 
   return (
@@ -78,6 +93,8 @@ export default function ApplicationsKanbanPage() {
           {jobs.map((j) => <option key={j.id} value={j.id}>{j.title}</option>)}
         </select>
       </div>
+
+      {moveError && <Alert variant="error">{moveError}</Alert>}
 
       {isLoading ? (
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
