@@ -28,7 +28,15 @@ export type RequirementsSource = "EMPLOYER" | "AI_EXTRACTED" | "NONE";
 export interface SkillGapDto {
   status: SkillGapStatus;
   requirementsSource: RequirementsSource;
-  requirements: { text: string; matchedSkills: string[] }[];
+  requirements: {
+    text: string;
+    matchedSkills: string[];
+    /**
+     * EXACT — the skill appears verbatim. PARTIAL — only part of a multi-word skill
+     * appears. Real evidence, but weaker; must not be shown as a full match.
+     */
+    matchQuality?: "EXACT" | "PARTIAL";
+  }[];
   /** Requirements with no supporting skill — what the user should act on. */
   missing: string[];
   matchedCount: number;

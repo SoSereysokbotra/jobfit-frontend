@@ -89,12 +89,27 @@ export function SkillGapPanel({ jobId }: { jobId: string }) {
                     {r.text}
                     <span style={{ color: "var(--color-text-tertiary)" }}>
                       {" "}— {r.matchedSkills.join(", ")}
+                      {/* A partial hit found only part of a multi-word skill. Saying so
+                          is the difference between evidence and an overstatement. */}
+                      {r.matchQuality === "PARTIAL" && " (related)"}
                     </span>
                   </span>
                 </li>
               ))}
           </ul>
         </div>
+      )}
+
+      {/* Which skills were actually compared. Without this, two different résumés that
+          both happen to score 0 look identical, and there is no way to tell a real gap
+          from a bad résumé parse. */}
+      {data.skillsConsidered.length > 0 && (
+        <p
+          className="text-[11px] mt-3 pt-2.5 border-t"
+          style={{ color: "var(--color-text-tertiary)", borderColor: "var(--color-border)" }}
+        >
+          Compared against your résumé skills: {data.skillsConsidered.join(", ")}.
+        </p>
       )}
 
       <Provenance source={data.requirementsSource} />
