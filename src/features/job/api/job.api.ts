@@ -42,6 +42,21 @@ export interface JobDto {
   sourceType?: "INTERNAL" | "EXTERNAL";
   /** The original posting, for EXTERNAL jobs. */
   externalUrl?: string;
+  /**
+   * Real company facts, on the DETAIL endpoint only. Every field is omitted when the
+   * database has no value — render nothing for a missing field, never a default.
+   */
+  company?: {
+    name: string;
+    description?: string;
+    website?: string;
+    industry?: string;
+    size?: string;
+    foundedYear?: number;
+    location?: string;
+    glassdoorRating?: number;
+    glassdoorReviews?: number;
+  };
   createdAt: string;
   updatedAt: string;
 }

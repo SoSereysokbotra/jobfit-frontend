@@ -41,6 +41,21 @@ export interface Job {
   sourceType?: "INTERNAL" | "EXTERNAL";
   /** The original posting, for EXTERNAL jobs. */
   externalUrl?: string;
+  /**
+   * Real company facts, present on the job detail page only. Fields the database has no
+   * value for are absent and must render as nothing rather than a placeholder.
+   */
+  companyProfile?: {
+    name: string;
+    description?: string;
+    website?: string;
+    industry?: string;
+    size?: string;
+    foundedYear?: number;
+    location?: string;
+    glassdoorRating?: number;
+    glassdoorReviews?: number;
+  };
 }
 
 export function formatSalaryRange(job: Pick<Job, "salaryMin" | "salaryMax">): string {

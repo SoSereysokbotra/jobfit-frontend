@@ -55,6 +55,7 @@ export function toJobView(dto: JobDto): Job {
     // the job is treated as INTERNAL — the server stays the real gate either way.
     sourceType: dto.sourceType,
     externalUrl: dto.externalUrl,
+    companyProfile: dto.company,
   };
 }
 

@@ -43,7 +43,39 @@ export interface SkillGapDto {
   skillsConsidered: string[];
 }
 
+export interface JobMatchDto {
+  /** 0-100 weighted total from the DETERMINISTIC scorer (not the LLM fitScore). */
+  score: number;
+  breakdown: {
+    skills: number;
+    experience: number;
+    location: number;
+    salary: number;
+    other: number;
+  };
+  /** Statements derived from the sub-scores. Never generated prose. */
+  reasons: string[];
+  /**
+   * False when the job or profile has no embedding, so `skills` could not be computed and
+   * the total UNDERSTATES real fit. Must be surfaced, not silently shown as a low score.
+   */
+  skillsScored: boolean;
+}
+
 export const matchingApi = {
+  /**
+   * Match score for one job against the current user.
+   *
+   * Returns null when there is no profile or the job is unknown — the endpoint answers
+   * 204, and an empty body must not be rendered as "0% match".
+   */
+  matchForJob: async (jobId: string): Promise<JobMatchDto | null> => {
+    const res = await apiClient.get<JobMatchDto | undefined>(
+      `/recommendations/for-job?jobId=${encodeURIComponent(jobId)}`,
+    );
+    return res && typeof res.score === "number" ? res : null;
+  },
+
   /**
    * Which of a job's stated requirements the user's résumé does not evidence.
    *
