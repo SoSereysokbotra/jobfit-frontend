@@ -106,26 +106,37 @@ export default function ApplicationDetailPage() {
           </div>
         </div>
 
-        {/* Status changer */}
+        {/* Candidate actions — NOT a status picker. The employer owns the stage. */}
         <div className="mt-5 pt-4 border-t flex flex-wrap items-center gap-3" style={{ borderColor: "var(--color-border)" }}>
           <label className="text-xs font-semibold" style={{ color: "var(--color-text-secondary)" }}>
-            Update status
+            Your options
           </label>
+          {/* Deliberately not bound to application.status: this offers only the actions a
+              candidate can actually take, so the control never implies they can set
+              INTERVIEW or OFFER on themselves. */}
           <select
-            value={application.status}
+            value=""
             disabled={updateStatus.isPending}
-            onChange={(e) =>
-              updateStatus.mutate({ id: application.id, newStatus: e.target.value as ApplicationStatus })
-            }
+            onChange={(e) => {
+              if (!e.target.value) return;
+              updateStatus.mutate({
+                id: application.id,
+                newStatus: e.target.value as ApplicationStatus,
+              });
+            }}
             className="text-xs font-semibold rounded-md border px-2.5 py-1.5 outline-none cursor-pointer disabled:opacity-50"
             style={{ borderColor: "var(--color-border)", background: "var(--color-bg)", color: "var(--color-text-primary)" }}
           >
+            <option value="">Choose an action…</option>
             {SELECTABLE_STATUSES.map((s) => (
               <option key={s} value={s}>
                 {STATUS_META[s].label}
               </option>
             ))}
           </select>
+          <span className="text-xs" style={{ color: "var(--color-text-tertiary)" }}>
+            The employer moves your application through screening, interview and offer.
+          </span>
           {updateStatus.isPending && (
             <span className="text-xs" style={{ color: "var(--color-text-tertiary)" }}>Saving…</span>
           )}
