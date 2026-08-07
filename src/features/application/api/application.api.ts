@@ -36,6 +36,14 @@ export interface ApplicationDto {
   jobId: string;
   resumeId?: string;
   status: ApplicationStatus;
+  /**
+   * What the candidate can do to this application RIGHT NOW — reachable from its current
+   * status and theirs to decide. Render only these: a menu built from a fixed list offers
+   * choices the server answers with "Invalid status transition". Empty is legitimate — an
+   * archived application is finished. Optional so an older backend degrades to no actions
+   * rather than to invalid ones.
+   */
+  availableActions?: ApplicationStatus[];
   appliedAt: string;
   notes?: string;
   coverLetter?: string;

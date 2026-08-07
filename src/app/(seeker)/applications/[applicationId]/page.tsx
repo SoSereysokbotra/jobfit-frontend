@@ -12,7 +12,7 @@ import {
 } from "@/features/application/hooks/use-applications";
 import { ApplicationTimeline } from "@/features/application/components/application-timeline";
 import { InterviewScheduler } from "@/features/application/components/interview-scheduler";
-import { SELECTABLE_STATUSES, STATUS_META } from "@/features/application/api/application.mappers";
+import { STATUS_META } from "@/features/application/api/application.mappers";
 import type { ApplicationStatus } from "@/features/application/api/application.api";
 import { Badge } from "@/shared/components/data-display/badge";
 import { Button } from "@/shared/components/ui/button";
@@ -56,6 +56,11 @@ export default function ApplicationDetailPage() {
       </div>
     );
   }
+
+  // What the candidate can actually do from this exact status, decided by the server.
+  // Absent on an older backend, which degrades to "no actions" rather than to a menu of
+  // choices that will be refused.
+  const actions = application.availableActions ?? [];
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto space-y-6" style={{ background: "var(--color-bg-secondary)" }}>
@@ -108,35 +113,46 @@ export default function ApplicationDetailPage() {
 
         {/* Candidate actions — NOT a status picker. The employer owns the stage. */}
         <div className="mt-5 pt-4 border-t flex flex-wrap items-center gap-3" style={{ borderColor: "var(--color-border)" }}>
-          <label className="text-xs font-semibold" style={{ color: "var(--color-text-secondary)" }}>
-            Your options
-          </label>
-          {/* Deliberately not bound to application.status: this offers only the actions a
-              candidate can actually take, so the control never implies they can set
-              INTERVIEW or OFFER on themselves. */}
-          <select
-            value=""
-            disabled={updateStatus.isPending}
-            onChange={(e) => {
-              if (!e.target.value) return;
-              updateStatus.mutate({
-                id: application.id,
-                newStatus: e.target.value as ApplicationStatus,
-              });
-            }}
-            className="text-xs font-semibold rounded-md border px-2.5 py-1.5 outline-none cursor-pointer disabled:opacity-50"
-            style={{ borderColor: "var(--color-border)", background: "var(--color-bg)", color: "var(--color-text-primary)" }}
-          >
-            <option value="">Choose an action…</option>
-            {SELECTABLE_STATUSES.map((s) => (
-              <option key={s} value={s}>
-                {STATUS_META[s].label}
-              </option>
-            ))}
-          </select>
-          <span className="text-xs" style={{ color: "var(--color-text-tertiary)" }}>
-            The employer moves your application through screening, interview and offer.
-          </span>
+          {/* Driven by the server's availableActions: what is reachable from this exact
+              status AND the candidate's to decide. A fixed list offered choices that all
+              answered "Invalid status transition" once the application reached a stage
+              they cannot act on. */}
+          {actions.length > 0 ? (
+            <>
+              <label className="text-xs font-semibold" style={{ color: "var(--color-text-secondary)" }}>
+                Your options
+              </label>
+              <select
+                value=""
+                disabled={updateStatus.isPending}
+                onChange={(e) => {
+                  if (!e.target.value) return;
+                  updateStatus.mutate({
+                    id: application.id,
+                    newStatus: e.target.value as ApplicationStatus,
+                  });
+                }}
+                className="text-xs font-semibold rounded-md border px-2.5 py-1.5 outline-none cursor-pointer disabled:opacity-50"
+                style={{ borderColor: "var(--color-border)", background: "var(--color-bg)", color: "var(--color-text-primary)" }}
+              >
+                <option value="">Choose an action…</option>
+                {actions.map((s) => (
+                  <option key={s} value={s}>
+                    {STATUS_META[s].label}
+                  </option>
+                ))}
+              </select>
+              <span className="text-xs" style={{ color: "var(--color-text-tertiary)" }}>
+                The employer moves your application through screening, interview and offer.
+              </span>
+            </>
+          ) : (
+            // Nothing to do is a real state, not an error — say so instead of showing a
+            // menu where every choice fails.
+            <span className="text-xs" style={{ color: "var(--color-text-tertiary)" }}>
+              This application is {STATUS_META[application.status].label.toLowerCase()} — there&apos;s nothing left to do here.
+            </span>
+          )}
           {updateStatus.isPending && (
             <span className="text-xs" style={{ color: "var(--color-text-tertiary)" }}>Saving…</span>
           )}

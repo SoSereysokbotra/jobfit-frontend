@@ -52,26 +52,6 @@ export function columnIdForStatus(status: ApplicationStatus): string {
   return COLUMN_OF[status] ?? "applied";
 }
 
-/**
- * Statuses a CANDIDATE may set on their own application.
- *
- * Mirrors CANDIDATE_SETTABLE_STATUSES on the backend, which enforces this — the server is
- * the real gate; this list only stops the UI offering choices that will be refused.
- *
- * The dropdown previously listed all nine, so a candidate could mark themselves INTERVIEW,
- * OFFER or ACCEPTED. That is not an odd UI state: those statuses record what the EMPLOYER
- * decided, and the value appears in the employer's own pipeline view as though they had
- * decided it.
- *
- * ACCEPTED and NEGOTIATING stay because they are the candidate's genuine replies to an
- * offer; the backend's transition rules confine them to the OFFER stage.
- */
-export const SELECTABLE_STATUSES: ApplicationStatus[] = [
-  "WITHDRAWN",
-  "ARCHIVED",
-  "ACCEPTED",
-  "NEGOTIATING",
-];
 
 function appliedLabel(iso: string): string {
   const days = daysSince(iso);
