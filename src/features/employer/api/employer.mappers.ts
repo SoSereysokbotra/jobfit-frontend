@@ -128,6 +128,14 @@ export interface ApplicantView {
   screened: boolean;
   stage: ApplicationStage;
   status: ApplicationStatus;
+  /**
+   * Where this candidate can legally go next, straight from the backend.
+   *
+   * Deliberately kept as raw statuses rather than mapped to stage names: several statuses
+   * share a column (SUBMITTED and SCREENING are both "Applied"), so mapping here would
+   * lose the distinction the check depends on. The board compares at drop time instead.
+   */
+  availableActions: ApplicationStatus[];
   appliedAt: string;
   notes: string | null;
 }
@@ -149,6 +157,7 @@ export function toApplicantView(dto: EmployerApplicationDto): ApplicantView {
     screened: dto.screening.screenedAt !== null,
     stage: STATUS_TO_STAGE[dto.status] ?? "Applied",
     status: dto.status,
+    availableActions: dto.availableActions ?? [],
     appliedAt: postedLabel(dto.appliedAt),
     notes: dto.employerNotes,
   };
