@@ -70,6 +70,25 @@ export function useApplicationTimeline(id: string | undefined) {
   });
 }
 
+/**
+ * The current user's existing application to `jobId`, if any.
+ *
+ * The backend enforces one application per user per job (`@@unique([userId, jobId])`), so
+ * a second attempt always fails. Knowing beforehand lets the UI show that state instead of
+ * offering "Apply Now" and then answering with a red error — which reads as a bug rather
+ * than as "you already did this".
+ *
+ * A WITHDRAWN application still counts: the unique constraint does not care, so
+ * re-applying would fail just the same.
+ */
+export function useApplicationForJob(jobId: string | undefined) {
+  const { data: applications = [], isLoading } = useApplications();
+  return {
+    application: jobId ? applications.find((a) => a.jobId === jobId) : undefined,
+    isLoading,
+  };
+}
+
 /** Submit an application to a job. Invalidates the list on success. */
 export function useSubmitApplication() {
   const qc = useQueryClient();

@@ -6,7 +6,7 @@ import { Check, ExternalLink } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
 import { Alert } from "@/shared/components/feedback/alert";
 import { ApiError } from "@/lib/api/client";
-import { useSubmitApplication } from "../hooks/use-applications";
+import { useApplicationForJob, useSubmitApplication } from "../hooks/use-applications";
 
 interface ApplyButtonProps {
   jobId: string;
@@ -36,10 +36,34 @@ export function ApplyButton({
 }: ApplyButtonProps) {
   const submit = useSubmitApplication();
   const [applied, setApplied] = useState(false);
+  const { application: existing } = useApplicationForJob(jobId);
 
   if (sourceType === "EXTERNAL") {
     return (
       <ExternalApply externalUrl={externalUrl} fullWidth={fullWidth} className={className} />
+    );
+  }
+
+  // Already applied — show that up front instead of an "Apply Now" button that answers
+  // with a red error. One application per job is a rule, not a failure, and the user
+  // wants to reach the one they already have.
+  if (existing) {
+    return (
+      <div className={className}>
+        <div
+          className="flex items-center justify-center gap-2 py-2.5 px-5 rounded-md text-sm font-semibold"
+          style={{ background: "var(--color-neutral-100)", color: "var(--color-text-secondary)" }}
+        >
+          <Check size={16} /> Applied · {existing.statusMeta.label}
+        </div>
+        <Link
+          href={`/applications/${existing.id}`}
+          className="block text-center text-xs font-semibold mt-2 hover:underline"
+          style={{ color: "var(--color-primary-600)" }}
+        >
+          View your application →
+        </Link>
+      </div>
     );
   }
 
