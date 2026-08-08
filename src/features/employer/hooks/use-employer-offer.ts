@@ -21,6 +21,15 @@ export function useEmployerOffer(applicationId: string | null) {
   });
 }
 
+/** Reply to the candidate; refreshes the thread and the board's unread badge. */
+export function usePostOfferMessage(applicationId: string | null) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: string) => employerOfferApi.postMessage(applicationId as string, body),
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk.employer.all }),
+  });
+}
+
 /** Extend an offer on an application; refreshes the pipeline (status → Offer). */
 export function useExtendOffer() {
   const qc = useQueryClient();

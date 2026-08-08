@@ -183,13 +183,21 @@ export default function ApplicationsKanbanPage() {
                           {a.match !== null && <span className="text-sm font-extrabold shrink-0 text-primary-600">{a.match}%</span>}
                         </div>
 
-                        {/* NEGOTIATING shares the "Offer" column with OFFER, so without this
-                            the card looks identical and the employer has no way to know a
-                            message is waiting. */}
-                        {a.status === "NEGOTIATING" && (
-                          <span className="mt-2 inline-flex items-center gap-1 text-xs font-bold px-1.5 py-0.5 rounded-full bg-warning-50 text-warning-700 border border-warning-200">
-                            <MessageSquare size={11} /> Wants to negotiate
+                        {/* Unread COUNT, not just "is negotiating". NEGOTIATING shares the
+                            "Offer" column with OFFER, so the card looked identical — and a
+                            state badge cannot tell a first message from a fifth, which is
+                            why later messages went unnoticed entirely. */}
+                        {a.unreadMessages > 0 ? (
+                          <span className="mt-2 inline-flex items-center gap-1 text-xs font-bold px-1.5 py-0.5 rounded-full bg-warning-100 text-warning-800 border border-warning-300">
+                            <MessageSquare size={11} />
+                            {a.unreadMessages} new {a.unreadMessages === 1 ? "message" : "messages"}
                           </span>
+                        ) : (
+                          a.status === "NEGOTIATING" && (
+                            <span className="mt-2 inline-flex items-center gap-1 text-xs font-bold px-1.5 py-0.5 rounded-full bg-warning-50 text-warning-700 border border-warning-200">
+                              <MessageSquare size={11} /> Negotiating
+                            </span>
+                          )
                         )}
                       </div>
                     );
