@@ -140,6 +140,8 @@ export interface ApplicantView {
    * lose the distinction the check depends on. The board compares at drop time instead.
    */
   availableActions: ApplicationStatus[];
+  /** Unread messages from this candidate about their offer. Drives the board badge. */
+  unreadMessages: number;
   appliedAt: string;
   notes: string | null;
 }
@@ -162,6 +164,7 @@ export function toApplicantView(dto: EmployerApplicationDto): ApplicantView {
     stage: STATUS_TO_STAGE[dto.status] ?? "Applied",
     status: dto.status,
     availableActions: dto.availableActions ?? [],
+    unreadMessages: dto.unreadMessages ?? 0,
     appliedAt: postedLabel(dto.appliedAt),
     notes: dto.employerNotes,
   };

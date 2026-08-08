@@ -24,7 +24,7 @@ export default function OffersPage() {
   const offers = useOffers();
   /** Pending decision awaiting confirmation. */
   const [decision, setDecision] = useState<{ id: string; action: "accept" | "reject" } | null>(null);
-  /** The offer a counter is being written for, and the message. */
+  /** The offer whose conversation is open, and the message being written. */
   const [negotiating, setNegotiating] = useState<string | null>(null);
   const [counter, setCounter] = useState("");
 
@@ -42,11 +42,19 @@ export default function OffersPage() {
     setDecision(null);
   };
 
+  // Stays open after sending: this is a conversation, not a one-shot form. Sending used to
+  // close the modal because only one message was ever possible.
   const sendCounter = () => {
     if (!negotiating || !counter.trim()) return;
-    offers.negotiate(negotiating, counter.trim());
-    setNegotiating(null);
+    offers.sendMessage(negotiating, counter.trim());
     setCounter("");
+  };
+
+  /** Opening the conversation is reading it. */
+  const openThread = (id: string) => {
+    setCounter("");
+    setNegotiating(id);
+    offers.markRead(id);
   };
 
   return (
@@ -181,7 +189,7 @@ export default function OffersPage() {
                     offer={offer}
                     onAccept={(id) => setDecision({ id, action: "accept" })}
                     onReject={(id) => setDecision({ id, action: "reject" })}
-                    onNegotiate={(id) => { setCounter(""); setNegotiating(id); }}
+                    onNegotiate={openThread}
                   />
                 ))}
               </div>
@@ -252,7 +260,7 @@ export default function OffersPage() {
       <Modal
         open={negotiating !== null}
         onClose={() => setNegotiating(null)}
-        title="Ask for different terms"
+        title={negotiatingOffer && negotiatingOffer.messages.length > 0 ? "Your conversation" : "Ask for different terms"}
         subtitle={
           negotiatingOffer
             ? `${negotiatingOffer.job.title} at ${negotiatingOffer.job.company}`
@@ -264,22 +272,54 @@ export default function OffersPage() {
               onClick={() => setNegotiating(null)}
               className="px-4 py-2 rounded-md text-xs font-bold border border-neutral-200 text-neutral-600 hover:bg-neutral-50 transition-all duration-200"
             >
-              Cancel
+              Done
             </button>
             <button
               onClick={sendCounter}
               disabled={!counter.trim()}
               className="px-4 py-2 rounded-md text-xs font-bold text-white bg-primary-600 hover:bg-primary-700 transition-all duration-200 active:scale-95 inline-flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <ArrowUpDown size={12} /> Send to employer
+              <ArrowUpDown size={12} /> Send message
             </button>
           </>
         }
       >
         <div className="space-y-3">
+          {negotiatingOffer && negotiatingOffer.messages.length > 0 && (
+            <ul className="space-y-2 max-h-64 overflow-y-auto pr-1">
+              {negotiatingOffer.messages.map((m) => {
+                const mine = m.authorRole === "CANDIDATE";
+                return (
+                  <li
+                    key={m.id}
+                    className="rounded-md p-2.5 text-xs border"
+                    style={{
+                      background: mine ? "var(--color-primary-50)" : "var(--color-bg-secondary)",
+                      borderColor: mine ? "var(--color-primary-100)" : "var(--color-border)",
+                    }}
+                  >
+                    <span className="flex items-baseline gap-2 mb-0.5">
+                      <span className="font-bold" style={{ color: "var(--color-text-primary)" }}>
+                        {mine ? "You" : negotiatingOffer.job.company}
+                      </span>
+                      <span style={{ color: "var(--color-text-disabled)" }}>
+                        {new Date(m.createdAt).toLocaleString(undefined, {
+                          month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
+                        })}
+                      </span>
+                    </span>
+                    <span className="whitespace-pre-line break-words" style={{ color: "var(--color-text-secondary)" }}>
+                      {m.body}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+
           <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
             This keeps the offer open and tells the employer what you are asking for. They can
-            reply with revised terms, which you can then accept or decline.
+            reply here, or put revised terms on the table for you to accept or decline.
           </p>
           <textarea
             value={counter}

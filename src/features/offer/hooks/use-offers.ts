@@ -87,14 +87,30 @@ export function useOffers() {
     }
   };
 
-  /** Ask for different terms. The note is required — it is what the employer replies to. */
-  const negotiate = async (id: string, notes: string) => {
+  /**
+   * Write to the employer about an offer — as many times as you like.
+   *
+   * The first message opens the negotiation; the rest are just messages. It used to be
+   * one-shot: the second asked the backend for a NEGOTIATING -> NEGOTIATING transition,
+   * which does not exist, so it was refused and the employer never saw it.
+   */
+  const sendMessage = async (id: string, body: string) => {
     setError(null);
     try {
-      await offerApi.negotiate(id, notes);
+      await offerApi.sendMessage(id, body);
       setItems(await fetchOffers());
     } catch (e) {
-      await report(e, "Could not open the negotiation.");
+      await report(e, "Could not send your message.");
+    }
+  };
+
+  /** Opening a thread marks the employer's replies read; refresh so the count clears. */
+  const markRead = async (id: string) => {
+    try {
+      await offerApi.get(id);
+      setItems(await fetchOffers());
+    } catch {
+      // Not worth surfacing — the conversation is already on screen.
     }
   };
 
@@ -119,7 +135,7 @@ export function useOffers() {
   return {
     isLoading, active, past, stats,
     sort, setSort,
-    updateStatus, negotiate,
+    updateStatus, sendMessage, markRead,
     justAccepted, dismissCelebration,
     error, dismissError,
     hasAny: items.length > 0,

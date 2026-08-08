@@ -199,25 +199,27 @@ export function OfferCard({ offer, past = false, onAccept, onReject, onNegotiate
           {/* Market comparison */}
           {offer.market && <MarketBar offer={offer} market={offer.market} />}
 
-          {/* Offer notes — the thread on this offer, not a private notepad.
-              `offer.notes` is a single shared column: the employer writes it when
-              extending, and negotiating appends the candidate's message to it. It was
-              headed "Your decision notes" with an editor whose save went nowhere — the
-              label claimed the employer's words as the candidate's, and the edits were
-              never persisted. It is read-only now; the way to add to the thread is to
-              negotiate, which appends server-side. */}
-          {offer.notes && (
-            <div>
-              <h4 className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: "var(--color-text-secondary)" }}>
-                Offer notes
-              </h4>
-              <div
-                className="px-3 py-2 rounded-md text-xs flex items-start gap-2 whitespace-pre-line"
-                style={{ background: "var(--color-bg-secondary)", color: "var(--color-text-secondary)" }}
-              >
-                <StickyNote size={13} className="shrink-0 mt-0.5" style={{ color: "var(--color-primary-400)" }} />
-                <span>{offer.notes}</span>
-              </div>
+          {/* A pointer to the conversation, which lives in the Negotiate modal. This was a
+              "Your decision notes" editor over `offer.notes` — a single shared column that
+              actually held the employer's words, under a heading claiming them as the
+              candidate's, with a save that went nowhere. Messages are their own rows now. */}
+          {offer.messages.length > 0 && (
+            <div
+              className="px-3 py-2 rounded-md text-xs flex items-center gap-2"
+              style={{ background: "var(--color-bg-secondary)", color: "var(--color-text-secondary)" }}
+            >
+              <StickyNote size={13} className="shrink-0" style={{ color: "var(--color-primary-400)" }} />
+              <span>
+                {offer.messages.length} {offer.messages.length === 1 ? "message" : "messages"} with this employer
+              </span>
+              {offer.unreadCount > 0 && (
+                <span
+                  className="ml-auto font-bold px-1.5 py-0.5 rounded-full"
+                  style={{ background: "var(--color-primary-100)", color: "var(--color-primary-700)" }}
+                >
+                  {offer.unreadCount} new
+                </span>
+              )}
             </div>
           )}
         </div>

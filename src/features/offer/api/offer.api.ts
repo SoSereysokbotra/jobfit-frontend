@@ -36,7 +36,18 @@ export interface Offer {
   stockPrice?: number;
   /** Absent when no benchmark is available. */
   market?: MarketBenchmark;
-  notes: string;
+  /** The conversation with the employer, oldest first. */
+  messages: OfferMessage[];
+  /** Replies from the employer you have not read. */
+  unreadCount: number;
+}
+
+export interface OfferMessage {
+  id: string;
+  authorRole: "CANDIDATE" | "EMPLOYER";
+  body: string;
+  createdAt: string;
+  read: boolean;
 }
 
 export const ACTIVE_STATUSES: OfferStatus[] = ["New", "Reviewing", "Negotiating"];
@@ -77,7 +88,10 @@ interface OfferDto {
   equityPrice: number | null;
   startDate: string | null;
   responseDeadline: string | null;
+  /** @deprecated superseded by `messages`; always null on new offers. */
   notes: string | null;
+  messages: OfferMessage[];
+  unreadCount: number;
   createdAt: string;
   decidedAt: string | null;
   job: {
@@ -152,17 +166,24 @@ export function toOffer(dto: OfferDto): Offer {
     stockShares: dto.equityShares ?? undefined,
     stockPrice: dto.equityPrice ?? undefined,
     market: undefined, // TODO(backend): no salary-benchmark source
-    notes: dto.notes ?? "",
+    messages: dto.messages ?? [],
+    unreadCount: dto.unreadCount ?? 0,
   };
 }
 
 export const offerApi = {
   /** GET /offers → the current user's offers. */
   list: () => apiClient.get<OfferDto[]>("/offers"),
+  /** Reading one marks the employer's replies as seen. */
+  get: (id: string) => apiClient.get<OfferDto>(`/offers/${id}`),
   accept: (id: string) => apiClient.post<OfferDto>(`/offers/${id}/accept`),
   decline: (id: string) => apiClient.post<OfferDto>(`/offers/${id}/decline`),
-  negotiate: (id: string, notes: string) =>
-    apiClient.post<OfferDto>(`/offers/${id}/negotiate`, { notes }),
+  /**
+   * Write to the employer. Send as many as you like — the first opens the negotiation,
+   * the rest are just messages. (`/negotiate` is the old single-shot route.)
+   */
+  sendMessage: (id: string, body: string) =>
+    apiClient.post<OfferDto>(`/offers/${id}/messages`, { body }),
 };
 
 /** The user's offers, mapped to the view model. Keeps the old call-site name. */

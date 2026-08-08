@@ -88,6 +88,11 @@ export interface EmployerApplicationDto {
    * could — and a hired candidate tidying their list vanished from Hired.
    */
   archived: boolean;
+  /**
+   * Messages from this candidate about their offer that you have not read. A status alone
+   * cannot tell a first message from a fifth, which is why later ones went unnoticed.
+   */
+  unreadMessages: number;
 }
 
 export interface CreateJobInput {
