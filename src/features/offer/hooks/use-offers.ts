@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { ApiError } from "@/lib/api/client";
 import {
   fetchOffers, offerApi, yearOneComp,
   ACTIVE_STATUSES, PAST_STATUSES,
@@ -17,6 +18,8 @@ export function useOffers() {
   const [sort, setSort] = useState<OffersSortKey>("deadline");
   /** Set right after an offer is accepted, so the page can celebrate. */
   const [justAccepted, setJustAccepted] = useState<{ company: string; startDate: string } | null>(null);
+  /** The backend's own words when a decision is refused. */
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -66,35 +69,59 @@ export function useOffers() {
     };
   }, [items]);
 
-  /* ── Decisions & edits ─────────────────────────────────────── */
+  /* ── Decisions ─────────────────────────────────────────────── */
   // Accept/decline hit the live API, then we re-fetch so the server's side effects
-  // (e.g. accepting one offer auto-archives the others) are reflected wholesale.
+  // (accepting one offer auto-withdraws the others) are reflected wholesale.
   const updateStatus = async (id: string, status: OfferStatus) => {
     const offer = items.find((o) => o.id === id);
+    setError(null);
     try {
       if (status === "Accepted") await offerApi.accept(id);
       else if (status === "Rejected") await offerApi.decline(id);
-      const fresh = await fetchOffers();
-      setItems(fresh);
+      setItems(await fetchOffers());
       if (status === "Accepted" && offer) {
         setJustAccepted({ company: offer.job.company, startDate: offer.startDate });
       }
-    } catch {
-      // Surface nothing destructive on failure; the list stays as-is.
+    } catch (e) {
+      await report(e, "Could not record your decision.");
     }
   };
 
-  const dismissCelebration = () => setJustAccepted(null);
-
-  const updateNotes = (id: string, notes: string) => {
-    setItems((prev) => prev.map((o) => (o.id === id ? { ...o, notes } : o)));
+  /** Ask for different terms. The note is required — it is what the employer replies to. */
+  const negotiate = async (id: string, notes: string) => {
+    setError(null);
+    try {
+      await offerApi.negotiate(id, notes);
+      setItems(await fetchOffers());
+    } catch (e) {
+      await report(e, "Could not open the negotiation.");
+    }
   };
+
+  /**
+   * A failed decision used to be swallowed entirely, so the button looked broken rather
+   * than refused. The backend's own message is better than anything generic here — it
+   * says things like "This offer is already declined." Re-fetching matters too: a refusal
+   * usually means this client is stale.
+   */
+  async function report(e: unknown, fallback: string) {
+    setError(e instanceof ApiError ? e.message : fallback);
+    try {
+      setItems(await fetchOffers());
+    } catch {
+      // Leave the list as-is; the message above is the useful part.
+    }
+  }
+
+  const dismissCelebration = () => setJustAccepted(null);
+  const dismissError = () => setError(null);
 
   return {
     isLoading, active, past, stats,
     sort, setSort,
-    updateStatus, updateNotes,
+    updateStatus, negotiate,
     justAccepted, dismissCelebration,
+    error, dismissError,
     hasAny: items.length > 0,
   };
 }
