@@ -24,9 +24,15 @@ export default function OffersPage() {
   const offers = useOffers();
   /** Pending decision awaiting confirmation. */
   const [decision, setDecision] = useState<{ id: string; action: "accept" | "reject" } | null>(null);
+  /** The offer a counter is being written for, and the message. */
+  const [negotiating, setNegotiating] = useState<string | null>(null);
+  const [counter, setCounter] = useState("");
 
   const decisionOffer = decision
     ? [...offers.active].find((o) => o.id === decision.id)
+    : null;
+  const negotiatingOffer = negotiating
+    ? offers.active.find((o) => o.id === negotiating)
     : null;
 
   const confirmDecision = () => {
@@ -34,6 +40,13 @@ export default function OffersPage() {
       offers.updateStatus(decision.id, decision.action === "accept" ? "Accepted" : "Rejected");
     }
     setDecision(null);
+  };
+
+  const sendCounter = () => {
+    if (!negotiating || !counter.trim()) return;
+    offers.negotiate(negotiating, counter.trim());
+    setNegotiating(null);
+    setCounter("");
   };
 
   return (
@@ -56,6 +69,20 @@ export default function OffersPage() {
             🎉 Congrats! Your new adventure at{" "}
             <span className="font-bold">{offers.justAccepted.company}</span> starts {offers.justAccepted.startDate}.
             <button onClick={offers.dismissCelebration} className="font-bold hover:underline">
+              Dismiss
+            </button>
+          </span>
+        </Alert>
+      )}
+
+      {/* ── DECISION FAILED ───────────────────────────────── */}
+      {/* A refused decision used to do nothing at all, which reads as a broken button
+          rather than a refusal. The message is the backend's own. */}
+      {offers.error && (
+        <Alert variant="error">
+          <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            {offers.error}
+            <button onClick={offers.dismissError} className="font-bold hover:underline">
               Dismiss
             </button>
           </span>
@@ -154,7 +181,7 @@ export default function OffersPage() {
                     offer={offer}
                     onAccept={(id) => setDecision({ id, action: "accept" })}
                     onReject={(id) => setDecision({ id, action: "reject" })}
-                    onUpdateNotes={offers.updateNotes}
+                    onNegotiate={(id) => { setCounter(""); setNegotiating(id); }}
                   />
                 ))}
               </div>
@@ -169,7 +196,7 @@ export default function OffersPage() {
               </h2>
               <div className="grid grid-cols-1 gap-4">
                 {offers.past.map((offer) => (
-                  <OfferCard key={offer.id} offer={offer} past onUpdateNotes={offers.updateNotes} />
+                  <OfferCard key={offer.id} offer={offer} past />
                 ))}
               </div>
             </section>
@@ -210,14 +237,63 @@ export default function OffersPage() {
       >
         {decision?.action === "accept" ? (
           <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
-            Accepting moves this offer to your past decisions and archives your other active offers for this search.
+            Accepting moves this offer to your past decisions and withdraws your other active offers.
             Make sure you&apos;ve reviewed the compensation and start date — congratulations are in order! 🎉
           </p>
         ) : (
           <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
-            Declining moves this offer to your past decisions. You can always keep the notes for future reference.
+            Declining moves this offer to your past decisions and withdraws you from that application.
+            The offer and its notes stay on record for future reference.
           </p>
         )}
+      </Modal>
+
+      {/* ── NEGOTIATION MODAL ─────────────────────────────── */}
+      <Modal
+        open={negotiating !== null}
+        onClose={() => setNegotiating(null)}
+        title="Ask for different terms"
+        subtitle={
+          negotiatingOffer
+            ? `${negotiatingOffer.job.title} at ${negotiatingOffer.job.company}`
+            : undefined
+        }
+        footer={
+          <>
+            <button
+              onClick={() => setNegotiating(null)}
+              className="px-4 py-2 rounded-md text-xs font-bold border border-neutral-200 text-neutral-600 hover:bg-neutral-50 transition-all duration-200"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={sendCounter}
+              disabled={!counter.trim()}
+              className="px-4 py-2 rounded-md text-xs font-bold text-white bg-primary-600 hover:bg-primary-700 transition-all duration-200 active:scale-95 inline-flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <ArrowUpDown size={12} /> Send to employer
+            </button>
+          </>
+        }
+      >
+        <div className="space-y-3">
+          <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
+            This keeps the offer open and tells the employer what you are asking for. They can
+            reply with revised terms, which you can then accept or decline.
+          </p>
+          <textarea
+            value={counter}
+            onChange={(e) => setCounter(e.target.value)}
+            rows={4}
+            placeholder="e.g. The role is a strong fit. Could we revisit the base salary, or bring the start date forward?"
+            className="w-full px-3 py-2 rounded-md border text-sm outline-none transition-all focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            style={{
+              borderColor: "var(--color-border)",
+              background: "var(--color-bg)",
+              color: "var(--color-text-primary)",
+            }}
+          />
+        </div>
       </Modal>
     </div>
   );

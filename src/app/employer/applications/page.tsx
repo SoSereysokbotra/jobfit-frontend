@@ -3,7 +3,9 @@
 import React, { useMemo, useState } from "react";
 import { cn } from "@/shared/utils/cn";
 import { Skeleton } from "@/shared/components/feedback/skeleton";
+import { Alert } from "@/shared/components/feedback/alert";
 import { EmptyState } from "@/shared/components/data-display/empty-state";
+import { ApiError } from "@/lib/api/client";
 import {
   useEmployerApplications,
   useEmployerJobs,
@@ -35,6 +37,7 @@ export default function ApplicationsKanbanPage() {
   const [dragId, setDragId] = useState<string | null>(null);
   const [overStage, setOverStage] = useState<ApplicationStage | null>(null);
   const [offerFor, setOfferFor] = useState<{ id: string; name: string } | null>(null);
+  const [moveError, setMoveError] = useState<string | null>(null);
 
   const visible = useMemo(
     () =>
@@ -46,10 +49,31 @@ export default function ApplicationsKanbanPage() {
 
   const byStage = (stage: ApplicationStage) => visible.filter((a: ApplicantView) => a.stage === stage);
 
+  const dragged = dragId ? applicants.find((a) => a.id === dragId) ?? null : null;
+
+  /**
+   * Can the card currently being dragged land on this column?
+   *
+   * Asked PER CARD, not per column, and answered from `availableActions` off the payload
+   * rather than from a table kept here. Per column would be wrong for real candidates:
+   * "Applied" holds both SUBMITTED and SCREENING cards — screening never throws, so an
+   * application stays SUBMITTED whenever the AI service was down — and only the SCREENING
+   * ones may move to Interview.
+   *
+   * Because it is derived, changing the backend's TRANSITIONS changes this board with no
+   * frontend deploy. "Hired" stays a column, because candidates land there when they
+   * accept; it simply stops being somewhere you can drop.
+   */
+  const canDrop = (stage: ApplicationStage) =>
+    dragged !== null &&
+    dragged.stage !== stage &&
+    dragged.availableActions.includes(STAGE_TO_STATUS[stage]);
+
   const drop = (stage: ApplicationStage) => {
     const id = dragId;
     setDragId(null);
     setOverStage(null);
+    setMoveError(null);
     if (!id) return;
     const card = applicants.find((a) => a.id === id);
     if (!card || card.stage === stage) return;
@@ -59,7 +83,19 @@ export default function ApplicationsKanbanPage() {
       setOfferFor({ id: card.id, name: card.name });
       return;
     }
-    updateStatus.mutate({ id, newStatus: STAGE_TO_STATUS[stage] });
+    // Still needed, even though canDrop has already removed the moves that could never
+    // work. It covers the ones that can only fail at the moment they are attempted: a
+    // stale board, or a colleague moving the same candidate first (which the backend
+    // answers with a 409). The message is the backend's own, verbatim.
+    updateStatus.mutate(
+      { id, newStatus: STAGE_TO_STATUS[stage] },
+      {
+        onError: (e) =>
+          setMoveError(
+            e instanceof ApiError ? e.message : "Could not move this candidate.",
+          ),
+      },
+    );
   };
 
   return (
@@ -79,6 +115,8 @@ export default function ApplicationsKanbanPage() {
         </select>
       </div>
 
+      {moveError && <Alert variant="error">{moveError}</Alert>}
+
       {isLoading ? (
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
           {STAGES.map((s) => <Skeleton key={s} className="h-40 rounded-lg" />)}
@@ -93,7 +131,14 @@ export default function ApplicationsKanbanPage() {
             return (
               <div
                 key={stage}
-                onDragOver={(e) => { e.preventDefault(); setOverStage(stage); }}
+                // Not calling preventDefault is what makes a column refuse a drop. The
+                // browser then shows the "no drop" cursor and fires no onDrop — native
+                // affordance doing the work, no disabled styling of our own.
+                onDragOver={(e) => {
+                  if (!canDrop(stage)) return;
+                  e.preventDefault();
+                  setOverStage(stage);
+                }}
                 onDragLeave={() => setOverStage((s) => (s === stage ? null : s))}
                 onDrop={() => drop(stage)}
                 className={cn(

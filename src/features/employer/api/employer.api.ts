@@ -74,6 +74,20 @@ export interface EmployerApplicationDto {
     requirementsSource: "EMPLOYER" | "AI_EXTRACTED" | "NONE";
   };
   appliedAt: string;
+  /**
+   * Statuses the employer can move THIS application to right now — reachable from its
+   * current status and theirs to decide. Derive affordances from this; do not restate the
+   * rules client-side. It is per application, not per stage: from SUBMITTED it excludes
+   * INTERVIEW, and unscreened applications sit in SUBMITTED whenever screening could not
+   * run. An empty array is legitimate — an ARCHIVED application is finished.
+   */
+  availableActions: ApplicationStatus[];
+  /**
+   * Whether the EMPLOYER hid this from their board. The candidate has a separate flag;
+   * theirs can never remove a row from here. Archiving used to be a shared status, so it
+   * could — and a hired candidate tidying their list vanished from Hired.
+   */
+  archived: boolean;
 }
 
 export interface CreateJobInput {

@@ -7,7 +7,6 @@ import {
 } from "lucide-react";
 import { cn } from "@/shared/utils/cn";
 import { Badge } from "@/shared/components/ui/badge";
-import { NotesEditor } from "@/shared/components/ui/notes-editor";
 import { formatCurrency, formatCurrencyShort, formatInDays, formatDateInDays } from "@/lib/utils/format";
 import {
   OFFER_STATUS_CONFIG, yearOneComp, annualBonusValue, annualEquityValue,
@@ -20,7 +19,7 @@ interface OfferCardProps {
   past?: boolean;
   onAccept?: (id: string) => void;
   onReject?: (id: string) => void;
-  onUpdateNotes?: (id: string, notes: string) => void;
+  onNegotiate?: (id: string) => void;
 }
 
 /** Urgency color for the deadline countdown. */
@@ -91,9 +90,8 @@ function MarketBar({ offer, market }: { offer: Offer; market: MarketBenchmark })
  * Offer card (Path 3C-1) with an expandable quick-analysis summary (3C-2 essence):
  * compensation breakdown, year-one total, market position, and decision notes.
  */
-export function OfferCard({ offer, past = false, onAccept, onReject, onUpdateNotes }: OfferCardProps) {
+export function OfferCard({ offer, past = false, onAccept, onReject, onNegotiate }: OfferCardProps) {
   const [expanded, setExpanded] = useState(false);
-  const [notesOpen, setNotesOpen] = useState(false);
   const { job } = offer;
   const status = OFFER_STATUS_CONFIG[offer.status];
   const total = yearOneComp(offer);
@@ -201,40 +199,27 @@ export function OfferCard({ offer, past = false, onAccept, onReject, onUpdateNot
           {/* Market comparison */}
           {offer.market && <MarketBar offer={offer} market={offer.market} />}
 
-          {/* Notes */}
-          <div>
-            <h4 className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: "var(--color-text-secondary)" }}>
-              Your decision notes
-            </h4>
-            {notesOpen || offer.notes ? (
-              notesOpen ? (
-                <NotesEditor
-                  value={offer.notes}
-                  onSave={(n) => onUpdateNotes?.(offer.id, n)}
-                  onDone={() => setNotesOpen(false)}
-                  placeholder="Add decision notes… (negotiation, culture, comparisons)"
-                />
-              ) : (
-                <button
-                  onClick={() => setNotesOpen(true)}
-                  className="w-full text-left px-3 py-2 rounded-md text-xs flex items-start gap-2 transition-colors hover:bg-primary-50"
-                  style={{ background: "var(--color-bg-secondary)", color: "var(--color-text-secondary)" }}
-                >
-                  <StickyNote size={13} className="shrink-0 mt-0.5" style={{ color: "var(--color-primary-400)" }} />
-                  <span>{offer.notes}</span>
-                </button>
-              )
-            ) : (
-              !past && (
-                <button
-                  onClick={() => setNotesOpen(true)}
-                  className={cn(smallBtn, "border border-neutral-200 text-neutral-600 hover:bg-neutral-50")}
-                >
-                  <StickyNote size={12} /> Add notes
-                </button>
-              )
-            )}
-          </div>
+          {/* Offer notes — the thread on this offer, not a private notepad.
+              `offer.notes` is a single shared column: the employer writes it when
+              extending, and negotiating appends the candidate's message to it. It was
+              headed "Your decision notes" with an editor whose save went nowhere — the
+              label claimed the employer's words as the candidate's, and the edits were
+              never persisted. It is read-only now; the way to add to the thread is to
+              negotiate, which appends server-side. */}
+          {offer.notes && (
+            <div>
+              <h4 className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: "var(--color-text-secondary)" }}>
+                Offer notes
+              </h4>
+              <div
+                className="px-3 py-2 rounded-md text-xs flex items-start gap-2 whitespace-pre-line"
+                style={{ background: "var(--color-bg-secondary)", color: "var(--color-text-secondary)" }}
+              >
+                <StickyNote size={13} className="shrink-0 mt-0.5" style={{ color: "var(--color-primary-400)" }} />
+                <span>{offer.notes}</span>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -260,16 +245,17 @@ export function OfferCard({ offer, past = false, onAccept, onReject, onUpdateNot
             <Sparkles size={12} /> Accept offer
           </button>
           <button
+            onClick={() => onNegotiate?.(offer.id)}
+            className={cn(smallBtn, "border border-primary-200 text-primary-600 hover:bg-primary-50")}
+          >
+            <TrendingUp size={12} /> Negotiate
+          </button>
+          <button
             onClick={() => onReject?.(offer.id)}
             className={cn(smallBtn, "border border-error-100 text-error-500 hover:bg-error-50")}
           >
             <X size={12} /> Decline
           </button>
-          {offer.status !== "Negotiating" && (
-            <span className="flex items-center gap-1 text-xs ml-auto" style={{ color: "var(--color-text-disabled)" }}>
-              <TrendingUp size={11} /> Room to negotiate
-            </span>
-          )}
         </div>
       )}
     </div>

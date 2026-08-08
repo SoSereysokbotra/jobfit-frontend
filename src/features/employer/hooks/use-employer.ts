@@ -89,6 +89,10 @@ export function useUpdateApplicantStatus() {
     mutationFn: ({ id, newStatus, notes }: { id: string; newStatus: ApplicationStatus; notes?: string }) =>
       employerApi.updateApplicationStatus(id, newStatus, notes),
     onSuccess: () => qc.invalidateQueries({ queryKey: qk.employer.all }),
+    // Refetch on failure too. The backend refuses a move either because the transition is
+    // illegal or because the board is stale — someone else already moved this candidate.
+    // Resyncing to truth is what makes the next attempt meaningful rather than a re-guess.
+    onError: () => qc.invalidateQueries({ queryKey: qk.employer.all }),
   });
 }
 
