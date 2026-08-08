@@ -82,6 +82,12 @@ export interface EmployerApplicationDto {
    * run. An empty array is legitimate — an ARCHIVED application is finished.
    */
   availableActions: ApplicationStatus[];
+  /**
+   * Whether the EMPLOYER hid this from their board. The candidate has a separate flag;
+   * theirs can never remove a row from here. Archiving used to be a shared status, so it
+   * could — and a hired candidate tidying their list vanished from Hired.
+   */
+  archived: boolean;
 }
 
 export interface CreateJobInput {

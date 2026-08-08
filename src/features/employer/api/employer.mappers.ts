@@ -85,6 +85,10 @@ const STATUS_TO_STAGE: Record<ApplicationStatus, ApplicationStage> = {
   ACCEPTED: "Hired",
   REJECTED: "Rejected",
   WITHDRAWN: "Rejected",
+  // Legacy only — nothing writes this status any more. It used to arrive here whenever
+  // EITHER party archived, so a candidate tidying a job they had accepted showed up on
+  // the employer's board as rejected. Archiving is now a per-side flag that never changes
+  // the status; rows still carrying ARCHIVED predate that change.
   ARCHIVED: "Rejected",
 };
 
