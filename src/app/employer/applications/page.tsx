@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
+import { MessageSquare } from "lucide-react";
 import { cn } from "@/shared/utils/cn";
 import { Skeleton } from "@/shared/components/feedback/skeleton";
 import { Alert } from "@/shared/components/feedback/alert";
@@ -17,6 +18,7 @@ import {
   type ApplicationStage,
 } from "@/features/employer/api/employer.mappers";
 import { MakeOfferModal } from "@/features/employer/components/make-offer-modal";
+import { OfferThreadModal } from "@/features/employer/components/offer-thread-modal";
 
 /* Board stages (Rejected is handled outside the pipeline). */
 const STAGES: ApplicationStage[] = ["Applied", "Interview", "Offer", "Hired"];
@@ -37,6 +39,7 @@ export default function ApplicationsKanbanPage() {
   const [dragId, setDragId] = useState<string | null>(null);
   const [overStage, setOverStage] = useState<ApplicationStage | null>(null);
   const [offerFor, setOfferFor] = useState<{ id: string; name: string } | null>(null);
+  const [threadFor, setThreadFor] = useState<{ id: string; name: string } | null>(null);
   const [moveError, setMoveError] = useState<string | null>(null);
 
   const visible = useMemo(
@@ -153,27 +156,44 @@ export default function ApplicationsKanbanPage() {
                 </div>
 
                 <div className="space-y-2 min-h-16">
-                  {cards.map((a) => (
-                    <div
-                      key={a.id}
-                      draggable
-                      onDragStart={() => setDragId(a.id)}
-                      onDragEnd={() => { setDragId(null); setOverStage(null); }}
-                      className={cn(
-                        "rounded-lg border border-border bg-card shadow-sm p-3 cursor-grab active:cursor-grabbing transition-all duration-200 hover:shadow-md",
-                        dragId === a.id && "opacity-50",
-                      )}
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 bg-primary-100 text-primary-700">{a.initials}</div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-bold truncate text-content">{a.name}</p>
-                          <p className="text-xs text-content-tertiary truncate">{a.jobTitle}</p>
+                  {cards.map((a) => {
+                    const hasOffer = a.status === "OFFER" || a.status === "NEGOTIATING";
+                    return (
+                      <div
+                        key={a.id}
+                        draggable
+                        onDragStart={() => setDragId(a.id)}
+                        onDragEnd={() => { setDragId(null); setOverStage(null); }}
+                        // Opening the thread is the only way to read what a candidate said
+                        // when they asked for different terms.
+                        onClick={() => hasOffer && setThreadFor({ id: a.id, name: a.name })}
+                        className={cn(
+                          "rounded-lg border bg-card shadow-sm p-3 transition-all duration-200 hover:shadow-md",
+                          hasOffer ? "cursor-pointer" : "cursor-grab active:cursor-grabbing",
+                          a.status === "NEGOTIATING" ? "border-warning-300" : "border-border",
+                          dragId === a.id && "opacity-50",
+                        )}
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 bg-primary-100 text-primary-700">{a.initials}</div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-bold truncate text-content">{a.name}</p>
+                            <p className="text-xs text-content-tertiary truncate">{a.jobTitle}</p>
+                          </div>
+                          {a.match !== null && <span className="text-sm font-extrabold shrink-0 text-primary-600">{a.match}%</span>}
                         </div>
-                        {a.match !== null && <span className="text-sm font-extrabold shrink-0 text-primary-600">{a.match}%</span>}
+
+                        {/* NEGOTIATING shares the "Offer" column with OFFER, so without this
+                            the card looks identical and the employer has no way to know a
+                            message is waiting. */}
+                        {a.status === "NEGOTIATING" && (
+                          <span className="mt-2 inline-flex items-center gap-1 text-xs font-bold px-1.5 py-0.5 rounded-full bg-warning-50 text-warning-700 border border-warning-200">
+                            <MessageSquare size={11} /> Wants to negotiate
+                          </span>
+                        )}
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                   {cards.length === 0 && (
                     <p className="text-xs text-center py-6 text-content-disabled">Drop candidates here</p>
                   )}
@@ -189,6 +209,13 @@ export default function ApplicationsKanbanPage() {
         onClose={() => setOfferFor(null)}
         applicationId={offerFor?.id ?? ""}
         candidateName={offerFor?.name ?? ""}
+      />
+
+      <OfferThreadModal
+        open={threadFor !== null}
+        onClose={() => setThreadFor(null)}
+        applicationId={threadFor?.id ?? null}
+        candidateName={threadFor?.name ?? ""}
       />
     </div>
   );
