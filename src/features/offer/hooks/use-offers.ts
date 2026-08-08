@@ -23,12 +23,28 @@ export function useOffers() {
 
   useEffect(() => {
     let cancelled = false;
-    fetchOffers().then((data) => {
-      if (!cancelled) {
-        setItems(data);
+    fetchOffers()
+      .then((data) => {
+        if (!cancelled) {
+          setItems(data);
+          setIsLoading(false);
+        }
+      })
+      .catch((e: unknown) => {
+        if (cancelled) return;
         setIsLoading(false);
-      }
-    });
+        // This had no catch at all, so a failed first load became an unhandled rejection
+        // and the dev overlay showed a crash instead of the page.
+        //
+        // 401 is deliberately silent: the access token lives in memory, so a hard refresh
+        // always starts without one. The client retries behind a cookie refresh, and when
+        // that fails the auth provider is already navigating to /login — a message here
+        // would flash under a page that is on its way out.
+        const expired = e instanceof ApiError && e.statusCode === 401;
+        if (!expired) {
+          setError(e instanceof ApiError ? e.message : "Could not load your offers.");
+        }
+      });
     return () => { cancelled = true; };
   }, []);
 
