@@ -1,15 +1,17 @@
 "use client";
 
 import React from "react";
-import { Briefcase, Sparkles, MessageSquare, Info } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Briefcase, Sparkles, MessageSquare, Info, FileText } from "lucide-react";
 import { daysSince } from "@/lib/utils/format";
 import type { NotificationDto, NotificationType } from "../api/notification.api";
 
 const TYPE_ICON: Record<NotificationType, React.ReactNode> = {
-  application: <Briefcase size={16} />,
-  match: <Sparkles size={16} />,
-  message: <MessageSquare size={16} />,
-  system: <Info size={16} />,
+  APPLICATION: <Briefcase size={16} />,
+  OFFER: <FileText size={16} />,
+  MESSAGE: <MessageSquare size={16} />,
+  MATCH: <Sparkles size={16} />,
+  SYSTEM: <Info size={16} />,
 };
 
 function ago(iso: string): string {
@@ -28,12 +30,22 @@ interface NotificationListProps {
 }
 
 export function NotificationList({ notifications, onRead }: NotificationListProps) {
+  const router = useRouter();
+
+  // Reading it and going to it are one gesture. "The employer replied about your offer"
+  // that leaves you to find the offer yourself is barely better than the unread badge
+  // this replaces. `link` is null when there is genuinely nowhere to go.
+  const open = (n: NotificationDto) => {
+    onRead(n.id);
+    if (n.link) router.push(n.link);
+  };
+
   return (
     <div className="divide-y" style={{ borderColor: "var(--color-neutral-100)" }}>
       {notifications.map((n) => (
         <button
           key={n.id}
-          onClick={() => onRead(n.id)}
+          onClick={() => open(n)}
           className="w-full text-left flex items-start gap-3 px-5 py-4 transition-colors hover:bg-primary-50"
           style={{ background: n.read ? "transparent" : "var(--color-primary-50)" }}
         >

@@ -6,9 +6,10 @@
  * then narrower keys built from it. Keys are `as const` so React Query infers
  * literal tuples.
  *
- * Gap features (notification, saved-jobs, matching, payment) get keys too, even
- * though they resolve against mock data today — when the backend lands, only the
- * fetcher changes. See INTEGRATION_PLAN.md Phase 10.
+ * Gap features (saved-jobs, matching, payment) get keys too, even though they
+ * resolve against mock data today — when the backend lands, only the fetcher
+ * changes. See INTEGRATION_PLAN.md Phase 10. Notifications were one of these and
+ * are now live, which is exactly the one-file swap the convention was for.
  */
 
 export const qk = {
@@ -105,14 +106,14 @@ export const qk = {
     resources: (skillId: string) => [...qk.learning.all, "resources", skillId] as const,
   },
 
-  // ---- Gap features: no backend endpoint yet (INTEGRATION_PLAN.md Phase 10) ----
-
-  /** TODO(backend): no notification endpoints. */
+  /** Live: GET /notifications, /unread-count, PATCH /:id/read, POST /read-all. */
   notifications: {
     all: ["notifications"] as const,
     list: () => [...qk.notifications.all, "list"] as const,
     unreadCount: () => [...qk.notifications.all, "unread-count"] as const,
   },
+
+  // ---- Gap features: no backend endpoint yet (INTEGRATION_PLAN.md Phase 10) ----
 
   /** TODO(backend): no saved-jobs endpoints. */
   savedJobs: {
