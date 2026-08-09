@@ -1,8 +1,8 @@
 import React from "react";
 import Link from "next/link";
 import {
-  Sparkles, ArrowRight, ChevronRight, Briefcase, Calendar, Star,
-  MapPin, DollarSign,
+  ArrowRight, Briefcase, Calendar, Star,
+  MapPin, DollarSign
 } from "lucide-react";
 import MatchScoreBadge from "@/shared/components/data-display/match-score-badge";
 import { Reveal } from "@/shared/components/motion/reveal";
@@ -141,7 +141,7 @@ export function HeroSection() {
                 borderColor: "var(--color-border)",
                 color: "var(--color-text-primary)",
                 background: "var(--color-bg)",
-                boxShadow: "var(--shadow-sm)",
+                boxShadow: "var(--shadow-sm)"
               }}
             >
               Browse Jobs
@@ -164,7 +164,7 @@ export function HeroSection() {
               style={{
                 background: "var(--color-card)",
                 borderColor: "var(--color-border)",
-                boxShadow: "var(--shadow-lg)",
+                boxShadow: "var(--shadow-lg)"
               }}
             />
 
@@ -174,7 +174,7 @@ export function HeroSection() {
               style={{
                 background: "var(--color-card)",
                 borderColor: "var(--color-border)",
-                boxShadow: "var(--shadow-xl)",
+                boxShadow: "var(--shadow-xl)"
               }}
             >
               {/* Window bar */}

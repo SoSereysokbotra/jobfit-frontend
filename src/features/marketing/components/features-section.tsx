@@ -2,7 +2,7 @@ import React from "react";
 import Link from "next/link";
 import {
   Target, FileText, Star, Briefcase, Check, CheckCircle2, Eye,
-  Calendar, Award, Upload, ArrowRight, MapPin, type LucideIcon,
+  Calendar, Award, ArrowRight, type LucideIcon
 } from "lucide-react";
 import MatchScoreBadge from "@/shared/components/data-display/match-score-badge";
 import { Reveal } from "@/shared/components/motion/reveal";
@@ -163,7 +163,7 @@ function TrackingVisual() {
                 style={{
                   background: s.done ? "var(--color-primary-600)" : s.active ? "var(--color-primary-100)" : "var(--color-neutral-100)",
                   color: s.done ? "var(--color-text-on-primary)" : s.active ? "var(--color-primary-700)" : "var(--color-text-tertiary)",
-                  border: s.active ? "2px solid var(--color-primary-500)" : "none",
+                  border: s.active ? "2px solid var(--color-primary-500)" : "none"
                 }}
               >
                 {s.icon}
@@ -236,7 +236,7 @@ const FEATURES: Feature[] = [
       "Only shown once your profile is complete — no noise",
     ],
     cta: { label: "See how matching works", href: "/signup" },
-    Visual: MatchVisual,
+    Visual: MatchVisual
   },
   {
     num: "02",
@@ -251,7 +251,7 @@ const FEATURES: Feature[] = [
       "Re-parses on every update so matches stay fresh",
     ],
     cta: { label: "Analyze my resume", href: "/signup" },
-    Visual: ResumeVisual,
+    Visual: ResumeVisual
   },
   {
     num: "03",
@@ -266,7 +266,7 @@ const FEATURES: Feature[] = [
       "Save roles and get alerts when new matches land",
     ],
     cta: { label: "Browse recommendations", href: "/jobs" },
-    Visual: RecommendationsVisual,
+    Visual: RecommendationsVisual
   },
   {
     num: "04",
@@ -281,7 +281,7 @@ const FEATURES: Feature[] = [
       "Offer tracking with deadlines you won't miss",
     ],
     cta: { label: "Start tracking", href: "/signup" },
-    Visual: TrackingVisual,
+    Visual: TrackingVisual
   },
 ];
 

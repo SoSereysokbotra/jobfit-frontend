@@ -1,16 +1,8 @@
 "use client";
-
 import React from "react";
 import Link from "next/link";
-import {
-  Briefcase, Calendar, Award, Target, TrendingUp,
-  CheckCircle2, Eye, Star, ArrowRight, Search, Upload,
-  BarChart3, Clock, ChevronRight,
-} from "lucide-react";
-import {
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, Legend,
-} from "recharts";
+import { Briefcase, Calendar, Award, Target, CheckCircle2, Star, ArrowRight, Search, Upload, BarChart3, ChevronRight } from "lucide-react";
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { JobCard } from "@/features/job/components";
 import { useSession, displayName } from "@/features/auth/hooks/use-session";
 import { useMyStats } from "@/features/insights/hooks/use-insights";
@@ -38,7 +30,7 @@ function SamplePill() {
    CVD-validated: worst adjacent ΔE 20.7 (protan) on white surface. */
 const SERIES = {
   applications: "var(--color-primary-600)",
-  interviews: "var(--color-primary-400)",
+  interviews: "var(--color-primary-400)"
 };
 
 /* ─── MOCK DATA ─────────────────────────────────────────────── */
@@ -52,64 +44,11 @@ const applicationTrendData = [
   { month: "Jul", applications: 22, interviews: 9 },
 ];
 
-const recentActivity = [
-  {
-    icon: <Eye size={15} />,
-    text: "Stripe viewed your application",
-    sub: "Senior Frontend Engineer",
-    time: "2 hours ago",
-    color: "var(--color-info-500)",
-    bg: "var(--color-info-50)",
-  },
-  {
-    icon: <CheckCircle2 size={15} />,
-    text: "Applied to TechCorp",
-    sub: "Senior Software Engineer",
-    time: "5 hours ago",
-    color: "var(--color-success-500)",
-    bg: "var(--color-success-50)",
-  },
-  {
-    icon: <Star size={15} />,
-    text: "20 new job recommendations",
-    sub: "Matching your profile",
-    time: "1 day ago",
-    color: "var(--color-primary-500)",
-    bg: "var(--color-primary-50)",
-  },
-  {
-    icon: <Calendar size={15} />,
-    text: "Interview scheduled",
-    sub: "CloudBase — Tomorrow 2:00 PM",
-    time: "2 days ago",
-    color: "var(--color-warning-500)",
-    bg: "var(--color-warning-50)",
-  },
-  {
-    icon: <TrendingUp size={15} />,
-    text: "Profile score increased to 75%",
-    sub: "Add education to reach 90%",
-    time: "3 days ago",
-    color: "var(--color-success-600)",
-    bg: "var(--color-success-50)",
-  },
-];
-
 const quickActions = [
   { icon: <Search size={20} />, label: "Search Jobs", href: "/jobs", color: "var(--color-info-600)", bg: "var(--color-info-50)" },
   { icon: <Upload size={20} />, label: "Upload Resume", href: "/resumes", color: "var(--color-primary-600)", bg: "var(--color-primary-50)" },
   { icon: <Star size={20} />, label: "View Matches", href: "/recommendations", color: "var(--color-warning-600)", bg: "var(--color-warning-50)" },
   { icon: <BarChart3 size={20} />, label: "Career Insights", href: "/insights", color: "var(--color-success-600)", bg: "var(--color-success-50)" },
-];
-
-const upcomingInterviews = [
-  {
-    company: "CloudBase",
-    role: "DevOps Lead",
-    date: "Tomorrow",
-    time: "2:00 PM PT",
-    type: "Video Interview",
-  },
 ];
 
 /* ─── CHART TOOLTIP ─────────────────────────────────────────────
@@ -123,7 +62,7 @@ function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: 
       style={{
         background: "var(--color-card)",
         borderColor: "var(--color-border)",
-        boxShadow: "var(--shadow-md)",
+        boxShadow: "var(--shadow-md)"
       }}
     >
       <p className="font-bold mb-1.5" style={{ color: "var(--color-text-primary)" }}>{label}</p>
@@ -177,7 +116,7 @@ export default function DashboardPage() {
   const checklistDone = profileChecklist.filter((c) => c.done).length;
 
   const today = new Date().toLocaleDateString("en-US", {
-    weekday: "long", month: "long", day: "numeric",
+    weekday: "long", month: "long", day: "numeric"
   });
 
   return (

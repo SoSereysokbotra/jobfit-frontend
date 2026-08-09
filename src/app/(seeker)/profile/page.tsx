@@ -2,14 +2,14 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { UserCircle2, MapPin, Mail, Phone, Linkedin, Github, Globe } from "lucide-react";
+import { MapPin, Mail, Phone, Linkedin, Github, Globe } from "lucide-react";
 import {
   ProfileForm,
   CareerPreferencesForm,
   SkillsEditor,
   ExperienceList,
   EducationList,
-  formValuesToInput,
+  formValuesToInput
 } from "@/features/user-profile/components";
 import {
   useProfile,
@@ -22,11 +22,10 @@ import {
   useEducation,
   useEducationMutations,
   useSkills,
-  useSkillMutations,
+  useSkillMutations
 } from "@/features/user-profile/hooks/use-profile";
 import { profileCompleteness } from "@/features/user-profile/api/profile.mappers";
 import { useSession, displayName } from "@/features/auth/hooks/use-session";
-import { Button } from "@/shared/components/ui/button";
 import { Badge } from "@/shared/components/ui/badge";
 import { Skeleton } from "@/shared/components/feedback/skeleton";
 import { Alert } from "@/shared/components/feedback/alert";

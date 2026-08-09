@@ -2,7 +2,7 @@
 
 import type { BadgeTone } from "@/shared/components/data-display/badge";
 import { daysSince, initialsFrom } from "@/lib/utils/format";
-import type { AdminUserListItem, Alert, SystemHealth } from "./admin.api";
+import type { Alert, SystemHealth } from "./admin.api";
 
 export type UserStatus = "active" | "inactive" | "locked" | "deleted";
 
@@ -10,7 +10,7 @@ export const USER_STATUS_TONE: Record<UserStatus, BadgeTone> = {
   active: "success",
   inactive: "neutral",
   locked: "error",
-  deleted: "neutral",
+  deleted: "neutral"
 };
 
 /** Derive a display status. `isLocked` only exists on the detail DTO. */
@@ -68,7 +68,7 @@ export function isAcknowledged(a: Alert): boolean {
 export const HEALTH_TONE: Record<string, BadgeTone> = {
   ok: "success",
   degraded: "warning",
-  down: "error",
+  down: "error"
 };
 
 export function healthLabel(status: string): string {

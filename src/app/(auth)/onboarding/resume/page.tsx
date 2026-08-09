@@ -1,5 +1,4 @@
 "use client";
-
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -22,15 +21,11 @@ import {
   Info,
   Check,
   Search,
-  HelpCircle
+  HelpCircle,
 } from "lucide-react";
 import { useResumeUpload } from "@/features/resume/hooks/use-resume-upload";
 import { useParsingStatus, useParsedData } from "@/features/resume/hooks/use-resumes";
-import {
-  validateResumeFile,
-  RESUME_ACCEPT_ATTR,
-  type ParsedResumeDataDto,
-} from "@/features/resume/api/resume.api";
+import { validateResumeFile, RESUME_ACCEPT_ATTR, type ParsedResumeDataDto } from "@/features/resume/api/resume.api";
 import { useSession, displayName } from "@/features/auth/hooks/use-session";
 import { useCreateProfile, useUpdatePreferences, useProfile } from "@/features/user-profile/hooks/use-profile";
 import { parseLocationInput } from "@/features/user-profile/api/profile.mappers";
@@ -743,7 +738,8 @@ function ProfileSetupStep({
   onNext,
   onBack,
   parsedResumeData,
-  skipResume
+  // Passed by the parent but not read here; the prop stays in the contract.
+  skipResume: _skipResume
 }: {
   onNext: (data: ProfileData) => void;
   onBack: () => void;
@@ -1254,7 +1250,8 @@ function ProfileSetupStep({
 /* ═════════════════════════════════════════════════════════════ */
 function FirstMatchesStep({ 
   onBack, 
-  profileData 
+  // Passed by the parent but not read here; the prop stays in the contract.
+  profileData: _profileData 
 }: { 
   onBack: () => void; 
   profileData: ProfileData | null;

@@ -1,5 +1,4 @@
 /** Backend DTO -> view adapters for the employer feature. */
-
 import type { BadgeTone } from "@/shared/components/data-display/badge";
 import type { ApplicationStatus } from "@/features/application/api/application.api";
 import { daysSince, initialsFrom, toSalaryK } from "@/lib/utils/format";
@@ -186,7 +185,6 @@ export interface CompanyView {
 }
 
 export function toCompanyView(dto: EmployerCompanyDto): CompanyView {
-  const location = [dto.city, dto.state, dto.country].filter(Boolean).join(", ");
   return {
     id: dto.id,
     name: dto.name,

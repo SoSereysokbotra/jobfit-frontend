@@ -193,7 +193,7 @@ export function GoogleOAuthModal({
 
             {selected && (
               <div className="bg-neutral-900 rounded-lg p-3 border border-neutral-800 mb-4">
-                <div className="text-neutral-400 font-bold mb-1">// Received Identity Claims:</div>
+                <div className="text-neutral-400 font-bold mb-1">{"// Received Identity Claims:"}</div>
                 <div><span className="text-info-500">email:</span> &quot;{selected.email}&quot;</div>
                 <div><span className="text-info-500">firstName:</span> &quot;{selected.firstName}&quot;</div>
                 <div><span className="text-info-500">lastName:</span> &quot;{selected.lastName}&quot;</div>

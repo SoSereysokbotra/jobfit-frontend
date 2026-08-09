@@ -74,6 +74,11 @@ export default function TopNav({ onMenuToggle, className = "", user }: TopNavPro
       {/* Spacer for desktop */}
       <div className="hidden md:block flex-1" />
 
+      {/* The bell was IMPORTED here and never rendered, so the entire notification
+          feature was unreachable from the app — found by ESLint's no-unused-vars on the
+          day it was adopted, not by anyone using the page. */}
+      <NotificationBell />
+
       {/* User Avatar */}
       <Link href="/profile">
         <div

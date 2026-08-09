@@ -2,10 +2,8 @@
 
 import React, { useState, useRef } from "react";
 import {
-  FileText, Upload, Star, StarOff, Trash2, Download,
-  Plus, AlertTriangle, Info, AlertCircle,
-  ChevronDown, ChevronUp, MoreHorizontal, Clock,
-  Zap, Shield, TrendingUp, RefreshCw, X, Loader2,
+  FileText, Upload, Star, StarOff, Trash2,   Plus, AlertTriangle, Info,   ChevronDown, ChevronUp, MoreHorizontal, Clock,
+  Zap, Shield, TrendingUp, X, Loader2
 } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
 import { Badge } from "@/shared/components/ui/badge";
@@ -16,7 +14,7 @@ import { cn } from "@/shared/utils/cn";
 import {
   useResumes,
   useResumeMutations,
-  useParsingStatus,
+  useParsingStatus
 } from "@/features/resume/hooks/use-resumes";
 import { useResumeUpload } from "@/features/resume/hooks/use-resume-upload";
 import { validateResumeFile, RESUME_ACCEPT_ATTR } from "@/features/resume/api/resume.api";
@@ -70,7 +68,7 @@ function resumeName(r: ResumeView): string {
 
 /** Section card wrapper */
 function SectionCard({
-  title, icon: Icon, children, action, className,
+  title, icon: Icon, children, action, className
 }: {
   title: string;
   icon: React.ElementType;
@@ -127,7 +125,7 @@ function AtsRing({ score }: { score: number }) {
 function TipRow({ tip }: { tip: AtsTip }) {
   const config = {
     warning: { Icon: AlertTriangle, color: "var(--color-warning-600)", bg: "var(--color-warning-50)", badge: "warning" as const, label: "Tip" },
-    info:    { Icon: Info, color: "var(--color-info-600)", bg: "var(--color-info-50)", badge: "info" as const, label: "Info" },
+    info:    { Icon: Info, color: "var(--color-info-600)", bg: "var(--color-info-50)", badge: "info" as const, label: "Info" }
   };
   const { Icon, color, bg, badge, label } = config[tip.level];
 
@@ -205,7 +203,7 @@ function ResumeCard({
   onDelete,
   onSelectForAts,
   isSelectedForAts,
-  isMutating,
+  isMutating
 }: {
   resume: ResumeView;
   onSetDefault: (id: string) => void;
@@ -227,7 +225,7 @@ function ResumeCard({
         background: "var(--color-card)",
         borderColor: resume.isDefault ? "var(--color-primary-300)" : "var(--color-border)",
         boxShadow: resume.isDefault ? "0 0 0 3px var(--color-primary-50)" : "var(--shadow-sm)",
-        ...(isSelectedForAts ? { outline: `2px solid var(--color-primary-500)`, outlineOffset: "2px" } : {}),
+        ...(isSelectedForAts ? { outline: `2px solid var(--color-primary-500)`, outlineOffset: "2px" } : {})
       }}
     >
       {/* Default badge */}
@@ -367,7 +365,7 @@ export default function ResumesPage() {
     progress: uploadProgress,
     error: uploadError,
     resume: uploadedResume,
-    reset: resetUpload,
+    reset: resetUpload
   } = useResumeUpload();
 
   // Poll parsing for the just-uploaded resume so its status flips live.

@@ -1,22 +1,67 @@
 "use client";
-
 import React, { useState } from "react";
 import {
-  Search, Eye, EyeOff, Upload, ChevronDown, ChevronRight,
-  Heart, Bookmark, Share2, MoreHorizontal, Bell, Settings,
-  User, Briefcase, FileText, BarChart3, Star, MapPin,
-  DollarSign, Clock, Building2, GraduationCap, Award,
-  TrendingUp, CheckCircle2, AlertCircle, AlertTriangle,
-  Info, XCircle, X, Plus, Minus, Filter, ArrowUpDown,
-  Home, Mail, Lock, Calendar, Trash2, Edit, Download,
-  ExternalLink, ChevronLeft, ChevronsLeft, ChevronsRight,
-  Loader2, Menu, LogOut, HelpCircle, Zap, Target,
-  PieChart, Activity, ArrowRight, Check, Copy, Send,
+  Search,
+  Eye,
+  EyeOff,
+  Upload,
+  ChevronDown,
+  ChevronRight,
+  Heart,
+  Bookmark,
+  Share2,
+  MoreHorizontal,
+  Bell,
+  Settings,
+  User,
+  Briefcase,
+  FileText,
+  BarChart3,
+  Star,
+  MapPin,
+  DollarSign,
+  Clock,
+  Building2,
+  GraduationCap,
+  Award,
+  TrendingUp,
+  CheckCircle2,
+  AlertCircle,
+  AlertTriangle,
+  Info,
+  XCircle,
+  X,
+  Filter,
+  Home,
+  Mail,
+  Lock,
+  Calendar,
+  Trash2,
+  Edit,
+  Download,
+  ChevronLeft,
+  Loader2,
+  Menu,
+  Zap,
+  Target,
+  Check,
 } from "lucide-react";
 import {
-  LineChart, Line, BarChart, Bar, PieChart as RePieChart, Pie, Cell,
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, Legend,
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  PieChart as RePieChart,
+  Pie,
+  Cell,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
 } from "recharts";
 
 /* ═══════════════════════════════════════════════════════════════
@@ -112,7 +157,7 @@ function TokenCard({ children, label }: { children: React.ReactNode; label?: str
       style={{
         background: "var(--color-card)",
         borderColor: "var(--color-border)",
-        boxShadow: "var(--shadow-sm)",
+        boxShadow: "var(--shadow-sm)"
       }}
     >
       {label && (
@@ -132,7 +177,7 @@ function CodeTag({ children }: { children: React.ReactNode }) {
       style={{
         background: "var(--color-primary-50)",
         color: "var(--color-primary-700)",
-        border: "1px solid var(--color-primary-100)",
+        border: "1px solid var(--color-primary-100)"
       }}
     >
       {children}
@@ -148,10 +193,12 @@ export default function UIReferencePage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeSection, setActiveSection] = useState("colors");
   const [showPassword, setShowPassword] = useState(false);
-  const [modalOpen, setModalOpen] = useState<string | null>(null);
   const [switchOn, setSwitchOn] = useState(true);
   const [sliderValue, setSliderValue] = useState(65);
-  const [tabActive, setTabActive] = useState("all");
+  // The value is never read — this reference page's tab strip is decorative and does
+  // not reflect selection. The setter IS called, so the state stays and the unused
+  // slot is elided rather than named.
+  const [, setTabActive] = useState("all");
 
   return (
     <div className="min-h-screen" style={{ background: "var(--color-bg-secondary)" }}>
@@ -160,7 +207,7 @@ export default function UIReferencePage() {
         className="sticky top-0 z-50 border-b backdrop-blur-xl"
         style={{
           background: "rgba(255,255,255,0.85)",
-          borderColor: "var(--color-border)",
+          borderColor: "var(--color-border)"
         }}
       >
         <div className="max-w-[1440px] mx-auto px-6 py-4 flex items-center justify-between">
@@ -191,7 +238,7 @@ export default function UIReferencePage() {
               className="text-xs px-3 py-1 rounded-full font-medium"
               style={{
                 background: "var(--color-success-100)",
-                color: "var(--color-success-600)",
+                color: "var(--color-success-600)"
               }}
             >
               22 Sections
@@ -212,7 +259,7 @@ export default function UIReferencePage() {
           `}
           style={{
             background: "var(--color-bg)",
-            borderColor: "var(--color-border)",
+            borderColor: "var(--color-border)"
           }}
         >
           <nav className="space-y-1">
@@ -228,7 +275,7 @@ export default function UIReferencePage() {
                 style={{
                   background: activeSection === s.id ? "var(--color-primary-50)" : "transparent",
                   color: activeSection === s.id ? "var(--color-primary-700)" : "var(--color-text-secondary)",
-                  borderLeft: activeSection === s.id ? "3px solid var(--color-primary-500)" : "3px solid transparent",
+                  borderLeft: activeSection === s.id ? "3px solid var(--color-primary-500)" : "3px solid transparent"
                 }}
               >
                 <span className="text-base">{s.icon}</span>
@@ -253,7 +300,7 @@ export default function UIReferencePage() {
           <section
             className="rounded-2xl p-8 lg:p-12 text-white relative overflow-hidden"
             style={{
-              background: "linear-gradient(135deg, var(--color-primary-900), var(--color-primary-700), var(--color-primary-500))",
+              background: "linear-gradient(135deg, var(--color-primary-900), var(--color-primary-700), var(--color-primary-500))"
             }}
           >
             <div className="absolute inset-0 opacity-10">
@@ -473,7 +520,7 @@ export default function UIReferencePage() {
                         fontSize: t.size,
                         fontWeight: t.weight as unknown as number,
                         lineHeight: t.lh,
-                        color: "var(--color-text-primary)",
+                        color: "var(--color-text-primary)"
                       }}
                     >
                       {t.example}
@@ -513,7 +560,7 @@ export default function UIReferencePage() {
                       className="h-6 rounded"
                       style={{
                         width: s.value,
-                        background: "linear-gradient(135deg, var(--color-primary-500), var(--color-primary-300))",
+                        background: "linear-gradient(135deg, var(--color-primary-500), var(--color-primary-300))"
                       }}
                     />
                     <div className="flex-1">
@@ -551,7 +598,7 @@ export default function UIReferencePage() {
                       style={{
                         borderRadius: r.value,
                         borderColor: "var(--color-primary-500)",
-                        background: "var(--color-primary-50)",
+                        background: "var(--color-primary-50)"
                       }}
                     />
                     <p className="text-xs font-semibold" style={{ color: "var(--color-primary-600)" }}>{r.name}</p>
@@ -586,7 +633,7 @@ export default function UIReferencePage() {
                       style={{
                         background: "var(--color-card)",
                         borderColor: "var(--color-border)",
-                        boxShadow: `var(${s.var})`,
+                        boxShadow: `var(${s.var})`
                       }}
                     />
                     <p className="text-sm font-semibold" style={{ color: "var(--color-text-primary)" }}>{s.name}</p>
@@ -836,7 +883,7 @@ export default function UIReferencePage() {
                       style={{
                         borderColor: i <= 4 ? "var(--color-primary-500)" : "var(--color-border)",
                         color: "var(--color-primary-700)",
-                        background: i <= 4 ? "var(--color-primary-50)" : "var(--color-bg)",
+                        background: i <= 4 ? "var(--color-primary-50)" : "var(--color-bg)"
                       }}
                     />
                   ))}
@@ -1041,7 +1088,7 @@ export default function UIReferencePage() {
                     {["Python", "React", "SQL", "AWS", "Kubernetes", "Machine Learning"].map((s, i) => (
                       <span key={s} className="px-2 py-0.5 rounded text-xs font-medium" style={{
                         background: i < 4 ? "var(--color-success-50)" : "var(--color-warning-50)",
-                        color: i < 4 ? "var(--color-success-600)" : "var(--color-warning-600)",
+                        color: i < 4 ? "var(--color-success-600)" : "var(--color-warning-600)"
                       }}>
                         {i < 4 ? "✓" : "⚠"} {s}
                       </span>
@@ -1081,7 +1128,7 @@ export default function UIReferencePage() {
                         <td className="px-4 py-3">
                           <span className="px-2 py-0.5 rounded-full text-xs font-medium" style={{
                             background: `var(--color-${r.statusColor}-100)`,
-                            color: `var(--color-${r.statusColor}-600)`,
+                            color: `var(--color-${r.statusColor}-600)`
                           }}>{r.status}</span>
                         </td>
                         <td className="px-4 py-3" style={{ color: "var(--color-text-tertiary)" }}>{r.date}</td>
@@ -1131,7 +1178,7 @@ export default function UIReferencePage() {
                       style={{
                         background: item.active ? "var(--color-primary-50)" : "transparent",
                         color: item.active ? "var(--color-primary-700)" : "var(--color-text-secondary)",
-                        fontWeight: item.active ? 600 : 400,
+                        fontWeight: item.active ? 600 : 400
                       }}
                     >
                       {item.icon}
@@ -1183,7 +1230,7 @@ export default function UIReferencePage() {
                       className="px-4 py-2.5 text-xs font-medium border-b-2 transition-colors -mb-px"
                       style={{
                         borderColor: i === 0 ? "var(--color-primary-500)" : "transparent",
-                        color: i === 0 ? "var(--color-primary-600)" : "var(--color-text-tertiary)",
+                        color: i === 0 ? "var(--color-primary-600)" : "var(--color-text-tertiary)"
                       }}
                     >
                       {t}
@@ -1381,7 +1428,7 @@ export default function UIReferencePage() {
                         <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${s.done ? "text-white" : ""}`} style={{
                           background: s.done ? "var(--color-primary-600)" : s.active ? "var(--color-primary-100)" : "var(--color-neutral-100)",
                           color: s.done ? "white" : s.active ? "var(--color-primary-700)" : "var(--color-text-tertiary)",
-                          border: s.active ? "2px solid var(--color-primary-500)" : "none",
+                          border: s.active ? "2px solid var(--color-primary-500)" : "none"
                         }}>
                           {s.done ? <Check size={14} /> : i + 1}
                         </div>
@@ -1443,7 +1490,7 @@ export default function UIReferencePage() {
                     <div key={i} className="relative">
                       <div className="absolute -left-[18px] top-1 w-3 h-3 rounded-full border-2" style={{
                         background: exp.current ? "var(--color-primary-500)" : "var(--color-bg)",
-                        borderColor: "var(--color-primary-500)",
+                        borderColor: "var(--color-primary-500)"
                       }} />
                       <h4 className="text-sm font-semibold" style={{ color: "var(--color-text-primary)" }}>{exp.title}</h4>
                       <p className="text-xs" style={{ color: "var(--color-text-secondary)" }}>{exp.company}</p>

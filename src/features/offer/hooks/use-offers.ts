@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ApiError } from "@/lib/api/client";
 import { qk } from "@/lib/api/query-keys";
@@ -72,20 +72,26 @@ export function useOffers() {
     onSettled: refresh,
   });
 
-  const sortOffers = (list: Offer[]) =>
-    [...list].sort((a, b) => {
-      switch (sort) {
-        case "salary": return yearOneComp(b) - yearOneComp(a);
-        case "recent": return a.receivedDaysAgo - b.receivedDaysAgo;
-        default: return a.deadlineInDays - b.deadlineInDays; // soonest deadline first
-      }
-    });
+  // useCallback so the memo below can depend on the function itself rather than on the
+  // `sort` it closes over. Depending on `sort` was correct but only by coincidence: any
+  // future value read in here would silently not invalidate the memo.
+  const sortOffers = useCallback(
+    (list: Offer[]) =>
+      [...list].sort((a, b) => {
+        switch (sort) {
+          case "salary": return yearOneComp(b) - yearOneComp(a);
+          case "recent": return a.receivedDaysAgo - b.receivedDaysAgo;
+          default: return a.deadlineInDays - b.deadlineInDays; // soonest deadline first
+        }
+      }),
+    [sort],
+  );
 
   // Both lists go through isActiveOffer/isPastOffer rather than testing the status here,
   // because an offer's status alone does not decide it — see the note in offer.api.ts.
   const active = useMemo(
     () => sortOffers(items.filter(isActiveOffer)),
-    [items, sort],
+    [items, sortOffers],
   );
 
   const past = useMemo(
