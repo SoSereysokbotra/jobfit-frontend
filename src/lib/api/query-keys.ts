@@ -61,6 +61,12 @@ export const qk = {
       [...qk.applications.detail(applicationId), "timeline"] as const,
   },
 
+  offers: {
+    all: ["offers"] as const,
+    list: () => [...qk.offers.all, "list"] as const,
+    detail: (offerId: string) => [...qk.offers.all, "detail", offerId] as const,
+  },
+
   employer: {
     all: ["employer"] as const,
     company: (companyId: string) => [...qk.employer.all, "company", companyId] as const,

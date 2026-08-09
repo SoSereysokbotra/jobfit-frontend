@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import {
   MapPin, Clock, CalendarClock, ChevronDown, StickyNote,
-  Check, X, TrendingUp, Sparkles,
+  Check, X, TrendingUp, Sparkles, Ban,
 } from "lucide-react";
 import { cn } from "@/shared/utils/cn";
 import { Badge } from "@/shared/components/ui/badge";
@@ -228,7 +228,14 @@ export function OfferCard({ offer, past = false, onAccept, onReject, onNegotiate
       {/* ── Decision actions ───────────────────────────────── */}
       {past ? (
         <div className="flex items-center gap-2 mt-4 pt-3 border-t" style={{ borderColor: "var(--color-neutral-100)" }}>
-          {offer.status === "Accepted" ? (
+          {/* Three past states, not two. A lapsed offer was never accepted OR declined —
+              the application closed underneath it — and calling it "Declined" would tell
+              the candidate they turned down a job they never answered. */}
+          {offer.lapsed ? (
+            <span className="flex items-center gap-1.5 text-xs font-bold" style={{ color: "var(--color-text-tertiary)" }}>
+              <Ban size={13} /> No longer open — this application has closed
+            </span>
+          ) : offer.status === "Accepted" ? (
             <span className="flex items-center gap-1.5 text-xs font-bold" style={{ color: "var(--color-success-600)" }}>
               <Check size={13} /> Accepted · started {offer.startDate}
             </span>

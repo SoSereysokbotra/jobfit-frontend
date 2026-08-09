@@ -40,6 +40,12 @@ export interface Offer {
   messages: OfferMessage[];
   /** Replies from the employer you have not read. */
   unreadCount: number;
+  /**
+   * The offer still reads as awaiting a reply, but the application behind it is closed —
+   * so there is no decision left to make. The backend derives this; see `lapsed` on
+   * OfferResponseDto.
+   */
+  lapsed: boolean;
 }
 
 export interface OfferMessage {
@@ -52,6 +58,21 @@ export interface OfferMessage {
 
 export const ACTIVE_STATUSES: OfferStatus[] = ["New", "Reviewing", "Negotiating"];
 export const PAST_STATUSES: OfferStatus[] = ["Accepted", "Rejected"];
+
+/**
+ * Active/past is NOT a function of the offer's status alone.
+ *
+ * The database holds offers still marked EXTENDED/NEGOTIATING on applications that are
+ * already finished — written independently before the lifecycle was enforced. Splitting on
+ * status alone put four of those in the operator's "Active Offers" with live Accept and
+ * Decline buttons, every one of which the backend refuses. Every split goes through these
+ * two, so the rule lives in one place.
+ */
+export const isActiveOffer = (o: Offer): boolean =>
+  ACTIVE_STATUSES.includes(o.status) && !o.lapsed;
+
+export const isPastOffer = (o: Offer): boolean =>
+  PAST_STATUSES.includes(o.status) || o.lapsed;
 
 export const OFFER_STATUS_CONFIG: Record<OfferStatus, { label: string; badge: BadgeVariant }> = {
   New: { label: "New offer", badge: "info" },
@@ -94,6 +115,10 @@ interface OfferDto {
   unreadCount: number;
   createdAt: string;
   decidedAt: string | null;
+  /** The application's own status — an offer is only as live as the process behind it. */
+  applicationStatus?: string;
+  /** Optional so an older backend still parses; absent means "not lapsed". */
+  lapsed?: boolean;
   job: {
     id: string;
     title: string;
@@ -168,6 +193,7 @@ export function toOffer(dto: OfferDto): Offer {
     market: undefined, // TODO(backend): no salary-benchmark source
     messages: dto.messages ?? [],
     unreadCount: dto.unreadCount ?? 0,
+    lapsed: dto.lapsed ?? false,
   };
 }
 
