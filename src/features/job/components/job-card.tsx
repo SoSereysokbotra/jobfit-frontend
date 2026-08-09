@@ -5,6 +5,7 @@ import Link from "next/link";
 import { MapPin, DollarSign, Clock, Heart, ExternalLink } from "lucide-react";
 import { cn } from "@/shared/utils/cn";
 import MatchScoreBadge from "@/shared/components/data-display/match-score-badge";
+import { AppliedPill } from "@/features/application/components/applied-pill";
 import { formatPostedDate, formatSalaryRange, type Job } from "@/shared/types/shared.types";
 
 interface JobCardProps {
@@ -48,12 +49,16 @@ export function JobCard({
 }: JobCardProps) {
   const actions = (
     <>
-      <button
-        onClick={() => onApply?.(job.id)}
-        className="px-3 py-1.5 rounded-md text-xs font-bold text-white bg-primary-600 hover:bg-primary-700 transition-all duration-200 active:scale-95"
-      >
-        Apply
-      </button>
+      {/* Same treatment as the job detail page: once an application exists, show it and
+          link to it rather than offering an Apply that the unique constraint refuses. */}
+      <AppliedPill jobId={job.id}>
+        <button
+          onClick={() => onApply?.(job.id)}
+          className="px-3 py-1.5 rounded-md text-xs font-bold text-white bg-primary-600 hover:bg-primary-700 transition-all duration-200 active:scale-95"
+        >
+          Apply
+        </button>
+      </AppliedPill>
       <button
         onClick={() => onToggleSave?.(job.id)}
         aria-label={saved ? "Remove from saved jobs" : "Save job"}

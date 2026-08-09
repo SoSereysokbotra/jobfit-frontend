@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { MapPin, DollarSign, Heart, X, ChevronDown, ChevronUp, Check, AlertTriangle } from "lucide-react";
 import { cn } from "@/shared/utils/cn";
+import { AppliedPill } from "@/features/application/components/applied-pill";
 import { formatSalaryRange, type Job } from "@/shared/types/shared.types";
 
 /** Display labels for the match sub-scores returned by the backend. */
@@ -133,13 +134,16 @@ export function JobRecommendationCard({
           </p>
 
           <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => onApply?.(job.id)}
-              className="px-6 py-2 rounded-md text-sm font-bold text-white transition-all duration-200 hover:opacity-90 active:scale-95"
-              style={{ background: "var(--color-primary-600)" }}
-            >
-              Apply Now
-            </button>
+            {/* Same treatment as the job detail page and the search results. */}
+            <AppliedPill jobId={job.id}>
+              <button
+                onClick={() => onApply?.(job.id)}
+                className="px-6 py-2 rounded-md text-sm font-bold text-white transition-all duration-200 hover:opacity-90 active:scale-95"
+                style={{ background: "var(--color-primary-600)" }}
+              >
+                Apply Now
+              </button>
+            </AppliedPill>
             <button
               onClick={() => onToggleSave?.(job.id)}
               className={cn(
