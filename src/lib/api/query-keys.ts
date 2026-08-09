@@ -95,7 +95,6 @@ export const qk = {
 
   learning: {
     all: ["learning"] as const,
-    path: (userId: string) => [...qk.learning.all, "path", userId] as const,
     gaps: (userId: string) => [...qk.learning.all, "gaps", userId] as const,
     resources: (skillId: string) => [...qk.learning.all, "resources", skillId] as const,
   },

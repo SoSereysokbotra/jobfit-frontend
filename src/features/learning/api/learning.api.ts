@@ -1,7 +1,8 @@
 /**
- * Learning-path endpoints (backend module: `learning`).
- *   - GET /learning-paths/{userId} — auth, own-only. Current skills + skill-gap
- *     recommendations (in-demand skills the user lacks), each with resources.
+ * Learning endpoints (backend module: `learning`).
+ *   - GET /learning/skill-gaps — auth, own-only. What the jobs YOU applied to ask for that
+ *     your CV does not evidence. Replaced GET /learning-paths/{userId}, which returned ten
+ *     hardcoded technology skills as anyone's learning path.
  *   - GET /skills/{skillId}/learning-resources — public catalog for one skill.
  */
 
@@ -11,18 +12,6 @@ export interface LearningResource {
   title: string;
   provider: string;
   url: string;
-}
-
-export interface SkillGapRecommendation {
-  skill: string;
-  resources: LearningResource[];
-}
-
-/** Mirrors LearningPathView. */
-export interface LearningPathDto {
-  userId: string;
-  currentSkills: string[];
-  gapSkills: SkillGapRecommendation[];
 }
 
 /** Mirrors SkillResourcesView. */
@@ -61,10 +50,6 @@ export interface SkillGapSummaryDto {
 export const learningApi = {
   /** GET /learning/skill-gaps — own-only, derived from the token. */
   skillGaps: () => apiClient.get<SkillGapSummaryDto>("/learning/skill-gaps"),
-
-  /** GET /learning-paths/{userId} */
-  learningPath: (userId: string) =>
-    apiClient.get<LearningPathDto>(`/learning-paths/${userId}`),
 
   /** GET /skills/{skillId}/learning-resources (public) */
   skillResources: (skillId: string) =>
