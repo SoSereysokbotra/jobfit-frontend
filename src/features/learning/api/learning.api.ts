@@ -21,15 +21,33 @@ export interface SkillResourcesDto {
   resources: LearningResource[];
 }
 
-/** One requirement the user's applied jobs ask for that their CV does not evidence. */
+/**
+ * MISSING — nothing on the CV evidences this.
+ * PARTIAL — something adjacent matched. Worth showing, but it must NOT read as covered:
+ *   a CV listing "Effective Time Management" once counted as covering "Classroom behaviour
+ *   management", because both contain the word `management`.
+ */
+export type GapCoverage = "MISSING" | "PARTIAL";
+
+/** One requirement a job asks for that the user's CV does not clearly evidence. */
 export interface SkillGapDto {
   /** The employer's own wording — a full requirement sentence, never a short skill tag. */
   requirement: string;
-  /** How many of the user's applications ask for it. A count, not a grade. */
+  coverage: GapCoverage;
+  /** For PARTIAL only: the CV skills that caused the weak match, so the user can overrule it. */
+  matchedSkills: string[];
+  /** How many of the user's applications ask for it, across all of them. A count, not a grade. */
   requiredBy: number;
+}
+
+/** The gaps for one application, so the job is the heading rather than a footnote. */
+export interface ApplicationGapsDto {
+  applicationId: string;
+  jobId: string;
+  jobTitle: string;
   source: "EMPLOYER" | "AI_EXTRACTED";
-  /** The jobs behind the count, so the number can be checked. */
-  jobTitles?: string[];
+  requirementsTotal: number;
+  gaps: SkillGapDto[];
 }
 
 /**
@@ -44,7 +62,8 @@ export interface SkillGapSummaryDto {
   hasApplications: boolean;
   hasParsedResume: boolean;
   jobsConsidered: number;
-  gaps: SkillGapDto[];
+  /** Grouped by application, most gaps first. */
+  applications: ApplicationGapsDto[];
 }
 
 export const learningApi = {
