@@ -107,6 +107,10 @@ export interface CreateJobInput {
   requirements?: string[];
   benefits?: string[];
   bonusPct?: number;
+  /** Omit when the employer has not said — the API stores NULL and clients render nothing. */
+  employmentType?: "FULL_TIME" | "PART_TIME" | "CONTRACT" | "TEMPORARY" | "FREELANCE";
+  experienceLevel?:
+    | "INTERN" | "ENTRY" | "MID" | "SENIOR" | "LEAD" | "MANAGER" | "DIRECTOR" | "C_LEVEL";
 }
 
 export type UpdateJobInput = Partial<CreateJobInput>;

@@ -1,8 +1,21 @@
 /* Shared domain types used across features (job, dashboard, saved-jobs, recommendations). */
 
-export type EmploymentType = "Full-time" | "Contract" | "Part-time" | "Freelance";
+export type EmploymentType =
+  | "Full-time"
+  | "Part-time"
+  | "Contract"
+  | "Temporary"
+  | "Freelance";
 export type RemoteType = "On-site" | "Hybrid" | "Remote";
-export type ExperienceLevel = "Entry-level" | "Mid-level" | "Senior" | "Lead/Manager";
+export type ExperienceLevel =
+  | "Intern"
+  | "Entry-level"
+  | "Mid-level"
+  | "Senior"
+  | "Lead"
+  | "Manager"
+  | "Director"
+  | "C-level";
 
 export interface Job {
   id: string;
@@ -18,10 +31,20 @@ export interface Job {
   salaryMax: number;
   /** Match score 0–100 (shown only when profile is complete). */
   match: number;
-  type: EmploymentType;
+  /**
+   * ABSENT when the employer has not said, and absent must render as nothing.
+   *
+   * These three used to be required, which the mapper satisfied by hardcoding
+   * "Full-time" / "Mid-level" / "Technology" on every job — so every card in search,
+   * saved jobs, the dashboard and recommendations asserted all three, including on a
+   * part-time teaching post. Making them optional is what forces each call site to
+   * decide what "not known" looks like, instead of being handed a plausible lie.
+   */
+  type?: EmploymentType;
   remote: RemoteType;
-  level: ExperienceLevel;
-  industry: string;
+  level?: ExperienceLevel;
+  /** Resolved from the posting company, and present on the job DETAIL response only. */
+  industry?: string;
   postedDaysAgo: number;
   description: string;
   /** Employer-authored structured content (absent/empty when unset). */

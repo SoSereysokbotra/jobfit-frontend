@@ -1,7 +1,9 @@
 /** Backend DTO -> view adapter for the job feature. */
 
 import type { JobDto } from "./job.api";
-import type { Job, RemoteType } from "@/shared/types/shared.types";
+import type {
+  EmploymentType, ExperienceLevel, Job, RemoteType,
+} from "@/shared/types/shared.types";
 import { daysSince, initialsFrom, logoBgFor, toSalaryK } from "@/lib/utils/format";
 
 /** Backend remoteType tokens -> the frontend's display union. */
@@ -16,18 +18,52 @@ function toRemote(token: string | undefined): RemoteType {
   return REMOTE_LABELS[(token ?? "").toUpperCase()] ?? "On-site";
 }
 
+const EMPLOYMENT_LABELS: Record<string, EmploymentType> = {
+  FULL_TIME: "Full-time",
+  PART_TIME: "Part-time",
+  CONTRACT: "Contract",
+  TEMPORARY: "Temporary",
+  FREELANCE: "Freelance",
+};
+
+const LEVEL_LABELS: Record<string, ExperienceLevel> = {
+  INTERN: "Intern",
+  ENTRY: "Entry-level",
+  MID: "Mid-level",
+  SENIOR: "Senior",
+  LEAD: "Lead",
+  MANAGER: "Manager",
+  DIRECTOR: "Director",
+  C_LEVEL: "C-level",
+};
+
 /**
- * JobDto -> Job. Faithful for the fields the backend has; the rest are DEFAULTED
- * because the Job model does not carry them yet:
+ * Look a token up, returning undefined for anything absent or unrecognised.
  *
- *   TODO(backend): `match`    — needs the AI matching service (Phase 10). 0 until then.
- *   TODO(backend): `type`     — no employmentType column. Defaults to "Full-time".
- *   TODO(backend): `level`    — no experienceLevel column. Defaults to "Mid-level".
- *   TODO(backend): `industry` — Job has none; Company.industry is an id, not exposed.
- *                               Defaults to "Technology".
+ * `?? someDefault` is exactly what this file used to do, and it is the bug: an
+ * unrecognised token means we do not know, and "we do not know" has to survive all the
+ * way to the pixel or the card asserts something nobody said.
+ */
+function labelOf<T extends string>(
+  labels: Record<string, T>,
+  token: string | undefined,
+): T | undefined {
+  return token ? labels[token.toUpperCase()] : undefined;
+}
+
+/**
+ * JobDto -> Job.
  *
- * These defaults keep the existing UI (cards, filter facets, sorts) working; they
- * are the single place to change when the backend grows the fields.
+ * `type`, `level` and `industry` used to be hardcoded to "Full-time", "Mid-level" and
+ * "Technology" because the backend had no such columns. Job cards render the first two
+ * as pills, so every card claimed "Full-time · Mid-level" regardless of the posting —
+ * including the part-time teaching one. The backend now has `employmentType` and
+ * `experienceLevel` (nullable, and null on every job posted before they existed), and
+ * `industry` comes off the company profile on the detail response.
+ *
+ * All three are now UNDEFINED when unknown, and every consumer renders nothing for them.
+ *
+ *   TODO(backend): `match` — needs the AI matching service (Phase 10). 0 until then.
  */
 export function toJobView(dto: JobDto): Job {
   const company = dto.companyName?.trim() || "Company";
@@ -41,10 +77,13 @@ export function toJobView(dto: JobDto): Job {
     salaryMin: toSalaryK(dto.salaryRange?.min),
     salaryMax: toSalaryK(dto.salaryRange?.max),
     match: 0, // TODO(backend): AI match score not available yet.
-    type: "Full-time", // TODO(backend)
+    type: labelOf(EMPLOYMENT_LABELS, dto.employmentType),
     remote: toRemote(dto.remoteType),
-    level: "Mid-level", // TODO(backend)
-    industry: "Technology", // TODO(backend)
+    level: labelOf(LEVEL_LABELS, dto.experienceLevel),
+    // The company's industry, resolved to a name by the backend. Only the DETAIL
+    // response carries `company`, so this is undefined in list results — which is
+    // correct: we genuinely do not know it there.
+    industry: dto.company?.industry,
     postedDaysAgo: daysSince(dto.createdAt),
     description: dto.description,
     responsibilities: dto.responsibilities ?? [],

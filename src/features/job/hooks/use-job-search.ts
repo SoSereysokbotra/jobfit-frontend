@@ -52,14 +52,18 @@ export function filterJobs(
   const q = filters.query.trim().toLowerCase();
   return jobs.filter((job) => {
     if (ignore !== "query" && q) {
-      const haystack = `${job.title} ${job.company} ${job.industry} ${job.description}`.toLowerCase();
+      const haystack = `${job.title} ${job.company} ${job.industry ?? ""} ${job.description}`.toLowerCase();
       if (!haystack.includes(q)) return false;
     }
-    if (ignore !== "types" && filters.types.length && !filters.types.includes(job.type)) return false;
+    // type / level / industry are absent when the employer has not said. A job that
+    // does not state its employment type is NOT a full-time job, so an active
+    // "Full-time" filter excludes it — the same answer as before, but now reached by
+    // reading the data rather than by the mapper having assumed it.
+    if (ignore !== "types" && filters.types.length && !(job.type && filters.types.includes(job.type))) return false;
     if (ignore !== "remote" && filters.remote.length && !filters.remote.includes(job.remote)) return false;
-    if (ignore !== "levels" && filters.levels.length && !filters.levels.includes(job.level)) return false;
+    if (ignore !== "levels" && filters.levels.length && !(job.level && filters.levels.includes(job.level))) return false;
     if (ignore !== "locations" && filters.locations.length && !filters.locations.includes(job.location)) return false;
-    if (ignore !== "industries" && filters.industries.length && !filters.industries.includes(job.industry)) return false;
+    if (ignore !== "industries" && filters.industries.length && !(job.industry && filters.industries.includes(job.industry))) return false;
     if (ignore !== "salaryMin" && filters.salaryMin > 0 && job.salaryMax < filters.salaryMin) return false;
     if (ignore !== "matchMin" && filters.matchMin > 0 && job.match < filters.matchMin) return false;
     if (ignore !== "postedWithin" && filters.postedWithin !== null && job.postedDaysAgo > filters.postedWithin) return false;

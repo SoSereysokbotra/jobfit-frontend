@@ -9,10 +9,12 @@
  *   - `companyName` is enriched by JobService from the Company table (the Job
  *     aggregate itself only carries `companyId`); it can be absent.
  *
- * TODO(backend): the Job model has no employment type, experience level, industry,
- * or match score. Those frontend `Job` fields are defaulted in job.mappers.ts and
- * flagged there — swap when the backend exposes them (match depends on the AI
- * service; see INTEGRATION_PLAN.md Phase 10).
+ * `employmentType` and `experienceLevel` are OPTIONAL and are omitted for every posting
+ * whose employer has not set them — which is all 55 that existed before the columns did.
+ * Absent means absent; job.mappers.ts leaves the field undefined rather than defaulting.
+ *
+ * TODO(backend): `match` still has no source (depends on the AI service; see
+ * INTEGRATION_PLAN.md Phase 10).
  */
 
 import { apiClient } from "@/lib/api/client";
@@ -33,6 +35,10 @@ export interface JobDto {
   requirements?: string[];
   benefits?: string[];
   bonusPct?: number | null;
+  /** Absent when the employer has not said. Never render a default for these. */
+  employmentType?: "FULL_TIME" | "PART_TIME" | "CONTRACT" | "TEMPORARY" | "FREELANCE";
+  experienceLevel?:
+    | "INTERN" | "ENTRY" | "MID" | "SENIOR" | "LEAD" | "MANAGER" | "DIRECTOR" | "C_LEVEL";
   /**
    * INTERNAL — apply inside JobFits. EXTERNAL — ingested from another site; the user must
    * apply at `externalUrl`. The server REJECTS applications to EXTERNAL jobs, so the UI

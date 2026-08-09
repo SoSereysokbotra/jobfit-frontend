@@ -16,6 +16,33 @@ const REMOTE_TYPES: { label: string; value: CreateJobInput["remoteType"] }[] = [
   { label: "Remote", value: "REMOTE" },
 ];
 
+/**
+ * Both default to "" — NOT SAID — and both are sent as undefined when left alone.
+ *
+ * Every job card used to claim "Full-time · Mid-level" because the frontend mapper
+ * invented those. The columns now exist, but they are only worth having if an employer
+ * can answer them; and an employer who does not answer must leave a null, not pick up a
+ * default that the card then presents as their word.
+ */
+const EMPLOYMENT_TYPES: { label: string; value: string }[] = [
+  { label: "Full-time", value: "FULL_TIME" },
+  { label: "Part-time", value: "PART_TIME" },
+  { label: "Contract", value: "CONTRACT" },
+  { label: "Temporary", value: "TEMPORARY" },
+  { label: "Freelance", value: "FREELANCE" },
+];
+
+const EXPERIENCE_LEVELS: { label: string; value: string }[] = [
+  { label: "Intern", value: "INTERN" },
+  { label: "Entry-level", value: "ENTRY" },
+  { label: "Mid-level", value: "MID" },
+  { label: "Senior", value: "SENIOR" },
+  { label: "Lead", value: "LEAD" },
+  { label: "Manager", value: "MANAGER" },
+  { label: "Director", value: "DIRECTOR" },
+  { label: "C-level", value: "C_LEVEL" },
+];
+
 const INPUT = "w-full px-3 py-2.5 rounded-md border border-border bg-background text-content text-sm outline-none transition-all focus:ring-2 focus:ring-primary-500 focus:border-transparent";
 
 /** Turn a textarea (one item per line) into a clean string[]. */
@@ -41,6 +68,9 @@ export default function CreateJobPage() {
   const [maxSalary, setMaxSalary] = useState("");
   const [bonus, setBonus] = useState("");
   const [remote, setRemote] = useState<CreateJobInput["remoteType"]>("HYBRID");
+  /** "" means the employer has not said, and is sent as undefined. */
+  const [employmentType, setEmploymentType] = useState("");
+  const [experienceLevel, setExperienceLevel] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<null | "draft" | "publish">(null);
 
@@ -62,6 +92,8 @@ export default function CreateJobPage() {
       requirements: toLines(requirements),
       benefits: toLines(benefits),
       bonusPct: bonus ? Number(bonus) : undefined,
+      employmentType: (employmentType || undefined) as CreateJobInput["employmentType"],
+      experienceLevel: (experienceLevel || undefined) as CreateJobInput["experienceLevel"],
     };
   };
 
@@ -121,6 +153,27 @@ export default function CreateJobPage() {
             ))}
           </div>
         </Field>
+
+        {/* Both optional. "Not specified" is a real choice and stays a real absence —
+            seekers see no pill rather than a guess. */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Field label="Employment Type" hint="Optional">
+            <select value={employmentType} onChange={(e) => setEmploymentType(e.target.value)} className={INPUT}>
+              <option value="">Not specified</option>
+              {EMPLOYMENT_TYPES.map((o) => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
+          </Field>
+          <Field label="Experience Level" hint="Optional">
+            <select value={experienceLevel} onChange={(e) => setExperienceLevel(e.target.value)} className={INPUT}>
+              <option value="">Not specified</option>
+              {EXPERIENCE_LEVELS.map((o) => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
+          </Field>
+        </div>
 
         {error && <Alert variant="error">{error}</Alert>}
       </div>

@@ -4,9 +4,13 @@ import React, { useMemo } from "react";
 import type { EmploymentType, ExperienceLevel, Job, RemoteType } from "@/shared/types/shared.types";
 import { filterJobs, type JobSearchFilters } from "../hooks/use-job-search";
 
-const EMPLOYMENT_TYPES: EmploymentType[] = ["Full-time", "Contract", "Part-time", "Freelance"];
+const EMPLOYMENT_TYPES: EmploymentType[] = [
+  "Full-time", "Part-time", "Contract", "Temporary", "Freelance",
+];
 const REMOTE_TYPES: RemoteType[] = ["On-site", "Hybrid", "Remote"];
-const EXPERIENCE_LEVELS: ExperienceLevel[] = ["Entry-level", "Mid-level", "Senior", "Lead/Manager"];
+const EXPERIENCE_LEVELS: ExperienceLevel[] = [
+  "Intern", "Entry-level", "Mid-level", "Senior", "Lead", "Manager", "Director", "C-level",
+];
 const POSTED_OPTIONS: { label: string; value: number | null }[] = [
   { label: "Last 7 days", value: 7 },
   { label: "Last 30 days", value: 30 },
@@ -24,6 +28,17 @@ interface JobFiltersProps {
   setFilter: <K extends keyof JobSearchFilters>(key: K, value: JobSearchFilters[K]) => void;
   clearFilters: () => void;
   activeFilterCount: number;
+}
+
+/**
+ * The distinct values a facet actually has, skipping jobs that do not state one.
+ *
+ * `[...new Set(jobs.map(j => j.industry))]` used to be safe only because the mapper
+ * defaulted every job to "Technology". Now that absent is a real value, an undefined
+ * would become a blank checkbox that filters to nothing.
+ */
+export function valuesOf(jobs: Job[], pick: (j: Job) => string | undefined): string[] {
+  return [...new Set(jobs.map(pick).filter((v): v is string => Boolean(v)))].sort();
 }
 
 export function FilterSection({ title, children }: { title: string; children: React.ReactNode }) {
@@ -71,7 +86,13 @@ export function JobFilters({
   jobs, filters, toggleFilter, setFilter, clearFilters, activeFilterCount,
 }: JobFiltersProps) {
   const locations = useMemo(() => [...new Set(jobs.map((j) => j.location))].sort(), [jobs]);
-  const industries = useMemo(() => [...new Set(jobs.map((j) => j.industry))].sort(), [jobs]);
+  const industries = useMemo(() => valuesOf(jobs, (j) => j.industry), [jobs]);
+
+  // A facet whose field NO job in this set states cannot narrow anything — every option
+  // would read 0 and the panel would imply the board is empty of part-time work rather
+  // than that nobody has said. Hide the section instead of showing dead checkboxes.
+  const anyType = useMemo(() => jobs.some((j) => j.type), [jobs]);
+  const anyLevel = useMemo(() => jobs.some((j) => j.level), [jobs]);
 
   // Faceted counts: how many jobs match if this option were the only value in its facet
   const countFor = (key: "types" | "remote" | "levels" | "locations" | "industries", value: string) =>
@@ -97,17 +118,19 @@ export function JobFilters({
         )}
       </div>
 
-      <FilterSection title="Employment Type">
-        {EMPLOYMENT_TYPES.map((t) => (
-          <CheckOption
-            key={t}
-            label={t}
-            checked={filters.types.includes(t)}
-            count={countFor("types", t)}
-            onChange={() => toggleFilter("types", t)}
-          />
-        ))}
-      </FilterSection>
+      {anyType && (
+        <FilterSection title="Employment Type">
+          {EMPLOYMENT_TYPES.map((t) => (
+            <CheckOption
+              key={t}
+              label={t}
+              checked={filters.types.includes(t)}
+              count={countFor("types", t)}
+              onChange={() => toggleFilter("types", t)}
+            />
+          ))}
+        </FilterSection>
+      )}
 
       <FilterSection title="Remote Flexibility">
         {REMOTE_TYPES.map((r) => (
@@ -121,17 +144,19 @@ export function JobFilters({
         ))}
       </FilterSection>
 
-      <FilterSection title="Experience Level">
-        {EXPERIENCE_LEVELS.map((l) => (
-          <CheckOption
-            key={l}
-            label={l}
-            checked={filters.levels.includes(l)}
-            count={countFor("levels", l)}
-            onChange={() => toggleFilter("levels", l)}
-          />
-        ))}
-      </FilterSection>
+      {anyLevel && (
+        <FilterSection title="Experience Level">
+          {EXPERIENCE_LEVELS.map((l) => (
+            <CheckOption
+              key={l}
+              label={l}
+              checked={filters.levels.includes(l)}
+              count={countFor("levels", l)}
+              onChange={() => toggleFilter("levels", l)}
+            />
+          ))}
+        </FilterSection>
+      )}
 
       <FilterSection title="Location">
         <div className="max-h-44 overflow-y-auto pr-1">
@@ -147,17 +172,19 @@ export function JobFilters({
         </div>
       </FilterSection>
 
-      <FilterSection title="Industry">
-        {industries.map((ind) => (
-          <CheckOption
-            key={ind}
-            label={ind}
-            checked={filters.industries.includes(ind)}
-            count={countFor("industries", ind)}
-            onChange={() => toggleFilter("industries", ind)}
-          />
-        ))}
-      </FilterSection>
+      {industries.length > 0 && (
+        <FilterSection title="Industry">
+          {industries.map((ind) => (
+            <CheckOption
+              key={ind}
+              label={ind}
+              checked={filters.industries.includes(ind)}
+              count={countFor("industries", ind)}
+              onChange={() => toggleFilter("industries", ind)}
+            />
+          ))}
+        </FilterSection>
+      )}
 
       <FilterSection title="Minimum Salary">
         <div className="flex justify-between text-xs mb-1.5">

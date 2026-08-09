@@ -83,8 +83,12 @@ export function JobCard({
       <span className="flex items-center gap-1 text-xs font-medium" style={{ color: "var(--color-success-600)" }}>
         <DollarSign size={11} /> {formatSalaryRange(job)}
       </span>
-      <TypePill>{job.type}</TypePill>
+      {/* No pill when the employer has not said. This rendered `job.type` unconditionally,
+          and the mapper defaulted it to "Full-time", so every card claimed full-time —
+          including the part-time teaching post. An absent fact shows as nothing. */}
+      {job.type && <TypePill>{job.type}</TypePill>}
       <TypePill tone="neutral">{job.remote}</TypePill>
+      {job.level && <TypePill tone="neutral">{job.level}</TypePill>}
       {/* Set expectations before the user opens the job: applying to this one means
           leaving JobFits, and the application can't be tracked here. */}
       {job.sourceType === "EXTERNAL" && (

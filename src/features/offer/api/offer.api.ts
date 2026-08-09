@@ -168,10 +168,11 @@ function jobOf(j: OfferDto["job"]): Job {
     salaryMin: toSalaryK(j.minSalary ?? undefined),
     salaryMax: toSalaryK(j.maxSalary ?? undefined),
     match: 0,
-    type: "Full-time",
+    // type / level / industry are deliberately absent: the offer response embeds a
+    // MINIMAL job projection that does not carry them. Defaulting them here was the same
+    // fabrication job.mappers.ts made — and this projection could not even be fixed by
+    // asking the backend, because these fields are not in it.
     remote: REMOTE_LABEL[(j.remoteType ?? "").toUpperCase()] ?? "On-site",
-    level: "Mid-level",
-    industry: "Technology",
     postedDaysAgo: 0,
     description: "",
   };

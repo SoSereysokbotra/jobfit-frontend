@@ -1,5 +1,5 @@
 import React from "react";
-import { DollarSign, Clock, Building2 } from "lucide-react";
+import { DollarSign, Clock, Building2, Briefcase } from "lucide-react";
 import { Job, formatSalaryRange, formatPostedDate } from "@/shared/types/shared.types";
 
 interface JobDetailHeaderProps {
@@ -48,13 +48,27 @@ export function JobDetailHeader({ job }: JobDetailHeaderProps) {
               <Clock size={14} />
               {formatPostedDate(job.postedDaysAgo)}
             </span>
-            <span
-              className="flex items-center gap-1.5 text-xs font-medium"
-              style={{ color: "var(--color-text-tertiary)" }}
-            >
-              <Building2 size={14} />
-              {job.industry}
-            </span>
+            {/* Absent unless the posting company has an industry recorded. It used to
+                read "Technology" for every job because the mapper hardcoded it. */}
+            {job.industry && (
+              <span
+                className="flex items-center gap-1.5 text-xs font-medium"
+                style={{ color: "var(--color-text-tertiary)" }}
+              >
+                <Building2 size={14} />
+                {job.industry}
+              </span>
+            )}
+            {job.type && (
+              <span
+                className="flex items-center gap-1.5 text-xs font-medium"
+                style={{ color: "var(--color-text-tertiary)" }}
+              >
+                <Briefcase size={14} />
+                {job.type}
+                {job.level ? ` · ${job.level}` : ""}
+              </span>
+            )}
           </div>
         </div>
       </div>

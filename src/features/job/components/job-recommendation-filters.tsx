@@ -3,9 +3,11 @@
 import React, { useMemo } from "react";
 import type { ExperienceLevel, Job } from "@/shared/types/shared.types";
 import { filterJobs, type JobSearchFilters } from "../hooks/use-job-search";
-import { FilterSection, CheckOption } from "./job-filters";
+import { FilterSection, CheckOption, valuesOf } from "./job-filters";
 
-const EXPERIENCE_LEVELS: ExperienceLevel[] = ["Entry-level", "Mid-level", "Senior", "Lead/Manager"];
+const EXPERIENCE_LEVELS: ExperienceLevel[] = [
+  "Intern", "Entry-level", "Mid-level", "Senior", "Lead", "Manager", "Director", "C-level",
+];
 
 interface JobRecommendationFiltersProps {
   jobs: Job[];
@@ -27,7 +29,10 @@ export function JobRecommendationFilters({
   jobs, filters, toggleFilter, setFilter, clearFilters, activeFilterCount,
 }: JobRecommendationFiltersProps) {
   const locations = useMemo(() => [...new Set(jobs.map((j) => j.location))].sort(), [jobs]);
-  const industries = useMemo(() => [...new Set(jobs.map((j) => j.industry))].sort(), [jobs]);
+  const industries = useMemo(() => valuesOf(jobs, (j) => j.industry), [jobs]);
+  // Same reason as job-filters.tsx: a facet no job in this set states can only show
+  // dead checkboxes reading 0.
+  const anyLevel = useMemo(() => jobs.some((j) => j.level), [jobs]);
 
   const countFor = (key: "types" | "remote" | "levels" | "locations" | "industries", value: string) =>
     filterJobs(jobs, { ...filters, [key]: [value] }, undefined).length;
@@ -114,29 +119,33 @@ export function JobRecommendationFilters({
         />
       </FilterSection>
 
-      <FilterSection title="Company Industry">
-        {industries.map((ind) => (
-          <CheckOption
-            key={ind}
-            label={ind}
-            checked={filters.industries.includes(ind)}
-            count={countFor("industries", ind)}
-            onChange={() => toggleFilter("industries", ind)}
-          />
-        ))}
-      </FilterSection>
+      {industries.length > 0 && (
+        <FilterSection title="Company Industry">
+          {industries.map((ind) => (
+            <CheckOption
+              key={ind}
+              label={ind}
+              checked={filters.industries.includes(ind)}
+              count={countFor("industries", ind)}
+              onChange={() => toggleFilter("industries", ind)}
+            />
+          ))}
+        </FilterSection>
+      )}
 
-      <FilterSection title="Role Level">
-        {EXPERIENCE_LEVELS.map((l) => (
-          <CheckOption
-            key={l}
-            label={l}
-            checked={filters.levels.includes(l)}
-            count={countFor("levels", l)}
-            onChange={() => toggleFilter("levels", l)}
-          />
-        ))}
-      </FilterSection>
+      {anyLevel && (
+        <FilterSection title="Role Level">
+          {EXPERIENCE_LEVELS.map((l) => (
+            <CheckOption
+              key={l}
+              label={l}
+              checked={filters.levels.includes(l)}
+              count={countFor("levels", l)}
+              onChange={() => toggleFilter("levels", l)}
+            />
+          ))}
+        </FilterSection>
+      )}
     </div>
   );
 }
