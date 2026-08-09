@@ -108,7 +108,9 @@ export function SkillGapPanel({ jobId }: { jobId: string }) {
           className="text-[11px] mt-3 pt-2.5 border-t"
           style={{ color: "var(--color-text-tertiary)", borderColor: "var(--color-border)" }}
         >
-          Compared against your résumé skills: {data.skillsConsidered.join(", ")}.
+          {/* "your résumé skills" was too narrow once this stopped being only the skills
+              column — it now also carries project technologies and your field of study. */}
+          Compared against your résumé: {data.skillsConsidered.join(", ")}.
         </p>
       )}
 
