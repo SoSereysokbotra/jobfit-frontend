@@ -224,24 +224,53 @@ export default function RecommendationsPage() {
 
             {/* Results */}
             {visibleResults.length === 0 ? (
+              /* TWO empty states, not one. This said "No recommendations match your
+                 filters" and offered "Clear filters" even when the backend had returned
+                 nothing at all — blaming the user for filters they never set. That was
+                 the live case: four seed candidates had no profile embedding, so the API
+                 returned [] and the page told them to adjust their filters. */
               <div
                 className="rounded-lg border p-12 text-center"
                 style={{ background: "var(--color-card)", borderColor: "var(--color-border)" }}
               >
                 <Star size={48} className="mx-auto mb-4 opacity-20" />
-                <p className="text-lg font-bold mb-2" style={{ color: "var(--color-text-primary)" }}>
-                  No recommendations match your filters
-                </p>
-                <p className="text-sm mb-4" style={{ color: "var(--color-text-tertiary)" }}>
-                  Try adjusting your filters or refreshing your recommendations.
-                </p>
-                <button
-                  onClick={clearFilters}
-                  className="px-4 py-2 rounded-md text-sm font-semibold text-white"
-                  style={{ background: "var(--color-primary-600)" }}
-                >
-                  Clear filters
-                </button>
+                {recommendations.length === 0 ? (
+                  <>
+                    <p className="text-lg font-bold mb-2" style={{ color: "var(--color-text-primary)" }}>
+                      No recommendations yet
+                    </p>
+                    <p className="text-sm mb-4" style={{ color: "var(--color-text-tertiary)" }}>
+                      We build these from your profile and résumé. Add a headline and
+                      upload a résumé, then refresh — matching needs something to compare
+                      jobs against.
+                    </p>
+                    <button
+                      onClick={() => refetch()}
+                      className="px-4 py-2 rounded-md text-sm font-semibold text-white"
+                      style={{ background: "var(--color-primary-600)" }}
+                    >
+                      Refresh recommendations
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-lg font-bold mb-2" style={{ color: "var(--color-text-primary)" }}>
+                      No recommendations match your filters
+                    </p>
+                    <p className="text-sm mb-4" style={{ color: "var(--color-text-tertiary)" }}>
+                      {recommendations.length} recommendation
+                      {recommendations.length === 1 ? "" : "s"} hidden by your current
+                      filters.
+                    </p>
+                    <button
+                      onClick={clearFilters}
+                      className="px-4 py-2 rounded-md text-sm font-semibold text-white"
+                      style={{ background: "var(--color-primary-600)" }}
+                    >
+                      Clear filters
+                    </button>
+                  </>
+                )}
               </div>
             ) : viewMode === "grid" ? (
               /* GRID VIEW: Reuse existing JobCard grid variant */
