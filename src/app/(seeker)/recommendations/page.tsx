@@ -9,6 +9,7 @@ import {
 } from "@/features/job/components";
 import { useJobSearch } from "@/features/job/hooks/use-job-search";
 import { useRecommendations } from "@/features/matching/hooks/use-recommendations";
+import { useDismissRecommendation } from "@/features/matching/hooks/use-dismiss-recommendation";
 import { useSavedJobIds, useToggleSavedJob } from "@/features/saved-jobs/hooks/use-saved-jobs";
 import { useSubmitApplication } from "@/features/application/hooks/use-applications";
 import { isExternalApply, openExternalPosting } from "@/features/application/lib/external-apply";
@@ -26,6 +27,7 @@ export default function RecommendationsPage() {
   const { data: recommendations = [], isFetching, refetch } = useRecommendations();
   const { ids: savedJobs } = useSavedJobIds();
   const toggleSaved = useToggleSavedJob();
+  const dismissRecommendation = useDismissRecommendation();
 
   // One-click apply (POST /applications) with a feedback banner.
   const submitApplication = useSubmitApplication();
@@ -68,7 +70,10 @@ export default function RecommendationsPage() {
   const handleToggleSave = (id: string) => toggleSaved.mutate(id);
 
   const handleDismiss = (id: string) => {
+    // Hide immediately, then persist. Dismissal used to be local-only state,
+    // so it did not survive a reload; it now goes through the offline queue.
     setDismissedJobs((prev) => new Set(prev).add(id));
+    dismissRecommendation.mutate(id);
   };
 
   const handleRefresh = () => {

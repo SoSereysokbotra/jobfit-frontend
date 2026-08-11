@@ -78,9 +78,15 @@ export interface ContactPersonInput {
 }
 
 export const applicationApi = {
-  /** POST /applications — submit an application to a job. */
-  submit: (input: SubmitApplicationInput) =>
-    apiClient.post<ApplicationDto>("/applications", input),
+  /**
+   * POST /applications — submit an application to a job.
+   *
+   * `idempotencyKey` is the one that matters most in the whole API: without it
+   * a retried submit creates a second application. Pass the key minted when the
+   * action was queued, not a fresh one per attempt.
+   */
+  submit: (input: SubmitApplicationInput, idempotencyKey?: string) =>
+    apiClient.post<ApplicationDto>("/applications", input, { idempotencyKey }),
 
   /** GET /applications — the current user's applications (optionally by status). */
   list: (status?: ApplicationStatus) =>

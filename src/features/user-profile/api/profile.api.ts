@@ -199,9 +199,16 @@ export const profileApi = {
   /** GET /profiles/{userId} — 404 when the user has no profile yet. */
   get: (userId: string) => apiClient.get<ProfileDto>(`/profiles/${userId}`),
 
-  /** PATCH /profiles/{userId} — identity/location/social only. */
-  update: (userId: string, input: UpdateProfileInput) =>
-    apiClient.patch<ProfileDto>(`/profiles/${userId}`, input),
+  /**
+   * PATCH /profiles/{userId} — identity/location/social only.
+   *
+   * `expectedUpdatedAt` is REQUIRED by the backend (optimistic concurrency,
+   * PWA_SYNC_API.md §4): pass the `updatedAt` you last saw. If the server's copy
+   * has moved on, the update is refused with a 409 carrying `serverVersion` and
+   * `clientAttempted` — resolve it, do not blindly resend.
+   */
+  update: (userId: string, input: UpdateProfileInput, expectedUpdatedAt: string) =>
+    apiClient.patch<ProfileDto>(`/profiles/${userId}`, { ...input, expectedUpdatedAt }),
 
   /** PATCH /profiles/{userId}/preferences */
   updatePreferences: (userId: string, prefs: WorkPreferencesInput) =>
@@ -217,8 +224,17 @@ export const profileApi = {
     apiClient.get<ExperienceDto[]>(`/profiles/${userId}/experience`),
   addExperience: (userId: string, input: AddExperienceInput) =>
     apiClient.post<ExperienceDto>(`/profiles/${userId}/experience`, input),
-  updateExperience: (userId: string, expId: string, input: Partial<AddExperienceInput>) =>
-    apiClient.patch<ExperienceDto>(`/profiles/${userId}/experience/${expId}`, input),
+  /** `expectedUpdatedAt` is required — see `update` above. */
+  updateExperience: (
+    userId: string,
+    expId: string,
+    input: Partial<AddExperienceInput>,
+    expectedUpdatedAt: string,
+  ) =>
+    apiClient.patch<ExperienceDto>(`/profiles/${userId}/experience/${expId}`, {
+      ...input,
+      expectedUpdatedAt,
+    }),
   deleteExperience: (userId: string, expId: string) =>
     apiClient.delete<void>(`/profiles/${userId}/experience/${expId}`),
 
@@ -228,8 +244,17 @@ export const profileApi = {
     apiClient.get<EducationDto[]>(`/profiles/${userId}/education`),
   addEducation: (userId: string, input: AddEducationInput) =>
     apiClient.post<EducationDto>(`/profiles/${userId}/education`, input),
-  updateEducation: (userId: string, eduId: string, input: Partial<AddEducationInput>) =>
-    apiClient.patch<EducationDto>(`/profiles/${userId}/education/${eduId}`, input),
+  /** `expectedUpdatedAt` is required — see `update` above. */
+  updateEducation: (
+    userId: string,
+    eduId: string,
+    input: Partial<AddEducationInput>,
+    expectedUpdatedAt: string,
+  ) =>
+    apiClient.patch<EducationDto>(`/profiles/${userId}/education/${eduId}`, {
+      ...input,
+      expectedUpdatedAt,
+    }),
   deleteEducation: (userId: string, eduId: string) =>
     apiClient.delete<void>(`/profiles/${userId}/education/${eduId}`),
 

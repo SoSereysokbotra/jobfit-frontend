@@ -81,6 +81,23 @@ export interface RequestOptions {
   /** Skip the silent-refresh-on-401 dance (the auth endpoints themselves). */
   skipRefresh?: boolean;
   signal?: AbortSignal;
+  /**
+   * Sent as `Idempotency-Key`. Generate ONE per logical action and reuse it on
+   * every retry — a fresh key per attempt defeats the mechanism entirely. Only
+   * `POST /applications`, `POST /saved-jobs` and `DELETE /saved-jobs/:jobId`
+   * honour it; elsewhere it is ignored.
+   */
+  idempotencyKey?: string;
+}
+
+/**
+ * The access token the auth bridge currently holds, or null.
+ *
+ * Read-only view for code that must know whether a write can even be attempted
+ * (the offline queue's write gate) without taking a dependency on React context.
+ */
+export function getAccessToken(): string | null {
+  return authBridge?.getAccessToken() ?? null;
 }
 
 function buildUrl(path: string, query?: QueryParams): string {
@@ -190,6 +207,8 @@ async function send(
 
   // Let the browser set the multipart boundary itself.
   if (body !== undefined && !isFormData) headers["Content-Type"] = "application/json";
+
+  if (options.idempotencyKey) headers["Idempotency-Key"] = options.idempotencyKey;
 
   if (!options.skipAuth) {
     const token = authBridge?.getAccessToken();

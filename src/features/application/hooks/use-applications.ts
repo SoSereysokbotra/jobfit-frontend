@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { qk } from "@/lib/api/query-keys";
+import { perform } from "@/lib/offline/mutation-queue";
 import type { Job } from "@/shared/types/shared.types";
 import { jobApi } from "@/features/job/api/job.api";
 import { toJobView } from "@/features/job/api/job.mappers";
@@ -89,11 +90,24 @@ export function useApplicationForJob(jobId: string | undefined) {
   };
 }
 
-/** Submit an application to a job. Invalidates the list on success. */
+/**
+ * Submit an application to a job. Invalidates the list on success.
+ *
+ * Routed through the offline queue: online it calls `POST /applications` as
+ * before, offline it writes a provisional row locally and queues the action
+ * under an idempotency key. That key is what stops a reconnect from creating a
+ * second application for the same submit.
+ */
 export function useSubmitApplication() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (input: SubmitApplicationInput) => applicationApi.submit(input),
+    mutationFn: (input: SubmitApplicationInput) =>
+      perform("SUBMIT_APPLICATION", {
+        jobId: input.jobId,
+        resumeId: input.resumeId,
+        coverLetter: input.coverLetter,
+        notes: input.notes,
+      }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.applications.all });
     },
