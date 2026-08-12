@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { Menu, Search, X } from "lucide-react";
 import { NotificationBell } from "@/features/notification/components/notification-bell";
+import { OfflineIndicator } from "./offline-indicator";
 
 interface TopNavProps {
   onMenuToggle?: () => void;
@@ -73,6 +74,9 @@ export default function TopNav({ onMenuToggle, className = "", user }: TopNavPro
 
       {/* Spacer for desktop */}
       <div className="hidden md:block flex-1" />
+
+      {/* Renders nothing while online and synced. */}
+      <OfflineIndicator />
 
       {/* The bell was IMPORTED here and never rendered, so the entire notification
           feature was unreachable from the app — found by ESLint's no-unused-vars on the

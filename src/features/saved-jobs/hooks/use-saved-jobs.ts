@@ -6,6 +6,7 @@ import type { Job } from "@/shared/types/shared.types";
 import { jobApi } from "@/features/job/api/job.api";
 import { toJobView } from "@/features/job/api/job.mappers";
 import { savedJobsApi } from "../api/saved-jobs.api";
+import { perform } from "@/lib/offline/mutation-queue";
 
 /** The set of saved job IDs (for save toggles on cards). */
 export function useSavedJobIds() {
@@ -17,12 +18,29 @@ export function useSavedJobIds() {
   return { ...query, ids: new Set(query.data ?? []) };
 }
 
-/** Toggle saved state, optimistically updating the cached ID list. */
+/**
+ * Toggle saved state, optimistically updating the cached ID list.
+ *
+ * Resolves the toggle to an explicit SAVE or UNSAVE before it leaves the
+ * client. `POST /saved-jobs/:jobId/toggle` cannot be used by the offline queue:
+ * a toggle is not replay-safe, so a retried flush would flip the state back.
+ * Stating the intended end state makes the retry a no-op instead.
+ */
 export function useToggleSavedJob() {
   const qc = useQueryClient();
+  const { ids } = useSavedJobIds();
+
   return useMutation({
-    mutationFn: (jobId: string) => savedJobsApi.toggle(jobId),
-    onSuccess: (ids) => qc.setQueryData(qk.savedJobs.list(), ids),
+    mutationFn: async (jobId: string) => {
+      const isSaved = ids.has(jobId);
+      await perform(isSaved ? "UNSAVE_JOB" : "SAVE_JOB", { jobId });
+      // Computed rather than taken from the response: offline there is no
+      // response, and both paths must leave the cache in the same shape.
+      return isSaved
+        ? [...ids].filter((id) => id !== jobId)
+        : [jobId, ...[...ids].filter((id) => id !== jobId)];
+    },
+    onSuccess: (next) => qc.setQueryData(qk.savedJobs.list(), next),
   });
 }
 

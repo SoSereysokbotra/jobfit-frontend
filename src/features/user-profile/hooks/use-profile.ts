@@ -4,6 +4,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { qk } from "@/lib/api/query-keys";
 import { ApiError } from "@/lib/api/client";
 import { useSession } from "@/features/auth/hooks/use-session";
+import { perform } from "@/lib/offline/mutation-queue";
+import { localUpdatedAt, type VersionedKind } from "@/lib/offline/record-version";
 import {
   profileApi,
   type AddEducationInput,
@@ -24,6 +26,22 @@ import {
 function useUserId(): string | undefined {
   const { user } = useSession();
   return user?.id;
+}
+
+/**
+ * The `updatedAt` to send as `expectedUpdatedAt`.
+ *
+ * Prefers the offline mirror — it holds the exact server rows this device was
+ * last given. Falls back to a live read when the mirror has not synced yet
+ * (first load, private browsing), because sending no version at all is a 400,
+ * and inventing one would defeat the conflict check.
+ */
+async function expectedVersion(
+  kind: VersionedKind,
+  fetchLive: () => Promise<string | undefined>,
+  id?: string,
+): Promise<string | undefined> {
+  return (await localUpdatedAt(kind, id)) ?? (await fetchLive());
 }
 
 /**
@@ -87,14 +105,27 @@ export function useCreateProfile() {
   });
 }
 
+/**
+ * PATCH /profiles/{userId}, through the offline queue.
+ *
+ * Two things changed here. The backend now REQUIRES `expectedUpdatedAt` on this
+ * route, so the previous call was being refused outright; and because this
+ * update can come back as a conflict, it goes through the queue, which is what
+ * owns the conflict state the resolution dialog reads.
+ */
 export function useUpdateProfile() {
   const userId = useUserId();
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (input: UpdateProfileInput) => profileApi.update(userId!, input),
-    onSuccess: (dto) => {
-      queryClient.setQueryData(qk.profiles.detail(userId!), toProfileView(dto));
+    mutationFn: async (input: UpdateProfileInput) => {
+      const expectedUpdatedAt = await expectedVersion("profile", () =>
+        profileApi.get(userId!).then((dto) => dto.updatedAt),
+      );
+      return perform("UPDATE_PROFILE", { expectedUpdatedAt, changes: input });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: qk.profiles.detail(userId!) });
     },
   });
 }
@@ -155,8 +186,23 @@ export function useExperienceMutations() {
     onSuccess: invalidate,
   });
   const update = useMutation({
-    mutationFn: ({ expId, input }: { expId: string; input: Partial<AddExperienceInput> }) =>
-      profileApi.updateExperience(userId!, expId, input),
+    mutationFn: async ({
+      expId,
+      input,
+    }: {
+      expId: string;
+      input: Partial<AddExperienceInput>;
+    }) => {
+      const expectedUpdatedAt = await expectedVersion(
+        "experience",
+        () =>
+          profileApi
+            .listExperience(userId!)
+            .then((rows) => rows.find((r) => r.id === expId)?.updatedAt),
+        expId,
+      );
+      return perform("UPDATE_EXPERIENCE", { id: expId, expectedUpdatedAt, changes: input });
+    },
     onSuccess: invalidate,
   });
   const remove = useMutation({
@@ -196,8 +242,23 @@ export function useEducationMutations() {
     onSuccess: invalidate,
   });
   const update = useMutation({
-    mutationFn: ({ eduId, input }: { eduId: string; input: Partial<AddEducationInput> }) =>
-      profileApi.updateEducation(userId!, eduId, input),
+    mutationFn: async ({
+      eduId,
+      input,
+    }: {
+      eduId: string;
+      input: Partial<AddEducationInput>;
+    }) => {
+      const expectedUpdatedAt = await expectedVersion(
+        "education",
+        () =>
+          profileApi
+            .listEducation(userId!)
+            .then((rows) => rows.find((r) => r.id === eduId)?.updatedAt),
+        eduId,
+      );
+      return perform("UPDATE_EDUCATION", { id: eduId, expectedUpdatedAt, changes: input });
+    },
     onSuccess: invalidate,
   });
   const remove = useMutation({
