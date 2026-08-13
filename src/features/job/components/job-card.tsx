@@ -2,7 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { MapPin, DollarSign, Clock, Heart, ExternalLink } from "lucide-react";
+import { MapPin, DollarSign, Clock, Heart, ExternalLink, Check } from "lucide-react";
 import { cn } from "@/shared/utils/cn";
 import MatchScoreBadge from "@/shared/components/data-display/match-score-badge";
 import { AppliedPill } from "@/features/application/components/applied-pill";
@@ -17,6 +17,12 @@ interface JobCardProps {
   saved?: boolean;
   onToggleSave?: (id: string) => void;
   onApply?: (id: string) => void;
+  /** Whether this job is currently selected for comparison. */
+  comparing?: boolean;
+  /** Called when the user clicks the compare checkbox. Undefined = hide the checkbox. */
+  onToggleCompare?: (job: Job) => void;
+  /** When true the checkbox is shown but disabled (max 3 reached and not selected). */
+  compareDisabled?: boolean;
 }
 
 function TypePill({ children, tone = "primary" }: { children: React.ReactNode; tone?: "primary" | "neutral" }) {
@@ -46,7 +52,28 @@ export function JobCard({
   saved = false,
   onToggleSave,
   onApply,
+  comparing = false,
+  onToggleCompare,
+  compareDisabled = false,
 }: JobCardProps) {
+  const compareBtn = onToggleCompare ? (
+    <button
+      onClick={(e) => { e.preventDefault(); onToggleCompare(job); }}
+      disabled={compareDisabled && !comparing}
+      aria-label={comparing ? `Remove ${job.title} from compare` : `Add ${job.title} to compare`}
+      aria-pressed={comparing}
+      title={compareDisabled && !comparing ? "Max 3 jobs selected" : comparing ? "Remove from compare" : "Add to compare"}
+      className="flex items-center justify-center w-5 h-5 rounded border transition-all duration-150 shrink-0"
+      style={{
+        background: comparing ? "var(--color-primary-600)" : "var(--color-card)",
+        borderColor: comparing ? "var(--color-primary-600)" : "var(--color-border)",
+        opacity: compareDisabled && !comparing ? 0.35 : 1,
+        cursor: compareDisabled && !comparing ? "not-allowed" : "pointer",
+      }}
+    >
+      {comparing && <Check size={11} style={{ color: "#ffffff" }} />}
+    </button>
+  ) : null;
   const actions = (
     <>
       {/* Same treatment as the job detail page: once an application exists, show it and
@@ -110,14 +137,17 @@ export function JobCard({
     return (
       <div
         className="rounded-lg border p-5 flex flex-col transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 group"
-        style={{ background: "var(--color-card)", borderColor: "var(--color-border)", boxShadow: "var(--shadow-sm)" }}
+        style={{ background: "var(--color-card)", borderColor: comparing ? "var(--color-primary-400)" : "var(--color-border)", boxShadow: comparing ? "var(--shadow-md)" : "var(--shadow-sm)" }}
       >
         <div className="flex items-start justify-between mb-3">
-          <div
-            className="w-11 h-11 rounded-lg flex items-center justify-center text-white font-extrabold text-base"
-            style={{ background: job.logoBg, boxShadow: "var(--shadow-sm)" }}
-          >
-            {job.logo}
+          <div className="flex items-center gap-2">
+            {compareBtn}
+            <div
+              className="w-11 h-11 rounded-lg flex items-center justify-center text-white font-extrabold text-base"
+              style={{ background: job.logoBg, boxShadow: "var(--shadow-sm)" }}
+            >
+              {job.logo}
+            </div>
           </div>
           <MatchScoreBadge score={job.match} size="sm" />
         </div>
@@ -145,7 +175,12 @@ export function JobCard({
 
   /* LIST variant */
   return (
-    <div className="flex items-start gap-4 px-5 py-4 hover:bg-primary-50 transition-colors group">
+    <div
+      className="flex items-start gap-3 px-5 py-4 hover:bg-primary-50 transition-colors group"
+      style={comparing ? { background: "var(--color-primary-50)" } : {}}
+    >
+      {/* Compare checkbox — only in list view when enabled */}
+      {compareBtn && <div className="flex items-center pt-1">{compareBtn}</div>}
       <div
         className="w-11 h-11 rounded-lg flex items-center justify-center text-white font-extrabold text-base shrink-0"
         style={{ background: job.logoBg, boxShadow: "var(--shadow-sm)" }}

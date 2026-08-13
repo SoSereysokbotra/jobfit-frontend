@@ -3,14 +3,11 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  Home, Search, Star, Bookmark, Briefcase, Calendar,
-  Award, User, FileText, BarChart3, Bell, HelpCircle,
-  Settings, LogOut, PanelLeftClose, PanelLeftOpen
-} from "lucide-react";
+import { LogOut, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { useAuth } from "@/providers/auth-provider";
 import { useSidebarCollapsed } from "@/stores/ui-store";
 import { useSession, displayName } from "@/features/auth/hooks/use-session";
+import { NAVIGATION_GROUPS } from "@/shared/config/navigation";
 
 export interface SidebarMenuGroup {
   group: string;
@@ -49,48 +46,7 @@ export default function Sidebar({
   const [collapsedState, setCollapsed] = useSidebarCollapsed();
   const collapsed = collapsible && collapsedState;
 
-  const defaultMenuGroups: SidebarMenuGroup[] = [
-    {
-      group: "",
-      items: [
-        { href: "/dashboard", label: "Dashboard", icon: <Home size={18} /> }
-      ]
-    },
-    {
-      group: "DISCOVERY",
-      items: [
-        { href: "/jobs", label: "Search Jobs", icon: <Search size={18} /> },
-        { href: "/recommendations", label: "Recommendations", icon: <Star size={18} /> },
-        { href: "/saved-jobs", label: "Saved Jobs", icon: <Bookmark size={18} /> }
-      ]
-    },
-    {
-      group: "YOUR JOURNEY",
-      items: [
-        { href: "/applications", label: "Applications", icon: <Briefcase size={18} />, badge: 2 },
-        { href: "/learning", label: "Interview Prep", icon: <Calendar size={18} /> },
-        { href: "/offers", label: "Offers & Decisions", icon: <Award size={18} /> }
-      ]
-    },
-    {
-      group: "PROFILE & RESOURCES",
-      items: [
-        { href: "/profile", label: "My Profile", icon: <User size={18} /> },
-        { href: "/resumes", label: "Resumes", icon: <FileText size={18} /> },
-        { href: "/insights", label: "Career Insights", icon: <BarChart3 size={18} /> }
-      ]
-    },
-    {
-      group: "HELP & PREFERENCES",
-      items: [
-        { href: "/notifications", label: "Notifications", icon: <Bell size={18} />, badge: 3 },
-        { href: "/help", label: "Help & Feedback", icon: <HelpCircle size={18} /> },
-        { href: "/settings", label: "Settings", icon: <Settings size={18} /> }
-      ]
-    }
-  ];
-
-  const groupsToRender = menuGroups || defaultMenuGroups;
+  const groupsToRender = menuGroups || NAVIGATION_GROUPS;
   
   const { user: authUser } = useSession();
   const fallbackUser = authUser 

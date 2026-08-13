@@ -6,11 +6,13 @@ import {
   SearchX, ArrowUpDown,
 } from "lucide-react";
 import { JobCard, JobSearchBar, JobFilters } from "@/features/job/components";
+import { JobCompareBar } from "@/features/job/components/job-compare-bar";
 import { useJobs } from "@/features/job/hooks/use-job";
 import { useJobSearch, type JobSortKey } from "@/features/job/hooks/use-job-search";
 import { useSavedJobIds, useToggleSavedJob } from "@/features/saved-jobs/hooks/use-saved-jobs";
 import { useSubmitApplication } from "@/features/application/hooks/use-applications";
 import { isExternalApply, openExternalPosting } from "@/features/application/lib/external-apply";
+import { useJobCompare } from "@/stores/job-compare-store";
 import { EmptyState } from "@/shared/components/data-display/empty-state";
 import { JobCardSkeleton } from "@/shared/components/feedback/skeleton";
 import { Alert } from "@/shared/components/feedback/alert";
@@ -55,6 +57,7 @@ export default function JobSearchPage() {
   };
 
   const search = useJobSearch(jobs, 5);
+  const { isComparing, toggleJobCompare, canAdd } = useJobCompare();
 
   const filtersPanel = (
     <JobFilters
@@ -250,6 +253,9 @@ export default function JobSearchPage() {
                   saved={savedIds.has(job.id)}
                   onToggleSave={toggleSave}
                   onApply={handleApply}
+                  comparing={isComparing(job.id)}
+                  onToggleCompare={toggleJobCompare}
+                  compareDisabled={!canAdd}
                 />
               ))}
             </div>
@@ -263,6 +269,9 @@ export default function JobSearchPage() {
                   saved={savedIds.has(job.id)}
                   onToggleSave={toggleSave}
                   onApply={handleApply}
+                  comparing={isComparing(job.id)}
+                  onToggleCompare={toggleJobCompare}
+                  compareDisabled={!canAdd}
                 />
               ))}
             </div>
@@ -313,6 +322,8 @@ export default function JobSearchPage() {
           )}
         </div>
       </div>
+      {/* Docked compare bar — appears whenever ≥1 job is selected for comparison */}
+      <JobCompareBar />
     </div>
   );
 }
