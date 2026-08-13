@@ -120,6 +120,8 @@ export const qk = {
     all: ["saved-jobs"] as const,
     list: () => [...qk.savedJobs.all, "list"] as const,
     folders: () => [...qk.savedJobs.all, "folders"] as const,
+    /** Jobs saved from the browser extension — their own list, own endpoint. */
+    external: () => [...qk.savedJobs.all, "external"] as const,
   },
 
   /** TODO(backend): depends on the AI service, not yet wired to the backend. */
@@ -129,6 +131,8 @@ export const qk = {
       [...qk.matching.all, "recommendations", filters] as const,
     breakdown: (jobId: string) => [...qk.matching.all, "breakdown", jobId] as const,
     skillGap: (jobId: string) => [...qk.matching.all, "skill-gap", jobId] as const,
+    /** A stored full-page match report, generated from the browser extension. */
+    report: (reportId: string) => [...qk.matching.all, "report", reportId] as const,
   },
 
   /** TODO(backend): no billing backend. */
