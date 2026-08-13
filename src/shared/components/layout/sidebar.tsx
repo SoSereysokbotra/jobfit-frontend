@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Home, Search, Star, Bookmark, Briefcase, Calendar,
-  Award, User, FileText, BarChart3, Bell, HelpCircle,
+  Award, User, FileText, LayoutTemplate, BarChart3, Bell, HelpCircle,
   Settings, LogOut, PanelLeftClose, PanelLeftOpen
 } from "lucide-react";
 import { useAuth } from "@/providers/auth-provider";
@@ -77,6 +77,7 @@ export default function Sidebar({
       items: [
         { href: "/profile", label: "My Profile", icon: <User size={18} /> },
         { href: "/resumes", label: "Resumes", icon: <FileText size={18} /> },
+        { href: "/resume-builder", label: "Resume Builder", icon: <LayoutTemplate size={18} /> },
         { href: "/insights", label: "Career Insights", icon: <BarChart3 size={18} /> }
       ]
     },

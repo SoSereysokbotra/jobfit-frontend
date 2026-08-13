@@ -50,6 +50,17 @@ export const qk = {
     scores: (resumeId: string) => [...qk.resumes.detail(resumeId), "scores"] as const,
   },
 
+  /** Live: the `resume-builder` module (templates, documents, sections, export). */
+  resumeBuilder: {
+    all: ["resume-builder"] as const,
+    /** `filters` keys the atsOnly/category variants separately. */
+    templates: (filters: Record<string, unknown> = {}) =>
+      [...qk.resumeBuilder.all, "templates", filters] as const,
+    documents: () => [...qk.resumeBuilder.all, "documents"] as const,
+    document: (documentId: string) =>
+      [...qk.resumeBuilder.documents(), documentId] as const,
+  },
+
   applications: {
     all: ["applications"] as const,
     lists: () => [...qk.applications.all, "list"] as const,

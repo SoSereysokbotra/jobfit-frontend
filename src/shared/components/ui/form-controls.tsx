@@ -104,6 +104,64 @@ export function Textarea({ label, error, hint, id, className, ...props }: Textar
   );
 }
 
+interface PillSelectProps<T extends string> {
+  label?: string;
+  options: readonly SelectOption<T>[];
+  value: T;
+  onChange: (value: T) => void;
+  hint?: string;
+  /** Stretch the options to fill the row — reads as a segmented control. */
+  fullWidth?: boolean;
+}
+
+/**
+ * Single-select sibling of PillMultiSelect: same pill vocabulary, one choice.
+ * Used where a native radio group would be right semantically but looks wrong
+ * next to the rest of the form kit (résumé line spacing, margins).
+ *
+ * `radiogroup` rather than a set of <input type="radio">: these are buttons
+ * carrying the pill styling, so the roles have to be declared explicitly.
+ */
+export function PillSelect<T extends string>({
+  label,
+  options,
+  value,
+  onChange,
+  hint,
+  fullWidth = false,
+}: PillSelectProps<T>) {
+  return (
+    <div>
+      {label && <FieldLabel>{label}</FieldLabel>}
+      <div className={cn("flex flex-wrap gap-2", fullWidth && "flex-nowrap")} role="radiogroup" aria-label={label}>
+        {options.map((option) => {
+          const selected = value === option.value;
+          return (
+            <button
+              key={option.value}
+              type="button"
+              role="radio"
+              aria-checked={selected}
+              onClick={() => onChange(option.value)}
+              className={cn(
+                "inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold transition-all duration-200",
+                fullWidth && "flex-1",
+                selected
+                  ? "bg-primary-50 border-primary-500 text-primary-700"
+                  : "bg-white border-neutral-200 text-neutral-600 hover:bg-neutral-50",
+              )}
+            >
+              {selected && <Check className="w-3.5 h-3.5" />}
+              {option.label}
+            </button>
+          );
+        })}
+      </div>
+      {hint && <p className="mt-1.5 text-xs text-neutral-400">{hint}</p>}
+    </div>
+  );
+}
+
 interface PillMultiSelectProps<T extends string> {
   label?: string;
   options: readonly SelectOption<T>[];
