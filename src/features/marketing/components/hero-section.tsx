@@ -1,3 +1,5 @@
+"use client";
+
 import React from "react";
 import Link from "next/link";
 import {
@@ -7,13 +9,8 @@ import {
 import MatchScoreBadge from "@/shared/components/data-display/match-score-badge";
 import { Reveal } from "@/shared/components/motion/reveal";
 import { LogoMarquee, type MarqueeLogo } from "./logo-marquee";
-
-const NAV_LINKS = [
-  { label: "Find Jobs", href: "/jobs" },
-  { label: "Features", href: "#features" },
-  { label: "Pricing", href: "/pricing" },
-  { label: "About", href: "/about" },
-];
+import { LanguageSwitcher } from "@/shared/components/ui/language-switcher";
+import { useTranslation } from "@/providers/locale-provider";
 
 /* Auto-scrolling platform logos shown above the product preview. */
 const PLATFORM_LOGOS: MarqueeLogo[] = [
@@ -43,6 +40,15 @@ const PREVIEW_JOBS = [
  * headline, dual CTAs, trusted-by strip, and a cropped product preview panel.
  */
 export function HeroSection() {
+  const { t } = useTranslation();
+
+  const navLinks = [
+    { label: t("marketing.findJobs"), href: "/jobs" },
+    { label: t("marketing.features"), href: "#features" },
+    { label: t("marketing.pricing"), href: "/pricing" },
+    { label: t("marketing.about"), href: "/about" },
+  ];
+
   return (
     <section className="relative overflow-hidden" style={{ background: "var(--color-bg)" }}>
       {/* Soft brand tint behind the headline */}
@@ -69,7 +75,7 @@ export function HeroSection() {
 
           {/* Center links (desktop) */}
           <div className="hidden md:flex items-center gap-1">
-            {NAV_LINKS.map((link) => (
+            {navLinks.map((link) => (
               <Link
                 key={link.label}
                 href={link.href}
@@ -81,19 +87,20 @@ export function HeroSection() {
             ))}
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
+            <LanguageSwitcher />
             <Link
               href="/login"
               className="hidden sm:inline-flex px-4 py-2 rounded-md text-sm font-semibold transition-colors hover:bg-neutral-50"
               style={{ color: "var(--color-text-secondary)" }}
             >
-              Log In
+              {t("marketing.login")}
             </Link>
             <Link
               href="/signup"
               className="px-4 py-2 rounded-md text-sm font-bold text-white bg-primary-600 hover:bg-primary-700 transition-all duration-200 active:scale-[0.98]"
             >
-              Get Started
+              {t("marketing.getStarted")}
             </Link>
           </div>
         </nav>
@@ -108,10 +115,10 @@ export function HeroSection() {
             className="mt-8 text-5xl sm:text-6xl font-extrabold tracking-tight leading-tight max-w-4xl"
             style={{ color: "var(--color-text-primary)" }}
           >
-            The smartest way to find
+            {t("marketing.heroTitlePrefix")}
             <br className="hidden sm:block" />{" "}
-            a job that{" "}
-            <span className="text-gradient-animated">truly fits</span>
+            {t("marketing.heroTitleMiddle")}{" "}
+            <span className="text-gradient-animated">{t("marketing.heroTitleAccent")}</span>
           </Reveal>
 
           {/* Subheadline */}
@@ -121,9 +128,7 @@ export function HeroSection() {
             className="mt-6 text-lg leading-relaxed max-w-3xl"
             style={{ color: "var(--color-text-secondary)" }}
           >
-            JobFits analyzes your resume against 12,000+ live roles from 500+ hiring
-            companies and scores every match — skills, experience, salary, and location —
-            so you apply where you&apos;ll actually win. Upload once, get matched instantly.
+            {t("marketing.heroSubtitle")}
           </Reveal>
 
           {/* CTAs */}
@@ -132,7 +137,7 @@ export function HeroSection() {
               href="/signup"
               className="px-6 py-3 rounded-md text-sm font-bold text-white bg-primary-600 hover:bg-primary-700 transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.98] inline-flex items-center gap-2 group"
             >
-              Get Started Free <ArrowRight size={15} className="transition-transform duration-200 group-hover:translate-x-1" />
+              {t("marketing.ctaButton")} <ArrowRight size={15} className="transition-transform duration-200 group-hover:translate-x-1" />
             </Link>
             <Link
               href="/jobs"
@@ -144,7 +149,7 @@ export function HeroSection() {
                 boxShadow: "var(--shadow-sm)"
               }}
             >
-              Browse Jobs
+              {t("marketing.exploreJobs")}
             </Link>
           </Reveal>
 

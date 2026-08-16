@@ -7,6 +7,7 @@ import { Skeleton } from "@/shared/components/feedback/skeleton";
 import { EmptyState } from "@/shared/components/data-display/empty-state";
 import { useEmailMetrics, useEmailBounces, useSuppressEmail } from "@/features/admin/hooks/use-admin";
 import { bounceTone, ago } from "@/features/admin/api/admin.mappers";
+import { formatNumber } from "@/shared/utils/formatters";
 
 export default function EmailTrackingPage() {
   const { data: m, isLoading } = useEmailMetrics();
@@ -17,8 +18,8 @@ export default function EmailTrackingPage() {
 
   const tiles = m
     ? [
-        { label: "Sent", value: m.sent.toLocaleString(), hint: "last 24h", icon: <Send size={18} />, accent: "bg-primary-50 text-primary-600" },
-        { label: "Delivered", value: m.delivered.toLocaleString(), hint: `${m.deliveryRate}%`, icon: <MailCheck size={18} />, accent: "bg-success-50 text-success-600" },
+        { label: "Sent", value: formatNumber(m.sent), hint: "last 24h", icon: <Send size={18} />, accent: "bg-primary-50 text-primary-600" },
+        { label: "Delivered", value: formatNumber(m.delivered), hint: `${m.deliveryRate}%`, icon: <MailCheck size={18} />, accent: "bg-success-50 text-success-600" },
         { label: "Bounced", value: `${m.bounced}`, hint: `${bouncedRate}%`, icon: <MailX size={18} />, accent: "bg-warning-50 text-warning-600" },
         { label: "Complained", value: `${m.complained}`, hint: "spam reports", icon: <MailWarning size={18} />, accent: "bg-error-50 text-error-600" },
       ]

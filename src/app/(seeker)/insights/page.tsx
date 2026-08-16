@@ -28,6 +28,7 @@ import { Alert } from "@/shared/components/feedback/alert";
 import { StatCard } from "@/shared/components/data-display/stat-card";
 import { ApplicationsChart } from "@/features/insights/components/applications-chart";
 import { SkillGapChartSection } from "@/features/insights/components/skill-gap-chart-section";
+import { formatDate } from "@/shared/utils/formatters";
 
 const pct = (fraction: number) => `${Math.round(fraction * 100)}%`;
 
@@ -185,7 +186,7 @@ export default function InsightsPage() {
                   style={{ borderColor: "var(--color-border)", color: "var(--color-text-tertiary)" }}
                 >
                   <Eye size={12} />
-                  Last profile view {new Date(stats.lastProfileViewDate).toLocaleDateString()}
+                  Last profile view {formatDate(stats.lastProfileViewDate)}
                 </p>
               )}
             </div>

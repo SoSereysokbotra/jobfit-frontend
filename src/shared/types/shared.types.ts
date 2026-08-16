@@ -81,12 +81,4 @@ export interface Job {
   };
 }
 
-export function formatSalaryRange(job: Pick<Job, "salaryMin" | "salaryMax">): string {
-  return `$${job.salaryMin}K – $${job.salaryMax}K`;
-}
-
-export function formatPostedDate(daysAgo: number): string {
-  if (daysAgo <= 0) return "Posted today";
-  if (daysAgo === 1) return "Posted yesterday";
-  return `Posted ${daysAgo} days ago`;
-}
+export { formatSalaryRange, formatPostedDate } from "@/shared/utils/formatters";

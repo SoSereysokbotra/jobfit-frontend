@@ -10,6 +10,7 @@ import { useAuth } from "@/providers/auth-provider";
 import { ApiError } from "@/lib/api/client";
 import { Alert } from "@/shared/components/feedback/alert";
 import { Button } from "@/shared/components/ui/button";
+import { useTranslation } from "@/providers/locale-provider";
 
 /** Mirrors VERIFICATION_CODE_TTL_MINUTES on the backend. */
 const CODE_TTL_SECONDS = 15 * 60;
@@ -59,6 +60,7 @@ const MAIL_CLIENTS = [
 function VerifyEmailContent() {
   const router = useRouter();
   const { setAccessToken } = useAuth();
+  const { t } = useTranslation();
   const searchParams = useSearchParams();
   // The email is passed by signup/login purely to display + power "resend" (the
   // request body needs it). Verification identity itself rides the httpOnly
@@ -182,14 +184,14 @@ function VerifyEmailContent() {
               </div>
               <div>
                 <h1 className="text-2xl font-bold tracking-tight text-neutral-900">
-                  Email Verified!
+                  {t("auth.emailVerified")}
                 </h1>
                 <p className="text-sm text-neutral-500 mt-1">
                   Your account is ready. Let&apos;s set up your profile.
                 </p>
               </div>
               <Button fullWidth onClick={() => router.push("/onboarding/resume")}>
-                Continue to Onboarding <ArrowRight className="w-4 h-4" />
+                {t("auth.continueToOnboarding")} <ArrowRight className="w-4 h-4" />
               </Button>
               <p className="text-xs text-neutral-400">
                 Redirecting automatically in {redirectCountdown}s…
@@ -203,7 +205,7 @@ function VerifyEmailContent() {
               {/* Title block */}
               <div className="text-center space-y-2">
                 <h1 className="text-2xl font-bold tracking-tight text-neutral-900">
-                  Check your inbox
+                  {t("auth.checkInbox")}
                 </h1>
                 <p className="text-sm text-neutral-500 leading-relaxed">
                   We&apos;ve sent a 6-digit code to{" "}
@@ -222,7 +224,7 @@ function VerifyEmailContent() {
                 <div>
                   <div className="flex justify-between items-center mb-1.5">
                     <label className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider">
-                      Verification Code
+                      {t("auth.verificationCode")}
                     </label>
                     <span className={`text-xs font-medium ${timeLeft <= 0 ? "text-error-600" : "text-neutral-500"}`}>
                       {timeLeft > 0 ? `Expires in ${formatTime(timeLeft)}` : "Code expired"}
@@ -244,7 +246,7 @@ function VerifyEmailContent() {
                   loadingText="Verifying…"
                   disabled={code.length !== 6 || timeLeft <= 0}
                 >
-                  Verify Email <ArrowRight className="w-4 h-4" />
+                  {t("auth.verifyEmail")} <ArrowRight className="w-4 h-4" />
                 </Button>
               </form>
 
@@ -255,7 +257,7 @@ function VerifyEmailContent() {
                 </div>
                 <div className="relative flex justify-center text-xs uppercase">
                   <span className="bg-white px-3 text-neutral-400 tracking-wider">
-                    Open your email app
+                    {t("auth.openEmailApp")}
                   </span>
                 </div>
               </div>

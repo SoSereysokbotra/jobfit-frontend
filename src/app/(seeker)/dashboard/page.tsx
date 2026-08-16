@@ -12,6 +12,7 @@ import { useProfile } from "@/features/user-profile/hooks/use-profile";
 import { profileCompleteness } from "@/features/user-profile/api/profile.mappers";
 import { StatCard } from "@/shared/components/data-display/stat-card";
 import { SectionCard } from "@/shared/components/layout/section-card";
+import { formatDate } from "@/shared/utils/formatters";
 
 /** Small "Sample" pill for sections with no backend endpoint yet. */
 function SamplePill() {
@@ -115,7 +116,7 @@ export default function DashboardPage() {
   ];
   const checklistDone = profileChecklist.filter((c) => c.done).length;
 
-  const today = new Date().toLocaleDateString("en-US", {
+  const today = formatDate(new Date(), {
     weekday: "long", month: "long", day: "numeric"
   });
 

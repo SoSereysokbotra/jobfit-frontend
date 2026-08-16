@@ -11,6 +11,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import type { ApplicationView } from "@/features/application/api/application.mappers";
+import { formatDate } from "@/shared/utils/formatters";
 
 interface ApplicationsChartProps {
   applications: ApplicationView[];
@@ -45,8 +46,8 @@ export function ApplicationsChart({ applications }: ApplicationsChartProps) {
     // Format month key to a short label: "Jan '25"
     return sorted.map(([key, count]) => {
       const [year, month] = key.split("-");
-      const label = new Date(Number(year), Number(month) - 1, 1).toLocaleString(
-        "en-US",
+      const label = formatDate(
+        new Date(Number(year), Number(month) - 1, 1),
         { month: "short", year: "2-digit" }
       );
       return { month: label, Applications: count };

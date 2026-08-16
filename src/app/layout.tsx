@@ -4,6 +4,7 @@ import "./globals.css";
 import { QueryProvider } from "@/providers/query-provider";
 import { AuthProvider } from "@/providers/auth-provider";
 import { OfflineProvider } from "@/providers/offline-provider";
+import { LocaleProvider } from "@/providers/locale-provider";
 
 const rubik = Rubik({
   subsets: ["latin"],
@@ -38,7 +39,9 @@ export default function RootLayout({
           <AuthProvider>
             {/* Inside AuthProvider: the sync engine and queue flush both need a
                 bearer token, and the write gate needs to know the session state. */}
-            <OfflineProvider>{children}</OfflineProvider>
+            <OfflineProvider>
+              <LocaleProvider>{children}</LocaleProvider>
+            </OfflineProvider>
           </AuthProvider>
         </QueryProvider>
       </body>

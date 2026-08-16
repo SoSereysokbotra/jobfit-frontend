@@ -10,10 +10,12 @@ import { useAuth } from "@/providers/auth-provider";
 import { ApiError } from "@/lib/api/client";
 import { Alert } from "@/shared/components/feedback/alert";
 import { Button } from "@/shared/components/ui/button";
+import { useTranslation } from "@/providers/locale-provider";
 
 export default function LoginPage() {
   const router = useRouter();
   const { login } = useAuth();
+  const { t } = useTranslation();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -64,7 +66,7 @@ export default function LoginPage() {
             <div className="mx-auto flex items-center justify-center w-12 h-12 rounded-full bg-error-100 mb-4">
               <ShieldAlert className="w-6 h-6 text-error-600" />
             </div>
-            <h2 className="text-2xl font-bold tracking-tight text-neutral-900">Account Locked</h2>
+            <h2 className="text-2xl font-bold tracking-tight text-neutral-900">{t("auth.accountLockedTitle")}</h2>
             <p className="text-sm text-neutral-500 mt-2">
               {errorMessage || "Too many failed attempts. Please try again later."}
             </p>
@@ -85,7 +87,7 @@ export default function LoginPage() {
                 setPassword("");
               }}
             >
-              Back to Sign In
+              {t("action.back")}
             </Button>
             <Link
               href="/forgot-password"
@@ -98,8 +100,8 @@ export default function LoginPage() {
       ) : (
         <>
           <AuthHeading
-            title="Sign in to your account"
-            subtitle="Enter your credentials to access your dashboard"
+            title={t("auth.welcomeBack")}
+            subtitle={t("auth.loginSubtitle")}
           />
 
           {errorMessage && (
@@ -118,21 +120,21 @@ export default function LoginPage() {
 
           <form className="space-y-4" onSubmit={handleEmailLogin}>
             <TextField
-              label="Email Address"
+              label={t("auth.emailLabel")}
               icon={Mail}
               type="email"
               required
-              placeholder="name@example.com"
+              placeholder={t("auth.emailPlaceholder")}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
 
             <TextField
-              label="Password"
+              label={t("auth.passwordLabel")}
               icon={Lock}
               passwordToggle
               required
-              placeholder="••••••••"
+              placeholder={t("auth.passwordPlaceholder")}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
@@ -148,11 +150,11 @@ export default function LoginPage() {
                   className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-neutral-200 rounded bg-white"
                 />
                 <label htmlFor="remember-me" className="ml-2 block text-xs text-neutral-500">
-                  Remember me on this device
+                  {t("auth.rememberMe")}
                 </label>
               </div>
               <Link href="/forgot-password" className="text-xs text-primary-600 hover:underline font-semibold">
-                Forgot password?
+                {t("auth.forgotPassword")}
               </Link>
             </div>
 
@@ -160,10 +162,10 @@ export default function LoginPage() {
               type="submit"
               fullWidth
               loading={isLoading}
-              loadingText="Signing in..."
+              loadingText={t("auth.signingIn")}
               disabled={!email || !password}
             >
-              Sign In <ArrowRight className="w-4 h-4" />
+              {t("auth.signIn")} <ArrowRight className="w-4 h-4" />
             </Button>
           </form>
 
@@ -188,9 +190,9 @@ export default function LoginPage() {
 
           {/* SIGN UP LINK */}
           <div className="text-center text-xs mt-4">
-            <span className="text-neutral-500">Don&apos;t have an account? </span>
+            <span className="text-neutral-500">{t("auth.dontHaveAccount")} </span>
             <Link href="/signup" className="text-primary-600 font-semibold hover:underline">
-              Sign up
+              {t("auth.createAccount")}
             </Link>
           </div>
         </>

@@ -6,6 +6,8 @@
  * `@/shared/types/shared.types` — these are the derivation helpers that feed them.
  */
 
+import { getStoredLocale } from "@/stores/locale-store";
+
 /** Logo background tokens, mirroring the palette the mock job data used. */
 const LOGO_BG_TOKENS = [
   "var(--color-primary-700)",
@@ -72,34 +74,76 @@ export function logoBgFor(key: string | null | undefined): string {
    (applications, saved jobs, offers). ── */
 
 /** "today" / "yesterday" / "5 days ago" / "2 weeks ago" */
-export function formatDaysAgo(daysAgo: number): string {
-  if (daysAgo <= 0) return "today";
-  if (daysAgo === 1) return "yesterday";
-  if (daysAgo < 14) return `${daysAgo} days ago`;
-  return `${Math.round(daysAgo / 7)} weeks ago`;
+export function formatDaysAgo(daysAgo: number, locale?: string): string {
+  const currentLocale = locale || getStoredLocale();
+  try {
+    const rtf = new Intl.RelativeTimeFormat(currentLocale, { numeric: "auto" });
+    if (daysAgo <= 0) return rtf.format(0, "day");
+    if (daysAgo < 14) return rtf.format(-Math.round(daysAgo), "day");
+    return rtf.format(-Math.round(daysAgo / 7), "week");
+  } catch {
+    if (daysAgo <= 0) return "today";
+    if (daysAgo === 1) return "yesterday";
+    if (daysAgo < 14) return `${daysAgo} days ago`;
+    return `${Math.round(daysAgo / 7)} weeks ago`;
+  }
 }
 
 /** "today" / "tomorrow" / "in 3 days" */
-export function formatInDays(inDays: number): string {
-  if (inDays <= 0) return "today";
-  if (inDays === 1) return "tomorrow";
-  return `in ${inDays} days`;
+export function formatInDays(inDays: number, locale?: string): string {
+  const currentLocale = locale || getStoredLocale();
+  try {
+    const rtf = new Intl.RelativeTimeFormat(currentLocale, { numeric: "auto" });
+    return rtf.format(Math.round(inDays), "day");
+  } catch {
+    if (inDays <= 0) return "today";
+    if (inDays === 1) return "tomorrow";
+    return `in ${inDays} days`;
+  }
 }
 
 /** A future calendar date N days from today, e.g. "Jul 21". */
-export function formatDateInDays(inDays: number): string {
+export function formatDateInDays(inDays: number, locale?: string): string {
+  const currentLocale = locale || getStoredLocale();
   const d = new Date();
   d.setDate(d.getDate() + inDays);
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  try {
+    return new Intl.DateTimeFormat(currentLocale, { month: "short", day: "numeric" }).format(d);
+  } catch {
+    return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  }
 }
 
 /** Whole-dollar currency, e.g. 155000 → "$155,000". */
-export function formatCurrency(amount: number): string {
-  return `$${Math.round(amount).toLocaleString("en-US")}`;
+export function formatCurrency(amount: number, locale?: string, currency: string = "USD"): string {
+  const currentLocale = locale || getStoredLocale();
+  try {
+    return new Intl.NumberFormat(currentLocale, {
+      style: "currency",
+      currency,
+      maximumFractionDigits: 0,
+    }).format(amount);
+  } catch {
+    return `$${Math.round(amount).toLocaleString()}`;
+  }
 }
 
 /** Compact currency for tight spaces, e.g. 201000 → "$201K". */
-export function formatCurrencyShort(amount: number): string {
-  if (amount >= 1000) return `$${Math.round(amount / 1000)}K`;
-  return `$${Math.round(amount)}`;
+export function formatCurrencyShort(amount: number, locale?: string, currency: string = "USD"): string {
+  const currentLocale = locale || getStoredLocale();
+  try {
+    if (amount >= 1000) {
+      const kValue = Math.round(amount / 1000);
+      const formatted = new Intl.NumberFormat(currentLocale, { maximumFractionDigits: 0 }).format(kValue);
+      return currency === "USD" ? `$${formatted}K` : `${formatted}K ${currency}`;
+    }
+    return new Intl.NumberFormat(currentLocale, {
+      style: "currency",
+      currency,
+      maximumFractionDigits: 0,
+    }).format(amount);
+  } catch {
+    if (amount >= 1000) return `$${Math.round(amount / 1000)}K`;
+    return `$${Math.round(amount)}`;
+  }
 }

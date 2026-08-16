@@ -1,12 +1,13 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { RefreshCw, LayoutGrid, List, SlidersHorizontal, X, Star } from "lucide-react";
+import { RefreshCw, LayoutGrid, List, SlidersHorizontal, X, Star, Layers } from "lucide-react";
 import {
   JobRecommendationCard,
   JobRecommendationFilters,
   JobCard,
 } from "@/features/job/components";
+import { SwipeDeck } from "@/features/matching/components/swipe-deck";
 import { useJobSearch } from "@/features/job/hooks/use-job-search";
 import { useRecommendations } from "@/features/matching/hooks/use-recommendations";
 import { useDismissRecommendation } from "@/features/matching/hooks/use-dismiss-recommendation";
@@ -16,7 +17,7 @@ import { isExternalApply, openExternalPosting } from "@/features/application/lib
 import { Alert } from "@/shared/components/feedback/alert";
 import { ApiError } from "@/lib/api/client";
 
-type ViewMode = "list" | "grid";
+type ViewMode = "list" | "grid" | "deck";
 
 export default function RecommendationsPage() {
   const [viewMode, setViewMode] = useState<ViewMode>("list");
@@ -195,6 +196,17 @@ export default function RecommendationsPage() {
                   >
                     <LayoutGrid size={16} />
                   </button>
+                  <button
+                    onClick={() => setViewMode("deck")}
+                    className="px-3 py-2 flex items-center justify-center transition-colors"
+                    style={{
+                      background: viewMode === "deck" ? "var(--color-primary-600)" : "var(--color-card)",
+                      color: viewMode === "deck" ? "white" : "var(--color-text-secondary)",
+                    }}
+                    title="Card deck triage"
+                  >
+                    <Layers size={16} />
+                  </button>
                 </div>
               </div>
             </div>
@@ -277,6 +289,13 @@ export default function RecommendationsPage() {
                   </>
                 )}
               </div>
+            ) : viewMode === "deck" ? (
+              /* DECK VIEW: Interactive Card Stack Triage */
+              <SwipeDeck
+                jobs={visibleResults}
+                onApply={handleApply}
+                onViewList={() => setViewMode("list")}
+              />
             ) : viewMode === "grid" ? (
               /* GRID VIEW: Reuse existing JobCard grid variant */
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -308,7 +327,7 @@ export default function RecommendationsPage() {
             )}
 
             {/* Bottom summary */}
-            {visibleResults.length > 0 && (
+            {visibleResults.length > 0 && viewMode !== "deck" && (
               <p className="text-center text-sm mt-8" style={{ color: "var(--color-text-tertiary)" }}>
                 Top {visibleResults.length} recommendations shown • Updated nightly
               </p>

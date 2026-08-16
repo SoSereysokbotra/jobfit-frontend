@@ -15,9 +15,11 @@ import { authApi } from "@/features/auth/api/auth.api";
 import { ApiError } from "@/lib/api/client";
 import { Alert } from "@/shared/components/feedback/alert";
 import { Button } from "@/shared/components/ui/button";
+import { useTranslation } from "@/providers/locale-provider";
 
 export default function SignupPage() {
   const router = useRouter();
+  const { t } = useTranslation();
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -64,8 +66,8 @@ export default function SignupPage() {
       author="Steve Jobs"
     >
       <AuthHeading
-        title="Create your account"
-        subtitle="Enter your details to create your account"
+        title={t("auth.createAccount")}
+        subtitle={t("auth.signupSubtitle")}
       />
 
       {errorMessage && (
@@ -77,32 +79,32 @@ export default function SignupPage() {
       {/* EMAIL/PASSWORD FORM */}
       <form className="space-y-4" onSubmit={handleEmailSignup}>
         <TextField
-          label="Full Name"
+          label={t("auth.fullNameLabel")}
           icon={User}
           type="text"
           maxLength={120}
-          placeholder="Jane Doe"
+          placeholder={t("auth.fullNamePlaceholder")}
           value={name}
           onChange={(e) => setName(e.target.value)}
         />
 
         <TextField
-          label="Email Address"
+          label={t("auth.emailLabel")}
           icon={Mail}
           type="email"
           required
-          placeholder="name@example.com"
+          placeholder={t("auth.emailPlaceholder")}
           value={email}
           onChange={(e) => setEmail(e.target.value)}
         />
 
         <div>
           <TextField
-            label="Password"
+            label={t("auth.passwordLabel")}
             icon={Lock}
             passwordToggle
             required
-            placeholder="••••••••"
+            placeholder={t("auth.passwordPlaceholder")}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
@@ -116,11 +118,11 @@ export default function SignupPage() {
 
         <div>
           <TextField
-            label="Confirm Password"
+            label={t("auth.confirmPasswordLabel")}
             icon={Lock}
             type="password"
             required
-            placeholder="••••••••"
+            placeholder={t("auth.passwordPlaceholder")}
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
           />
@@ -158,7 +160,7 @@ export default function SignupPage() {
           loadingText="Creating account…"
           disabled={!agreeTerms || !email || !password || password !== confirmPassword || passwordTooShort}
         >
-          Create Account <ArrowRight className="w-4 h-4" />
+          {t("auth.createAccount")} <ArrowRight className="w-4 h-4" />
         </Button>
       </form>
 
@@ -180,9 +182,9 @@ export default function SignupPage() {
 
       {/* SIGN IN LINK */}
       <div className="text-center text-xs mt-4">
-        <span className="text-neutral-500">Already have an account? </span>
+        <span className="text-neutral-500">{t("auth.haveAccount")} </span>
         <Link href="/login" className="text-primary-600 font-semibold hover:underline">
-          Log In
+          {t("auth.signIn")}
         </Link>
       </div>
     </AuthShell>

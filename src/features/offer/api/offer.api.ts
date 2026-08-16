@@ -150,10 +150,12 @@ function daysUntil(iso: string | null): number {
   return Math.ceil((new Date(iso).getTime() - Date.now()) / 86_400_000);
 }
 
+import { formatDate } from "@/shared/utils/formatters";
+
 function shortDate(iso: string | null): string {
   if (!iso) return "—";
   const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? "—" : d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  return Number.isNaN(d.getTime()) ? "—" : formatDate(d, { month: "short", day: "numeric" });
 }
 
 /** Build the offer's Job view from the embedded (minimal) job projection. */
