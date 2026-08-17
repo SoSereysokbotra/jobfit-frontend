@@ -47,7 +47,7 @@ export const NAVIGATION_GROUPS: NavigationGroup[] = [
   {
     group: "YOUR JOURNEY",
     items: [
-      { href: "/applications", label: "Applications", iconName: "Briefcase", icon: <Briefcase size={18} />, badge: 2 },
+      { href: "/applications", label: "Applications", iconName: "Briefcase", icon: <Briefcase size={18} /> },
       { href: "/learning", label: "Interview Prep", iconName: "Calendar", icon: <Calendar size={18} /> },
       { href: "/offers", label: "Offers & Decisions", iconName: "Award", icon: <Award size={18} /> },
     ],
@@ -63,7 +63,7 @@ export const NAVIGATION_GROUPS: NavigationGroup[] = [
   {
     group: "HELP & PREFERENCES",
     items: [
-      { href: "/notifications", label: "Notifications", iconName: "Bell", icon: <Bell size={18} />, badge: 3 },
+      { href: "/notifications", label: "Notifications", iconName: "Bell", icon: <Bell size={18} /> },
       { href: "/help", label: "Help & Feedback", iconName: "HelpCircle", icon: <HelpCircle size={18} /> },
       { href: "/settings", label: "Settings", iconName: "Settings", icon: <Settings size={18} /> },
     ],

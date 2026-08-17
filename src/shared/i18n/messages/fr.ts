@@ -140,4 +140,14 @@ export const fr: Record<MessageKey, string> = {
   "auth.resendVerification": "Renvoyer l'e-mail de confirmation",
   "auth.accountLockedTitle": "Compte temporairement verrouillé",
   "auth.accountLockedMessage": "Votre compte a été verrouillé suite à plusieurs tentatives infructueuses. Veuillez réessayer ultérieurement.",
+  // Verify Email page
+  "auth.checkInbox": "Vérifiez votre boîte de réception",
+  "auth.verificationCode": "Code de vérification",
+  "auth.verifyEmail": "Vérifier l'e-mail",
+  "auth.openEmailApp": "Ouvrir l'application de messagerie",
+  "auth.emailVerified": "E-mail vérifié !",
+  "auth.continueToOnboarding": "Continuer vers l'intégration",
+  // Signup extras
+  "auth.confirmPasswordLabel": "Confirmer le mot de passe",
+  "auth.haveAccount": "Vous avez déjà un compte ?",
 };

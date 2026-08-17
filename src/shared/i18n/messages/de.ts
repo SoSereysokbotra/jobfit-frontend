@@ -140,4 +140,14 @@ export const de: Record<MessageKey, string> = {
   "auth.resendVerification": "Bestätigungs-E-Mail erneut senden",
   "auth.accountLockedTitle": "Konto vorübergehend gesperrt",
   "auth.accountLockedMessage": "Dein Konto wurde nach mehreren Fehlversuchen gesperrt. Bitte versuche es später erneut oder kontaktiere den Support.",
+  // Verify Email page
+  "auth.checkInbox": "Posteingang überprüfen",
+  "auth.verificationCode": "Bestätigungscode",
+  "auth.verifyEmail": "E-Mail bestätigen",
+  "auth.openEmailApp": "E-Mail-App öffnen",
+  "auth.emailVerified": "E-Mail bestätigt!",
+  "auth.continueToOnboarding": "Weiter zum Onboarding",
+  // Signup extras
+  "auth.confirmPasswordLabel": "Passwort bestätigen",
+  "auth.haveAccount": "Bereits ein Konto?",
 };

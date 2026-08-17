@@ -1,15 +1,18 @@
 "use client";
 import React, { useState } from "react";
-import { User, Lock, Link2, Check, Mail, Phone, Eye, EyeOff } from "lucide-react";
+import { User, Lock, Link2, Check, Mail, Phone, Eye, EyeOff, Palette, Sun, Moon, Laptop } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
 import { Badge } from "@/shared/components/ui/badge";
 import { cn } from "@/shared/utils/cn";
+import { useTheme } from "@/providers/theme-provider";
+import { toast } from "@/stores/toast-store";
 
 /* ─────────────────────────── MOCK DATA ─────────────────────── */
 /* ─────────────────────────── COMPONENT ─────────────────────── */
 
 export default function SettingsPage() {
-  const [activeSection, setActiveSection] = useState<"account" | "security" | "integrations" | "sessions">("account");
+  const { theme, setTheme, resolvedTheme } = useTheme();
+  const [activeSection, setActiveSection] = useState<"account" | "security" | "integrations" | "appearance">("account");
 
   // Profile Form State
   const [email, setEmail] = useState("test@jobfits.co");
@@ -49,9 +52,10 @@ export default function SettingsPage() {
   const handleUpdatePassword = (e: React.FormEvent) => {
     e.preventDefault();
     if (newPassword !== confirmPassword) {
-      alert("New passwords do not match!");
+      toast.error("New passwords do not match!");
       return;
     }
+    toast.success("Password changed successfully!");
     setSuccessMsg("Password changed successfully!");
     setCurrPassword("");
     setNewPassword("");
@@ -64,6 +68,7 @@ export default function SettingsPage() {
     { id: "account", label: "Account Settings", icon: User, desc: "Email, phone & profile context" },
     { id: "security", label: "Sign-In & Security", icon: Lock, desc: "Password, 2FA & protection" },
     { id: "integrations", label: "Connected Accounts", icon: Link2, desc: "Linked OAuth applications" },
+    { id: "appearance", label: "Appearance", icon: Palette, desc: "Theme & visual preferences" },
   ] as const;
 
   return (
@@ -353,6 +358,94 @@ export default function SettingsPage() {
                     )}
                   </div>
                 ))}
+              </div>
+            </div>
+          )}
+
+          {/* 4. APPEARANCE PANEL */}
+          {activeSection === "appearance" && (
+            <div
+              className="rounded-xl border p-6 space-y-6"
+              style={{ background: "var(--color-card)", borderColor: "var(--color-border)", boxShadow: "var(--shadow-sm)" }}
+            >
+              <div>
+                <h2 className="text-base font-bold" style={{ color: "var(--color-text-primary)" }}>Appearance</h2>
+                <p className="text-xs mt-0.5" style={{ color: "var(--color-text-tertiary)" }}>
+                  Customize how JobFits looks on your device
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                <label className="text-xs font-bold uppercase tracking-wider" style={{ color: "var(--color-text-secondary)" }}>
+                  Theme Preference
+                </label>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  {[
+                    {
+                      id: "light" as const,
+                      label: "Light Mode",
+                      desc: "Clean light background with purple accents",
+                      icon: Sun,
+                    },
+                    {
+                      id: "dark" as const,
+                      label: "Dark Mode",
+                      desc: "Easy on the eyes in low-light environments",
+                      icon: Moon,
+                    },
+                    {
+                      id: "system" as const,
+                      label: "System Default",
+                      desc: `Automatically match OS (${resolvedTheme === "dark" ? "Dark" : "Light"})`,
+                      icon: Laptop,
+                    },
+                  ].map((opt) => {
+                    const isSelected = theme === opt.id;
+                    const Icon = opt.icon;
+                    return (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        onClick={() => setTheme(opt.id)}
+                        className={cn(
+                          "flex flex-col text-left p-4 rounded-xl border transition-all duration-200 cursor-pointer relative",
+                          isSelected
+                            ? "border-primary-500 ring-2 ring-primary-500/20 shadow-sm"
+                            : "hover:border-neutral-300"
+                        )}
+                        style={{
+                          background: isSelected ? "var(--color-primary-50)" : "var(--color-surface)",
+                          borderColor: isSelected ? "var(--color-primary-500)" : "var(--color-border)",
+                        }}
+                      >
+                        <div className="flex items-center justify-between w-full mb-3">
+                          <div
+                            className="w-8 h-8 rounded-lg flex items-center justify-center"
+                            style={{
+                              background: isSelected ? "var(--color-primary-100)" : "var(--color-neutral-100)",
+                              color: isSelected ? "var(--color-primary-700)" : "var(--color-text-secondary)",
+                            }}
+                          >
+                            <Icon size={16} />
+                          </div>
+                          {isSelected && (
+                            <Badge variant="primary" className="text-[10px] py-0.5 px-2">Active</Badge>
+                          )}
+                        </div>
+                        <p
+                          className="text-sm font-bold"
+                          style={{ color: isSelected ? "var(--color-primary-900)" : "var(--color-text-primary)" }}
+                        >
+                          {opt.label}
+                        </p>
+                        <p className="text-xs mt-1" style={{ color: "var(--color-text-tertiary)" }}>
+                          {opt.desc}
+                        </p>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             </div>
           )}

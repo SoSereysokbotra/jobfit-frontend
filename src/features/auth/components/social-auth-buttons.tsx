@@ -2,6 +2,7 @@
 
 import React from "react";
 import { GoogleIcon, LinkedInIcon } from "./brand-icons";
+import { toast } from "@/stores/toast-store";
 
 interface SocialAuthButtonsProps {
   onGoogle: () => void;
@@ -15,7 +16,7 @@ const BUTTON_CLASS =
 /** Google + LinkedIn OAuth buttons shared by login and signup. */
 export function SocialAuthButtons({ onGoogle, onLinkedIn, disabled = false }: SocialAuthButtonsProps) {
   const handleLinkedIn =
-    onLinkedIn ?? (() => alert("LinkedIn is not active in this simulation. Only Google is wired up."));
+    onLinkedIn ?? (() => toast.info("LinkedIn is not active in this simulation. Only Google is wired up."));
 
   return (
     <div className="grid grid-cols-2 gap-3">

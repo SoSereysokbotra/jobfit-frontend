@@ -84,7 +84,7 @@ export function SkillGapChartSection({ applications }: SkillGapChartSectionProps
             Skill-gap radar
           </h2>
           <p className="text-xs" style={{ color: "var(--color-text-tertiary)" }}>
-            How your résumé covers each job's stated requirements
+            How your résumé covers each job&apos;s stated requirements
           </p>
         </div>
       </div>
@@ -133,7 +133,7 @@ export function SkillGapChartSection({ applications }: SkillGapChartSectionProps
         </p>
       ) : data.status === "JOB_HAS_NO_REQUIREMENTS" ? (
         <p className="text-sm py-4" style={{ color: "var(--color-text-tertiary)" }}>
-          This job posting doesn't list specific requirements — nothing to compare against.
+          This job posting doesn&apos;t list specific requirements — nothing to compare against.
         </p>
       ) : showContent ? (
         <>

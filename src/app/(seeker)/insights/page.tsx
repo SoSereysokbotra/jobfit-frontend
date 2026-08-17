@@ -9,7 +9,6 @@ import {
   Eye,
   TrendingUp,
   DollarSign,
-  Target,
   BarChart3,
 } from "lucide-react";
 import {
@@ -29,6 +28,7 @@ import { StatCard } from "@/shared/components/data-display/stat-card";
 import { ApplicationsChart } from "@/features/insights/components/applications-chart";
 import { SkillGapChartSection } from "@/features/insights/components/skill-gap-chart-section";
 import { formatDate } from "@/shared/utils/formatters";
+import { Reveal } from "@/shared/components/motion/reveal";
 
 const pct = (fraction: number) => `${Math.round(fraction * 100)}%`;
 
@@ -97,6 +97,7 @@ export default function InsightsPage() {
       ) : (
         <>
           {/* ── Stat cards ───────────────────────────────────────── */}
+          <Reveal variant="up" delay={0}>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard
               label="Applications"
@@ -127,8 +128,10 @@ export default function InsightsPage() {
               accentBg="var(--color-warning-50)"
             />
           </div>
+          </Reveal>
 
           {/* ── Applications over time + Funnel ──────────────────── */}
+          <Reveal variant="up" delay={100}>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* 2c — Applications over time chart */}
             <div
@@ -191,8 +194,10 @@ export default function InsightsPage() {
               )}
             </div>
           </div>
+          </Reveal>
 
           {/* ── 2b — Recharts Funnel chart ────────────────────────── */}
+          <Reveal variant="up" delay={180}>
           <div
             className="rounded-lg border p-6"
             style={{
@@ -240,11 +245,15 @@ export default function InsightsPage() {
               </FunnelChart>
             </ResponsiveContainer>
           </div>
+          </Reveal>
 
           {/* ── 2a — Skill-gap radar ─────────────────────────────── */}
+          <Reveal variant="up" delay={260}>
           <SkillGapChartSection applications={applications} />
+          </Reveal>
 
           {/* ── Salary insights — pending backend ───────────────── */}
+          <Reveal variant="up" delay={320}>
           <div
             className="rounded-lg border p-6 flex items-center gap-3"
             style={{
@@ -268,6 +277,7 @@ export default function InsightsPage() {
               </p>
             </div>
           </div>
+          </Reveal>
         </>
       )}
     </div>

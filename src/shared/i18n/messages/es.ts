@@ -140,4 +140,14 @@ export const es: Record<MessageKey, string> = {
   "auth.resendVerification": "Reenviar correo de verificación",
   "auth.accountLockedTitle": "Cuenta bloqueada temporalmente",
   "auth.accountLockedMessage": "Tu cuenta ha sido bloqueada por múltiples intentos fallidos. Intenta más tarde o contacta con soporte.",
+  // Verify Email page
+  "auth.checkInbox": "Revisa tu bandeja de entrada",
+  "auth.verificationCode": "Código de verificación",
+  "auth.verifyEmail": "Verificar correo",
+  "auth.openEmailApp": "Abrir aplicación de correo",
+  "auth.emailVerified": "¡Correo verificado!",
+  "auth.continueToOnboarding": "Continuar con la incorporación",
+  // Signup extras
+  "auth.confirmPasswordLabel": "Confirmar contraseña",
+  "auth.haveAccount": "¿Ya tienes una cuenta?",
 };

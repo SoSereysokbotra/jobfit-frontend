@@ -61,13 +61,13 @@ export default function Sidebar({
 
   return (
     <aside
-      className={`${collapsed ? "w-[72px]" : "w-64"} border-r flex flex-col h-screen sticky top-0 bg-white transition-all duration-200 ease-in-out ${className}`}
-      style={{ borderColor: "var(--color-border)" }}
+      className={`${collapsed ? "w-[72px]" : "w-64"} border-r flex flex-col h-screen sticky top-0 transition-all duration-200 ease-in-out ${className}`}
+      style={{ borderColor: "var(--color-border)", background: "var(--color-card)" }}
     >
       {/* Brand Header */}
       <div
         className={`flex items-center border-b transition-all duration-200 ${collapsed ? "flex-col gap-2 p-4" : "gap-3 p-6"}`}
-        style={{ borderColor: "var(--color-neutral-100)" }}
+        style={{ borderColor: "var(--color-border)" }}
       >
         {collapsed ? (
           <button
@@ -181,15 +181,15 @@ export default function Sidebar({
       </div>
 
       {/* User profile footer */}
-      <div className={`border-t transition-all duration-200 ${collapsed ? "p-2" : "p-4"}`} style={{ borderColor: "var(--color-neutral-100)" }}>
+      <div className={`border-t transition-all duration-200 ${collapsed ? "p-2" : "p-4"}`} style={{ borderColor: "var(--color-border)" }}>
         <div className={`flex items-center rounded-lg hover:bg-neutral-50 transition-colors ${collapsed ? "flex-col gap-2 p-2" : "gap-3 p-2"}`}>
           <div className="w-9 h-9 rounded-full bg-primary-100 flex items-center justify-center font-bold text-primary-700 text-sm flex-shrink-0">
             {displayUser.initials}
           </div>
           {!collapsed && (
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-bold truncate text-neutral-800">{displayUser.name}</p>
-              <p className="text-[10px] text-neutral-400 truncate">{displayUser.email}</p>
+              <p className="text-xs font-bold truncate" style={{ color: "var(--color-text-primary)" }}>{displayUser.name}</p>
+              <p className="text-[10px] truncate" style={{ color: "var(--color-text-tertiary)" }}>{displayUser.email}</p>
             </div>
           )}
           <button

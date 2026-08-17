@@ -140,4 +140,14 @@ export const km: Record<MessageKey, string> = {
   "auth.resendVerification": "ផ្ញើអ៊ីមែលផ្ទៀងផ្ទាត់ម្តងទៀត",
   "auth.accountLockedTitle": "គណនីត្រូវបានចាក់សោបណ្តោះអាសន្ន",
   "auth.accountLockedMessage": "គណនីរបស់អ្នកត្រូវបានចាក់សោដោយសារការព្យាយាមចូលមិនជោគជ័យច្រើនដង។ សូមព្យាយាមម្តងទៀតនៅពេលក្រោយ។",
+  // Verify Email page
+  "auth.checkInbox": "ពិនិត្យប្រអប់សំបុត្ររបស់អ្នក",
+  "auth.verificationCode": "លេខកូដផ្ទៀងផ្ទាត់",
+  "auth.verifyEmail": "ផ្ទៀងផ្ទាត់អ៊ីមែល",
+  "auth.openEmailApp": "បើកកម្មវិធីអ៊ីមែល",
+  "auth.emailVerified": "បានផ្ទៀងផ្ទាត់អ៊ីមែលដោយជោគជ័យ!",
+  "auth.continueToOnboarding": "បន្តទៅការចាប់ផ្តើមដំបូង",
+  // Signup extras
+  "auth.confirmPasswordLabel": "បញ្ជាក់ពាក្យសម្ងាត់",
+  "auth.haveAccount": "មានគណនីរួចហើយ?",
 };

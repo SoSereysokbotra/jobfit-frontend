@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Menu, Search } from "lucide-react";
 import { NotificationBell } from "@/features/notification/components/notification-bell";
 import { LanguageSwitcher } from "@/shared/components/ui/language-switcher";
+import { ThemeToggle } from "@/shared/components/ui/theme-toggle";
 import { OfflineIndicator } from "./offline-indicator";
 import { useCommandPaletteOpen } from "@/stores/command-palette-store";
 import { CommandPalette } from "@/shared/components/ui/command-palette";
@@ -21,8 +22,8 @@ export default function TopNav({ onMenuToggle, className = "", user }: TopNavPro
   return (
     <>
       <header
-        className={`sticky top-0 z-40 h-14 bg-white border-b flex items-center px-4 gap-3 ${className}`}
-        style={{ borderColor: "var(--color-border)" }}
+        className={`sticky top-0 z-40 h-14 border-b flex items-center px-4 gap-3 ${className}`}
+        style={{ borderColor: "var(--color-border)", background: "var(--color-card)" }}
       >
         {/* Mobile hamburger */}
         <button
@@ -91,6 +92,9 @@ export default function TopNav({ onMenuToggle, className = "", user }: TopNavPro
 
         {/* Language Switcher */}
         <LanguageSwitcher />
+
+        {/* Theme Toggle */}
+        <ThemeToggle />
 
         {/* Notifications */}
         <NotificationBell />

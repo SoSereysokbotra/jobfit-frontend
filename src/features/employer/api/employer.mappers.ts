@@ -177,6 +177,7 @@ export interface CompanyView {
   website: string;
   industry: string;
   size: string;
+  foundedYear: number | null;
   isVerified: boolean;
   city: string;
   state: string;
@@ -192,6 +193,7 @@ export function toCompanyView(dto: EmployerCompanyDto): CompanyView {
     website: dto.website ?? "",
     industry: dto.industry ?? "",
     size: dto.size ?? "",
+    foundedYear: dto.foundedYear ?? null,
     isVerified: dto.isVerified,
     city: dto.city ?? "",
     state: dto.state ?? "",

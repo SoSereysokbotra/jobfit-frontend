@@ -17,6 +17,7 @@ import { EmptyState } from "@/shared/components/data-display/empty-state";
 import { JobCardSkeleton } from "@/shared/components/feedback/skeleton";
 import { Alert } from "@/shared/components/feedback/alert";
 import { ApiError } from "@/lib/api/client";
+import { Reveal } from "@/shared/components/motion/reveal";
 
 const SORT_OPTIONS: { value: JobSortKey; label: string }[] = [
   { value: "match", label: "Match score" },
@@ -84,7 +85,12 @@ export default function JobSearchPage() {
       </div>
 
       {/* ── SEARCH BAR ────────────────────────────────────── */}
-      <JobSearchBar value={search.filters.query} onChange={(v) => search.setFilter("query", v)} />
+      <Reveal variant="fade" delay={0}>
+        <JobSearchBar
+          value={search.filters.query}
+          onChange={(v) => search.setFilter("query", v)}
+        />
+      </Reveal>
 
       {applyMsg && <Alert variant={applyMsg.tone}>{applyMsg.text}</Alert>}
 
@@ -116,8 +122,8 @@ export default function JobSearchPage() {
 
         {/* Results column */}
         <div className="lg:col-span-3 space-y-4">
-
           {/* Results toolbar */}
+          <Reveal variant="up" delay={80}>
           <div
             className="rounded-lg border px-4 py-3 flex flex-wrap items-center gap-3"
             style={{ background: "var(--color-card)", borderColor: "var(--color-border)", boxShadow: "var(--shadow-sm)" }}
@@ -181,6 +187,7 @@ export default function JobSearchPage() {
               ))}
             </div>
           </div>
+          </Reveal>
 
           {/* Active filter pills */}
           {search.pills.length > 0 && (
@@ -211,6 +218,7 @@ export default function JobSearchPage() {
           )}
 
           {/* Results */}
+          <Reveal variant="up" delay={140}>
           {isLoading ? (
             <div
               className="rounded-lg border divide-y"
@@ -276,6 +284,7 @@ export default function JobSearchPage() {
               ))}
             </div>
           )}
+          </Reveal>
 
           {/* Pagination */}
           {!isLoading && search.results.length > 0 && (

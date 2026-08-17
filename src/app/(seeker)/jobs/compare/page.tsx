@@ -25,14 +25,6 @@ import type { JobMatchDto } from "@/features/matching/api/matching.api";
 import type { SkillGapDto } from "@/features/matching/api/matching.api";
 import { Skeleton } from "@/shared/components/feedback/skeleton";
 
-/* ─── Per-job data loader ─────────────────────────────────────────────────── */
-
-function useJobCompareData(job: Job) {
-  const match = useJobMatch(job.id);
-  const skillGap = useSkillGap(job.id);
-  return { match, skillGap };
-}
-
 /* ─── Helpers ────────────────────────────────────────────────────────────── */
 
 /** Returns indices of cells that share the maximum value (numeric). */
