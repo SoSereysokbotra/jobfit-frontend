@@ -82,15 +82,38 @@ export function useParsingStatus(resumeId: string | undefined, enabled = true) {
 /**
  * Scores for a parsed resume. Deliberately gated on `isParsed`: the endpoints
  * 400 with "Resume has not been parsed yet" before that.
+ *
+ * GET /scores is not a plain read — the backend calculates on demand and CACHES the
+ * result onto the resume row (ResumeScorerService.scoreResume). Uploading never scores,
+ * so a résumé has no atsScore until something calls this. That is why the list has to be
+ * invalidated afterwards: the row the cards render from is stale the moment this returns.
+ *
+ * `enabled` is the caller's gate, not just "is it parsed". ResumeScorerService re-runs the
+ * AI on EVERY call rather than returning the cached value, so a caller that already has a
+ * score should pass false instead of paying for an identical one.
  */
-export function useResumeScores(resumeId: string | undefined, isParsed: boolean) {
+export function useResumeScores(resumeId: string | undefined, enabled: boolean) {
+  const queryClient = useQueryClient();
+
   const query = useQuery({
     queryKey: qk.resumes.scores(resumeId ?? "unknown"),
     queryFn: () => resumeApi.scores(resumeId!),
-    enabled: Boolean(resumeId) && isParsed,
+    enabled: Boolean(resumeId) && enabled,
+    // Each refetch is a fresh AI call; a window focus is not a reason to buy another.
+    staleTime: Infinity,
   });
 
-  return { scores: query.data ?? null, isLoading: query.isPending && isParsed, error: query.error };
+  const isScored = query.isSuccess;
+
+  // Picks up the freshly cached atsScore/qualityScore. Invalidating the list does not
+  // re-run this query (different key), so there is no loop.
+  useEffect(() => {
+    if (!isScored || !resumeId) return;
+    void queryClient.invalidateQueries({ queryKey: qk.resumes.detail(resumeId) });
+    void queryClient.invalidateQueries({ queryKey: qk.resumes.lists() });
+  }, [isScored, resumeId, queryClient]);
+
+  return { scores: query.data ?? null, isLoading: query.isPending && enabled, error: query.error };
 }
 
 export function useResumeMutations() {
