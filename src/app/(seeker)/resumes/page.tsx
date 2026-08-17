@@ -2,8 +2,7 @@
 
 import React, { useState, useRef } from "react";
 import {
-  FileText, Upload, Star, StarOff, Trash2,   Plus, AlertTriangle, Info,   ChevronDown, ChevronUp, MoreHorizontal, Clock,
-  Zap, Shield, TrendingUp, X, Loader2
+  FileText, Upload, Star, Trash2, Plus, MoreHorizontal, Clock, TrendingUp, X
 } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
 import { Badge } from "@/shared/components/ui/badge";
@@ -19,45 +18,6 @@ import {
 import { useResumeUpload } from "@/features/resume/hooks/use-resume-upload";
 import { validateResumeFile, RESUME_ACCEPT_ATTR } from "@/features/resume/api/resume.api";
 import { PARSING_STATUS_TONE, type ResumeView } from "@/features/resume/api/resume.mappers";
-
-/* ─────────────────────────── TYPES ─────────────────────────── */
-interface AtsTip {
-  level: "warning" | "info";
-  title: string;
-  desc: string;
-}
-
-/**
- * General ATS best-practices. These are static guidance, NOT an analysis of the
- * user's resume. TODO(backend): there is no per-resume ATS-issues endpoint — the
- * backend exposes only numeric `atsScore`/`qualityScore`, so a real issue
- * breakdown would need a new endpoint.
- */
-const ATS_TIPS: AtsTip[] = [
-  { level: "warning", title: "Put skills in the top third", desc: "ATS parsers rank resumes higher when a clear skills section appears near the top." },
-  { level: "warning", title: "Use consistent date formats", desc: "Mixing 'Jan 2022' and '01/2022' can confuse parsers — pick one and stick to it." },
-  { level: "info", title: "Add a short professional summary", desc: "A 2–3 sentence summary can increase ATS keyword matching noticeably." },
-  { level: "info", title: "Keep body text 10–12pt", desc: "Fonts in this range parse reliably across most ATS software." },
-];
-
-/* ─────────────────────────── HELPERS ───────────────────────── */
-function atsColor(score: number) {
-  if (score >= 80) return "var(--color-success-500)";
-  if (score >= 60) return "var(--color-warning-500)";
-  return "var(--color-error-500)";
-}
-
-function atsBg(score: number) {
-  if (score >= 80) return "var(--color-success-50)";
-  if (score >= 60) return "var(--color-warning-50)";
-  return "var(--color-error-50)";
-}
-
-function atsLabel(score: number) {
-  if (score >= 80) return "Strong";
-  if (score >= 60) return "Moderate";
-  return "Needs Work";
-}
 
 /** Resume display name: the user-given title, else the file name. */
 function resumeName(r: ResumeView): string {
@@ -91,54 +51,6 @@ function SectionCard({
         {action}
       </div>
       <div className="p-6">{children}</div>
-    </div>
-  );
-}
-
-/** ATS score ring */
-function AtsRing({ score }: { score: number }) {
-  const r = 28;
-  const circ = 2 * Math.PI * r;
-  const dash = (score / 100) * circ;
-  return (
-    <div className="relative flex-shrink-0">
-      <svg width="68" height="68" viewBox="0 0 68 68">
-        <circle cx="34" cy="34" r={r} fill="none" stroke="var(--color-border)" strokeWidth="7" />
-        <circle
-          cx="34" cy="34" r={r} fill="none"
-          stroke={atsColor(score)}
-          strokeWidth="7"
-          strokeDasharray={`${dash} ${circ}`}
-          strokeLinecap="round"
-          transform="rotate(-90 34 34)"
-          style={{ transition: "stroke-dasharray 0.6s ease" }}
-        />
-      </svg>
-      <span className="absolute inset-0 flex items-center justify-center text-sm font-bold" style={{ color: atsColor(score) }}>
-        {score}
-      </span>
-    </div>
-  );
-}
-
-/** ATS tip row */
-function TipRow({ tip }: { tip: AtsTip }) {
-  const config = {
-    warning: { Icon: AlertTriangle, color: "var(--color-warning-600)", bg: "var(--color-warning-50)", badge: "warning" as const, label: "Tip" },
-    info:    { Icon: Info, color: "var(--color-info-600)", bg: "var(--color-info-50)", badge: "info" as const, label: "Info" }
-  };
-  const { Icon, color, bg, badge, label } = config[tip.level];
-
-  return (
-    <div className="flex items-start gap-3 p-3 rounded-lg" style={{ background: bg }}>
-      <Icon className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color }} />
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-0.5">
-          <span className="text-sm font-semibold" style={{ color: "var(--color-text-primary)" }}>{tip.title}</span>
-          <Badge variant={badge}>{label}</Badge>
-        </div>
-        <p className="text-xs leading-relaxed" style={{ color: "var(--color-text-secondary)" }}>{tip.desc}</p>
-      </div>
     </div>
   );
 }
@@ -201,19 +113,14 @@ function ResumeCard({
   resume,
   onSetDefault,
   onDelete,
-  onSelectForAts,
-  isSelectedForAts,
   isMutating
 }: {
   resume: ResumeView;
   onSetDefault: (id: string) => void;
   onDelete: (id: string) => void;
-  onSelectForAts: (id: string) => void;
-  isSelectedForAts: boolean;
   isMutating: boolean;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
-  const hasScore = typeof resume.atsScore === "number";
 
   return (
     <div
@@ -224,8 +131,7 @@ function ResumeCard({
       style={{
         background: "var(--color-card)",
         borderColor: resume.isDefault ? "var(--color-primary-300)" : "var(--color-border)",
-        boxShadow: resume.isDefault ? "0 0 0 3px var(--color-primary-50)" : "var(--shadow-sm)",
-        ...(isSelectedForAts ? { outline: `2px solid var(--color-primary-500)`, outlineOffset: "2px" } : {})
+        boxShadow: resume.isDefault ? "0 0 0 3px var(--color-primary-50)" : "var(--shadow-sm)"
       }}
     >
       {/* Default badge */}
@@ -235,7 +141,9 @@ function ResumeCard({
             className="text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1"
             style={{ background: "var(--color-primary-600)", color: "#fff" }}
           >
-            <Star className="w-3 h-3" /> Default
+            {/* Pairs with the "Use this resume" button on the other cards, so the two read
+                as one choice. "Default" named the database column, not what the user gets. */}
+            <Star className="w-3 h-3" /> In use
           </span>
         </div>
       )}
@@ -274,11 +182,9 @@ function ResumeCard({
                     className="absolute right-0 top-8 z-20 w-48 rounded-lg border py-1 shadow-lg"
                     style={{ background: "var(--color-card)", borderColor: "var(--color-border)" }}
                   >
+                    {/* Switching résumés lives on the card as one labelled button, so the
+                        menu holds only what has nowhere else to go. */}
                     {[
-                      ...(resume.isDefault
-                        ? []
-                        : [{ icon: Star, label: "Set as Default", action: () => { onSetDefault(resume.id); setMenuOpen(false); }, danger: false }]),
-                      { icon: Zap, label: "ATS Analysis", action: () => { onSelectForAts(resume.id); setMenuOpen(false); }, danger: false },
                       { icon: Trash2, label: "Delete", action: () => { onDelete(resume.id); setMenuOpen(false); }, danger: true },
                     ].map(({ icon: Icon, label, action, danger }) => (
                       <button
@@ -309,44 +215,19 @@ function ResumeCard({
           </div>
         </div>
 
-        {/* ATS Score bar */}
-        {hasScore && (
-          <div className="mt-4 pt-4 border-t" style={{ borderColor: "var(--color-border)" }}>
-            <div className="flex items-center justify-between mb-1.5">
-              <span className="text-xs font-semibold" style={{ color: "var(--color-text-secondary)" }}>
-                ATS Score
-              </span>
-              <div className="flex items-center gap-2">
-                <span
-                  className="text-xs font-bold px-2 py-0.5 rounded-full"
-                  style={{ background: atsBg(resume.atsScore!), color: atsColor(resume.atsScore!) }}
-                >
-                  {resume.atsScore}/100 · {atsLabel(resume.atsScore!)}
-                </span>
-              </div>
-            </div>
-            <div className="w-full h-2 rounded-full" style={{ background: "var(--color-border)" }}>
-              <div
-                className="h-2 rounded-full transition-all duration-700"
-                style={{ width: `${resume.atsScore}%`, background: atsColor(resume.atsScore!) }}
-              />
-            </div>
-          </div>
-        )}
-
-        {/* Actions */}
+        {/* Actions.
+            The default résumé is the one the AI matches jobs with, so switching needs one
+            obvious labelled control. It used to be a bare star icon here AND a menu item —
+            two ways to do the same thing, neither of them saying what it did. */}
         <div className="flex items-center gap-2 mt-4">
-          <Button
-            variant="outline"
-            className="flex-1 text-xs py-2"
-            onClick={() => onSelectForAts(resume.id)}
-          >
-            <Zap className="w-3.5 h-3.5" />
-            ATS Analysis
-          </Button>
           {!resume.isDefault && (
-            <Button variant="ghost" className="text-xs py-2 px-3" onClick={() => onSetDefault(resume.id)} title="Set as default" disabled={isMutating}>
-              <StarOff className="w-3.5 h-3.5" />
+            <Button
+              className="flex-1 text-xs py-2"
+              onClick={() => onSetDefault(resume.id)}
+              disabled={isMutating}
+            >
+              <Star className="w-3.5 h-3.5" />
+              Use this resume
             </Button>
           )}
         </div>
@@ -371,32 +252,16 @@ export default function ResumesPage() {
   // Poll parsing for the just-uploaded resume so its status flips live.
   useParsingStatus(uploadedResume?.id, uploadState === "success");
 
-  const [selectedAtsId, setSelectedAtsId] = useState<string | null>(null);
   const [showUpload, setShowUpload] = useState(false);
-  const [expandedTips, setExpandedTips] = useState(true);
   const [localError, setLocalError] = useState("");
 
   const isMutating = remove.isPending || setDefault.isPending;
   const uploading = uploadState === "uploading";
 
-  const selectedResume =
-    resumes.find(r => r.id === selectedAtsId) ??
-    resumes.find(r => r.isDefault) ??
-    resumes[0] ??
-    null;
-
-  const scored = resumes.filter(r => typeof r.atsScore === "number");
-  const avgAts = scored.length
-    ? Math.round(scored.reduce((a, r) => a + (r.atsScore ?? 0), 0) / scored.length)
-    : null;
-  const bestAts = scored.length ? Math.max(...scored.map(r => r.atsScore ?? 0)) : null;
   const parsedCount = resumes.filter(r => r.isParsed).length;
 
   const handleSetDefault = (id: string) => setDefault.mutate(id);
-  const handleDelete = (id: string) => {
-    remove.mutate(id);
-    if (selectedAtsId === id) setSelectedAtsId(null);
-  };
+  const handleDelete = (id: string) => remove.mutate(id);
 
   const handleFileUpload = async (file: File) => {
     setLocalError("");
@@ -419,7 +284,7 @@ export default function ResumesPage() {
         <div>
           <h1 className="text-2xl font-bold" style={{ color: "var(--color-text-primary)" }}>Resumes</h1>
           <p className="text-sm mt-0.5" style={{ color: "var(--color-text-tertiary)" }}>
-            Manage your resume versions and track ATS compatibility
+            Upload your CVs and choose which one JobFits matches jobs with
           </p>
         </div>
         <Button onClick={() => setShowUpload(v => !v)} disabled={uploading}>
@@ -435,27 +300,13 @@ export default function ResumesPage() {
       {uploadErrorMsg && <Alert variant="error">{uploadErrorMsg}</Alert>}
 
       {/* ── STATS ROW ── */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 gap-4">
         <StatCard
           label="Total Resumes"
           value={`${resumes.length}`}
           icon={<FileText className="w-[18px] h-[18px]" />}
           accentColor="var(--color-primary-600)"
           accentBg="var(--color-primary-50)"
-        />
-        <StatCard
-          label="Avg ATS Score"
-          value={avgAts !== null ? `${avgAts}` : "—"}
-          icon={<Shield className="w-[18px] h-[18px]" />}
-          accentColor="var(--color-success-600)"
-          accentBg="var(--color-success-50)"
-        />
-        <StatCard
-          label="Best Score"
-          value={bestAts !== null ? `${bestAts}/100` : "—"}
-          icon={<Zap className="w-[18px] h-[18px]" />}
-          accentColor="var(--color-warning-600)"
-          accentBg="var(--color-warning-50)"
         />
         <StatCard
           label="Parsed"
@@ -512,16 +363,16 @@ export default function ResumesPage() {
       )}
 
       {/* ── MAIN CONTENT GRID ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+      <div className="grid grid-cols-1 gap-6">
 
-        {/* ── LEFT: Resume List ── */}
-        <div className="lg:col-span-3 space-y-4">
+        {/* ── Resume List ── */}
+        <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-bold" style={{ color: "var(--color-text-primary)" }}>
               Your Resumes ({resumes.length})
             </h2>
             <p className="text-xs" style={{ color: "var(--color-text-tertiary)" }}>
-              Click &quot;ATS Analysis&quot; to inspect a resume
+              The résumé marked &quot;In use&quot; is the one jobs are matched against
             </p>
           </div>
 
@@ -540,7 +391,7 @@ export default function ResumesPage() {
               </div>
               <h3 className="text-base font-bold mb-1" style={{ color: "var(--color-text-primary)" }}>No resumes yet</h3>
               <p className="text-sm mb-4" style={{ color: "var(--color-text-tertiary)" }}>
-                Upload your first resume to get ATS analysis and better job matches
+                Upload your first resume to start getting job matches
               </p>
               <Button onClick={() => setShowUpload(true)}>
                 <Upload className="w-4 h-4" /> Upload Resume
@@ -553,93 +404,10 @@ export default function ResumesPage() {
                 resume={resume}
                 onSetDefault={handleSetDefault}
                 onDelete={handleDelete}
-                onSelectForAts={id => setSelectedAtsId(id)}
-                isSelectedForAts={selectedResume?.id === resume.id}
                 isMutating={isMutating}
               />
             ))
           )}
-        </div>
-
-        {/* ── RIGHT: ATS Analysis Panel ── */}
-        <div className="lg:col-span-2">
-          <div className="sticky top-6">
-            <SectionCard
-              title="ATS Analysis"
-              icon={Shield}
-              action={
-                <Badge variant={selectedResume?.atsScore && selectedResume.atsScore >= 80 ? "success" : "warning"}>
-                  {selectedResume ? resumeName(selectedResume) : "Select a resume"}
-                </Badge>
-              }
-            >
-              {selectedResume && typeof selectedResume.atsScore === "number" ? (
-                <div className="space-y-5">
-                  {/* Score overview */}
-                  <div
-                    className="flex items-center gap-4 p-4 rounded-xl"
-                    style={{ background: atsBg(selectedResume.atsScore) }}
-                  >
-                    <AtsRing score={selectedResume.atsScore} />
-                    <div>
-                      <p className="text-sm font-bold" style={{ color: "var(--color-text-primary)" }}>
-                        {atsLabel(selectedResume.atsScore)} Compatibility
-                      </p>
-                      <p className="text-xs mt-0.5" style={{ color: "var(--color-text-secondary)" }}>
-                        {typeof selectedResume.qualityScore === "number"
-                          ? `Quality score: ${selectedResume.qualityScore}/100`
-                          : selectedResume.atsScore >= 80
-                            ? "Your resume passes most ATS filters."
-                            : "Review the tips below to improve your score."}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* General ATS tips (static guidance, not per-resume analysis) */}
-                  <div>
-                    <button
-                      className="w-full flex items-center justify-between py-2 text-sm font-semibold"
-                      style={{ color: "var(--color-text-primary)" }}
-                      onClick={() => setExpandedTips(v => !v)}
-                    >
-                      <span>General ATS best practices</span>
-                      {expandedTips ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                    </button>
-
-                    {expandedTips && (
-                      <div className="space-y-2 mt-1">
-                        {ATS_TIPS.map((tip, i) => <TipRow key={i} tip={tip} />)}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ) : selectedResume && selectedResume.isProcessing ? (
-                <div className="flex flex-col items-center text-center py-8 gap-3">
-                  <Loader2 className="w-8 h-8 animate-spin" style={{ color: "var(--color-primary-500)" }} />
-                  <p className="text-sm font-semibold" style={{ color: "var(--color-text-primary)" }}>
-                    Analysing this resume…
-                  </p>
-                  <p className="text-xs" style={{ color: "var(--color-text-tertiary)" }}>
-                    ATS scores appear here once parsing finishes.
-                  </p>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center text-center py-8 gap-3">
-                  <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: "var(--color-primary-50)" }}>
-                    <Zap className="w-6 h-6" style={{ color: "var(--color-primary-400)" }} />
-                  </div>
-                  <p className="text-sm font-semibold" style={{ color: "var(--color-text-primary)" }}>
-                    {selectedResume ? "No ATS score yet" : "Select a resume to analyse"}
-                  </p>
-                  <p className="text-xs" style={{ color: "var(--color-text-tertiary)" }}>
-                    {selectedResume
-                      ? "This resume has no ATS score yet — it may still be parsing or parsing failed."
-                      : "Click \"ATS Analysis\" on any resume card to see its compatibility report."}
-                  </p>
-                </div>
-              )}
-            </SectionCard>
-          </div>
         </div>
 
       </div>
