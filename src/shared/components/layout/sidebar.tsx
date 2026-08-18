@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import {
   Home, Search, Star, Bookmark, Briefcase, Calendar,
   Award, User, FileText, LayoutTemplate, BarChart3, Bell, HelpCircle,
-  Settings, LogOut, PanelLeftClose, PanelLeftOpen
+  Settings, LogOut, PanelLeftClose, PanelLeftOpen, KanbanSquare
 } from "lucide-react";
 import { useAuth } from "@/providers/auth-provider";
 import { useSidebarCollapsed } from "@/stores/ui-store";
@@ -68,6 +68,7 @@ export default function Sidebar({
       group: "YOUR JOURNEY",
       items: [
         { href: "/applications", label: "Applications", icon: <Briefcase size={18} />, badge: 2 },
+        { href: "/tracker", label: "Job Tracker", icon: <KanbanSquare size={18} /> },
         { href: "/learning", label: "Interview Prep", icon: <Calendar size={18} /> },
         { href: "/offers", label: "Offers & Decisions", icon: <Award size={18} /> }
       ]

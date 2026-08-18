@@ -7,6 +7,7 @@ import { Button } from "@/shared/components/ui/button";
 import { Alert } from "@/shared/components/feedback/alert";
 import { ApiError } from "@/lib/api/client";
 import { useApplicationForJob, useSubmitApplication } from "../hooks/use-applications";
+import { useAddTrackedJob } from "@/features/job-tracker/hooks/use-tracker";
 
 interface ApplyButtonProps {
   jobId: string;
@@ -40,7 +41,12 @@ export function ApplyButton({
 
   if (sourceType === "EXTERNAL") {
     return (
-      <ExternalApply externalUrl={externalUrl} fullWidth={fullWidth} className={className} />
+      <ExternalApply
+        jobId={jobId}
+        externalUrl={externalUrl}
+        fullWidth={fullWidth}
+        className={className}
+      />
     );
   }
 
@@ -116,14 +122,22 @@ export function ApplyButton({
  * cannot be tracked once they go.
  */
 function ExternalApply({
+  jobId,
   externalUrl,
   fullWidth,
   className,
 }: {
+  jobId: string;
   externalUrl?: string;
   fullWidth: boolean;
   className?: string;
 }) {
+  const track = useAddTrackedJob();
+  // 409 means it is already on the board, which is the state we wanted anyway — the user
+  // applying twice is not an error worth showing them.
+  const alreadyTracked =
+    track.error instanceof ApiError && track.error.statusCode === 409;
+  const onBoard = track.isSuccess || alreadyTracked;
   // A missing URL is a data gap in ingestion. Say so plainly rather than rendering a
   // dead button or, worse, falling back to an in-app apply that the server will reject.
   if (!externalUrl) {
@@ -145,6 +159,14 @@ function ExternalApply({
         target="_blank"
         // noopener/noreferrer: the target is a third-party site we do not control.
         rel="noopener noreferrer"
+        // Kept as a real link rather than a handler that calls window.open: the browser
+        // opens the tab itself, so no popup blocker can swallow it, and the tracker write
+        // happens alongside instead of standing between the user and the posting.
+        onClick={() => {
+          if (!onBoard && !track.isPending) {
+            track.mutate({ jobId, stage: "APPLIED" });
+          }
+        }}
         className={`inline-flex items-center justify-center gap-2 py-2.5 px-5 rounded-md text-sm font-semibold border transition-colors ${
           fullWidth ? "w-full" : ""
         }`}
@@ -156,10 +178,23 @@ function ExternalApply({
         Apply Externally
         <ExternalLink size={15} />
       </a>
-      <p className="text-center text-xs mt-2" style={{ color: "var(--color-neutral-500)" }}>
-        {site ? `Posted on ${site}.` : "Posted on another site."} You&apos;ll finish your
-        application there, so we can&apos;t track it here.
-      </p>
+
+      {/* Told, not tracked silently. The user should know a card appeared and be able to
+          go straight to it — and to move or delete it if they did not actually apply. */}
+      {onBoard ? (
+        <p className="text-center text-xs mt-2" style={{ color: "var(--color-success-600)" }}>
+          Added to your{" "}
+          <Link href="/tracker" className="font-semibold hover:underline">
+            Job Tracker
+          </Link>{" "}
+          under Applied. Move or remove it there if you did not finish applying.
+        </p>
+      ) : (
+        <p className="text-center text-xs mt-2" style={{ color: "var(--color-neutral-500)" }}>
+          {site ? `Posted on ${site}.` : "Posted on another site."} You&apos;ll finish your
+          application there — we&apos;ll add it to your Job Tracker so you can follow it up.
+        </p>
+      )}
     </div>
   );
 }

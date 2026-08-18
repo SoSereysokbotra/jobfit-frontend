@@ -37,8 +37,11 @@ export function openExternalPosting(job: ApplyTarget | undefined): {
 
   return opened
     ? {
+        // Callers that also add a tracker card override this with a fuller sentence; see
+        // useExternalApply. The claim that it "can't be tracked here" used to live in this
+        // string and is no longer true — the Job Tracker exists for exactly these jobs.
         tone: "success",
-        text: "Opened the original posting in a new tab. Applications made there can't be tracked in JobFits.",
+        text: "Opened the original posting in a new tab.",
       }
     : {
         tone: "error",

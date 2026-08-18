@@ -4,6 +4,7 @@ import "./globals.css";
 import { QueryProvider } from "@/providers/query-provider";
 import { AuthProvider } from "@/providers/auth-provider";
 import { OfflineProvider } from "@/providers/offline-provider";
+import { DevServiceWorkerGuard } from "@/shared/components/dev-service-worker-guard";
 
 const rubik = Rubik({
   subsets: ["latin"],
@@ -32,6 +33,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={rubik.variable}>
       <body style={{ fontFamily: "var(--font-family)" }}>
+        {/* Dev-only: clears a service worker left behind by a production build,
+            which would otherwise serve stale chunks over every dev session. */}
+        <DevServiceWorkerGuard />
         {/* QueryProvider wraps AuthProvider: the auth provider itself uses
             useQuery/useQueryClient for /auth/me. */}
         <QueryProvider>

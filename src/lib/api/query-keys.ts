@@ -73,6 +73,13 @@ export const qk = {
       [...qk.applications.detail(applicationId), "timeline"] as const,
   },
 
+  /** The user's own Job Tracker board — jobs applied to on other sites. */
+  tracker: {
+    all: ["tracker"] as const,
+    board: () => [...qk.tracker.all, "board"] as const,
+    archived: () => [...qk.tracker.all, "archived"] as const,
+  },
+
   offers: {
     all: ["offers"] as const,
     list: () => [...qk.offers.all, "list"] as const,
