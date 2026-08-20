@@ -4,7 +4,7 @@ import type { JobDto } from "./job.api";
 import type {
   EmploymentType, ExperienceLevel, Job, RemoteType,
 } from "@/shared/types/shared.types";
-import { daysSince, initialsFrom, logoBgFor, toSalaryK } from "@/lib/utils/format";
+import { daysSince, initialsFrom, logoBgFor } from "@/lib/utils/format";
 
 /** Backend remoteType tokens -> the frontend's display union. */
 const REMOTE_LABELS: Record<string, RemoteType> = {
@@ -74,8 +74,14 @@ export function toJobView(dto: JobDto): Job {
     logo: initialsFrom(dto.companyName ?? dto.title),
     logoBg: logoBgFor(dto.companyId),
     location: dto.location?.trim() || (toRemote(dto.remoteType) === "Remote" ? "Remote" : "—"),
-    salaryMin: toSalaryK(dto.salaryRange?.min),
-    salaryMax: toSalaryK(dto.salaryRange?.max),
+    // Passed through UNTOUCHED, and null when absent. This used to be
+    // `toSalaryK(...)`, which divided by 1000 and mapped a missing salary to 0 — so
+    // every one of the 348 salary-less jobs rendered as "$0K – $0K", and a $300/month
+    // Cambodian salary rounded to 0 and became indistinguishable from unknown.
+    salaryMin: dto.salaryRange?.min ?? null,
+    salaryMax: dto.salaryRange?.max ?? null,
+    salaryCurrency: dto.salaryRange?.currency,
+    salaryPeriod: dto.salaryRange?.period,
     match: 0, // TODO(backend): AI match score not available yet.
     type: labelOf(EMPLOYMENT_LABELS, dto.employmentType),
     remote: toRemote(dto.remoteType),

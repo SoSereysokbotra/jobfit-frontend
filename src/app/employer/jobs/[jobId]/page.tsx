@@ -71,7 +71,9 @@ export default function EmployerJobDetailPage() {
           </div>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-sm text-content-tertiary">
             <span className="flex items-center gap-1"><MapPin size={13} /> {job.location}</span>
-            <span className="flex items-center gap-1 text-success-600"><DollarSign size={13} /> ${job.salaryMin}K – ${job.salaryMax}K</span>
+            {job.salary && (
+              <span className="flex items-center gap-1 text-success-600"><DollarSign size={13} /> {job.salary}</span>
+            )}
             <span>Posted {job.postedAt}</span>
           </div>
         </div>
@@ -107,7 +109,7 @@ export default function EmployerJobDetailPage() {
           <dl className="space-y-2 text-sm">
             <InfoRow label="Type" value={`${job.employmentType} · ${job.remote}`} />
             <InfoRow label="Location" value={job.location} />
-            <InfoRow label="Salary" value={`$${job.salaryMin}K – $${job.salaryMax}K`} />
+            <InfoRow label="Salary" value={job.salary ?? "Not stated"} />
             <InfoRow label="Skills" value={`${job.skillCount} listed`} />
           </dl>
         </div>

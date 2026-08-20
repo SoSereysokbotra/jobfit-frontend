@@ -6,6 +6,7 @@ import { translate, type MessageKey } from "@/shared/i18n";
 import {
   formatPostedDate as formatRelativeDateHelper,
   formatSalaryRange as formatSalaryRangeHelper,
+  type SalaryBand,
   formatCurrency as formatCurrencyHelper,
   formatDate as formatDateHelper,
   formatNumber as formatNumberHelper,
@@ -16,7 +17,8 @@ interface LocaleContextValue {
   setLocale: (locale: SupportedLocale) => void;
   t: (key: MessageKey, fallback?: string) => string;
   formatPostedDate: (daysAgo: number) => string;
-  formatSalaryRange: (job: { salaryMin: number; salaryMax: number }, currency?: string) => string;
+  /** `null` when the posting states no salary — callers render nothing. See §12. */
+  formatSalaryRange: (job: SalaryBand, currency?: string) => string | null;
   formatCurrency: (amount: number, currency?: string) => string;
   formatDate: (date: Date | string | number, options?: Intl.DateTimeFormatOptions) => string;
   formatNumber: (value: number, options?: Intl.NumberFormatOptions) => string;
@@ -38,7 +40,7 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
   );
 
   const formatSalaryRange = useCallback(
-    (job: { salaryMin: number; salaryMax: number }, currency?: string) =>
+    (job: SalaryBand, currency?: string) =>
       formatSalaryRangeHelper(job, locale, currency),
     [locale]
   );
@@ -95,8 +97,7 @@ export function useTranslation() {
       setLocale: () => {},
       t: (key: MessageKey, fallback?: string) => translate(key, "en", fallback),
       formatPostedDate: (daysAgo: number) => formatRelativeDateHelper(daysAgo, "en"),
-      formatSalaryRange: (job: { salaryMin: number; salaryMax: number }) =>
-        formatSalaryRangeHelper(job, "en"),
+      formatSalaryRange: (job: SalaryBand) => formatSalaryRangeHelper(job, "en"),
       formatCurrency: (amount: number) => formatCurrencyHelper(amount, "USD", "en"),
       formatDate: (date: Date | string | number) => formatDateHelper(date, undefined, "en"),
       formatNumber: (value: number) => formatNumberHelper(value, undefined, "en"),

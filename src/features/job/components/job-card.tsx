@@ -102,14 +102,20 @@ export function JobCard({
     </>
   );
 
+  const salary = formatSalaryRange(job);
+
   const meta = (
     <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2">
       <span className="flex items-center gap-1 text-xs" style={{ color: "var(--color-text-tertiary)" }}>
         <MapPin size={11} /> {job.location}
       </span>
-      <span className="flex items-center gap-1 text-xs font-medium" style={{ color: "var(--color-success-600)" }}>
-        <DollarSign size={11} /> {formatSalaryRange(job)}
-      </span>
+      {/* The whole span, not just the text: a null range with the icon still rendered
+          leaves a bare "$" promising a number that never arrives. */}
+      {salary && (
+        <span className="flex items-center gap-1 text-xs font-medium" style={{ color: "var(--color-success-600)" }}>
+          <DollarSign size={11} /> {salary}
+        </span>
+      )}
       {/* No pill when the employer has not said. This rendered `job.type` unconditionally,
           and the mapper defaulted it to "Full-time", so every card claimed full-time —
           including the part-time teaching post. An absent fact shows as nothing. */}

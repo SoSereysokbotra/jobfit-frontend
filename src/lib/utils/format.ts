@@ -24,14 +24,13 @@ const LOGO_BG_TOKENS = [
   "var(--color-success-500)",
 ] as const;
 
-/**
- * Backend salaries are absolute yearly amounts; the frontend `Job` type carries
- * $K bounds. Returns a whole number of thousands.
- */
-export function toSalaryK(amount: number | null | undefined): number {
-  if (amount == null || !Number.isFinite(amount)) return 0;
-  return Math.round(amount / 1000);
-}
+// REMOVED: toSalaryK (MENTOR_REVIEW_2026-08-18 §12).
+//
+// It divided the API's absolute amount by 1000 and rounded, and mapped a missing salary
+// to 0. Both were lossy in ways that showed on screen: every salary-less job (348 of 367)
+// rendered as "$0K – $0K", and a $300/month Phnom Penh salary rounded to 0 — the same
+// output as "unknown". `Job.salaryMin/salaryMax` now carry the absolute amount or null,
+// and `formatSalaryRange` abbreviates only where abbreviating loses nothing.
 
 /**
  * Whole days between an ISO timestamp and now, floored at 0 so a
