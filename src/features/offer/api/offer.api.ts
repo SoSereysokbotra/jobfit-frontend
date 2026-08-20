@@ -10,7 +10,7 @@
 import type { Job } from "@/shared/types/shared.types";
 import type { BadgeVariant } from "@/shared/components/ui/badge";
 import { apiClient } from "@/lib/api/client";
-import { daysSince, initialsFrom, logoBgFor, toSalaryK } from "@/lib/utils/format";
+import { daysSince, initialsFrom, logoBgFor } from "@/lib/utils/format";
 
 export type OfferStatus = "New" | "Reviewing" | "Negotiating" | "Accepted" | "Rejected";
 
@@ -167,8 +167,11 @@ function jobOf(j: OfferDto["job"]): Job {
     logo: initialsFrom(j.companyName ?? j.title),
     logoBg: logoBgFor(j.id),
     location: j.location?.trim() || (REMOTE_LABEL[j.remoteType] === "Remote" ? "Remote" : "—"),
-    salaryMin: toSalaryK(j.minSalary ?? undefined),
-    salaryMax: toSalaryK(j.maxSalary ?? undefined),
+    // Absolute and nullable, matching Job — see the note in job.mappers.ts. The offer
+    // projection carries no currency or period, so both stay absent and the formatter
+    // says nothing about either rather than guessing.
+    salaryMin: j.minSalary ?? null,
+    salaryMax: j.maxSalary ?? null,
     match: 0,
     // type / level / industry are deliberately absent: the offer response embeds a
     // MINIMAL job projection that does not carry them. Defaulting them here was the same

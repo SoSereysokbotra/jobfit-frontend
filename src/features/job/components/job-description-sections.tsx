@@ -17,7 +17,13 @@ export function JobDescriptionSections({ job }: JobDescriptionSectionsProps) {
   const responsibilities = job.responsibilities ?? [];
   const requirements = job.requirements ?? [];
   const benefits = job.benefits ?? [];
-  const hasSalary = Boolean(job.salaryMin && job.salaryMax);
+  // Narrowed, not just truthy-checked, so the badges below get real numbers rather than
+  // a non-null assertion that would happily render 0.
+  const salaryBand =
+    job.salaryMin != null && job.salaryMax != null && job.salaryMax > 0
+      ? { min: job.salaryMin, max: job.salaryMax }
+      : null;
+  const hasSalary = salaryBand !== null;
 
   const [expanded, setExpanded] = useState<Record<string, boolean>>({
     summary: true,
@@ -94,8 +100,8 @@ export function JobDescriptionSections({ job }: JobDescriptionSectionsProps) {
           <Header id="benefits" title="Benefits & Compensation" />
           {expanded["benefits"] && (
             <div className="pb-6 text-sm" style={{ color: "var(--color-text-secondary)", lineHeight: "1.65" }}>
-              {hasSalary && (
-                <JobSalaryBadges baseMin={job.salaryMin} baseMax={job.salaryMax} bonus={job.bonusPct ?? 0} />
+              {salaryBand && (
+                <JobSalaryBadges baseMin={salaryBand.min} baseMax={salaryBand.max} bonus={job.bonusPct ?? 0} />
               )}
               {benefits.length > 0 && (
                 <div className="mt-4">

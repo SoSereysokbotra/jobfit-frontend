@@ -5,7 +5,8 @@
  *   - `GET /jobs` does NOT default to published: with no `status` it returns
  *     DRAFT + PUBLISHED + CLOSED. A public board must send `status=PUBLISHED`.
  *   - `remoteType` is one of the canonical tokens REMOTE | HYBRID | ON_SITE.
- *   - `salaryRange` is absolute yearly amounts ({ min, max, currency }) or absent.
+ *   - `salaryRange` is ABSOLUTE amounts ({ min, max, currency, period }) or absent.
+ *     `period` is absent when the posting did not state one — do not assume yearly.
  *   - `companyName` is enriched by JobService from the Company table (the Job
  *     aggregate itself only carries `companyId`); it can be absent.
  *
@@ -29,7 +30,13 @@ export interface JobDto {
   status: "DRAFT" | "PUBLISHED" | "CLOSED";
   remoteType: string;
   location?: string;
-  salaryRange?: { min: number; max: number; currency: string };
+  salaryRange?: {
+    min: number;
+    max: number;
+    currency: string;
+    /** Absent when unknown. Never default this to ANNUAL — see §12. */
+    period?: "HOURLY" | "DAILY" | "WEEKLY" | "MONTHLY" | "ANNUAL";
+  };
   skillIds: string[];
   responsibilities?: string[];
   requirements?: string[];

@@ -31,6 +31,7 @@ export function JobRecommendationCard({
   onApply,
   onDismiss,
 }: JobRecommendationCardProps) {
+  const salary = formatSalaryRange(job);
   const [expanded, setExpanded] = useState(false);
   const [dismissed, setDismissed] = useState(false);
 
@@ -124,9 +125,11 @@ export function JobRecommendationCard({
             <span className="flex items-center gap-1.5 text-sm font-medium" style={{ color: "var(--color-text-secondary)" }}>
               <MapPin size={16} /> {job.location} ({job.remote})
             </span>
-            <span className="flex items-center gap-1.5 text-sm font-bold" style={{ color: "var(--color-success-600)" }}>
-              <DollarSign size={16} /> {formatSalaryRange(job)}
-            </span>
+            {salary && (
+              <span className="flex items-center gap-1.5 text-sm font-bold" style={{ color: "var(--color-success-600)" }}>
+                <DollarSign size={16} /> {salary}
+              </span>
+            )}
           </div>
           
           <p className="text-sm font-medium mb-4" style={{ color: "var(--color-text-secondary)" }}>

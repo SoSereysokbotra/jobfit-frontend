@@ -36,33 +36,94 @@ export function formatPostedDate(daysAgo: number, locale?: string): string {
   }
 }
 
+/** How often a pay band is paid, when the posting said. */
+export type SalaryPeriod = "HOURLY" | "DAILY" | "WEEKLY" | "MONTHLY" | "ANNUAL";
+
+/** The shape formatSalaryRange needs. Amounts are ABSOLUTE; null means "not stated". */
+export interface SalaryBand {
+  salaryMin: number | null;
+  salaryMax: number | null;
+  salaryCurrency?: string;
+  salaryPeriod?: SalaryPeriod;
+}
+
+const PERIOD_SUFFIX: Record<SalaryPeriod, string> = {
+  HOURLY: "/hr",
+  DAILY: "/day",
+  WEEKLY: "/wk",
+  MONTHLY: "/mo",
+  ANNUAL: "/yr",
+};
+
 /**
- * Formats a salary range with locale-aware number formatting.
- * E.g. { salaryMin: 120, salaryMax: 150 } -> "$120K – $150K" or "120K € – 150K €"
+ * Abbreviate only where abbreviating cannot lose information.
+ *
+ * 140000 -> "140K" is safe. 1500 -> "1.5K" is noise, and 300 -> "0.3K" is worse than
+ * useless. The old code appended "K" to every figure unconditionally, which is why a
+ * Cambodian monthly salary could not be displayed at all.
+ */
+function abbreviate(amount: number, locale: string): string {
+  if (amount >= 10000 && amount % 1000 === 0) {
+    return `${amount / 1000}K`;
+  }
+  return new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(amount);
+}
+
+/**
+ * A pay band, or `null` when there is nothing truthful to show.
+ *
+ * RETURNS NULL RATHER THAN A PLACEHOLDER, and callers must render nothing for null.
+ * 348 of 367 jobs have no salary; this used to render "$0K – $0K" for every one of them,
+ * because the mapper turned a missing value into 0 and this function then formatted the
+ * 0. A fact we do not have must not look like a fact we do.
+ *
+ * The currency and the period come from the JOB, not from this function's assumptions.
+ * Both used to be hardcoded — "$" and "K" (meaning per-year) — on a corpus that is 83%
+ * Cambodian. See MENTOR_REVIEW_2026-08-18 §12.
+ *
+ * An unknown period is rendered as no suffix at all. Writing "/yr" because most postings
+ * we have seen are annual is precisely the guess this exists to remove.
  */
 export function formatSalaryRange(
-  job: { salaryMin: number; salaryMax: number },
+  job: SalaryBand,
   locale?: string,
-  currency: string = "USD"
-): string {
+  currencyOverride?: string
+): string | null {
+  const { salaryMin: min, salaryMax: max } = job;
+
+  // Nothing stated, or a band that is only zeroes: not a salary.
+  if (min == null || max == null) return null;
+  if (!Number.isFinite(min) || !Number.isFinite(max)) return null;
+  if (max <= 0) return null;
+
   const currentLocale = locale || getStoredLocale();
+  const currency = currencyOverride ?? job.salaryCurrency ?? "USD";
+  const suffix = job.salaryPeriod ? PERIOD_SUFFIX[job.salaryPeriod] : "";
 
   try {
-    // Determine symbol or format
-    if (currency === "USD") {
-      const min = new Intl.NumberFormat(currentLocale, { maximumFractionDigits: 0 }).format(job.salaryMin);
-      const max = new Intl.NumberFormat(currentLocale, { maximumFractionDigits: 0 }).format(job.salaryMax);
-      return `$${min}K – $${max}K`;
-    }
-
+    // Intl puts the symbol where the locale expects it and knows KHR from USD, which is
+    // the entire reason not to concatenate a "$" ourselves.
     const fmt = new Intl.NumberFormat(currentLocale, {
       style: "currency",
       currency,
-      maximumFractionDigits: 0,
+      // ONE fraction digit, not zero. Compact notation with 0 digits rounds 1,200,000 to
+      // "1M" — a 20% error, and precisely the kind of confident-but-wrong number this
+      // function exists to stop producing. With 1 digit it reads "1.2M", while 140,000
+      // still reads "140K" because there is no fraction to show.
+      maximumFractionDigits: 1,
+      notation: "compact",
+      compactDisplay: "short",
     });
-    return `${fmt.format(job.salaryMin * 1000)} – ${fmt.format(job.salaryMax * 1000)}`;
+    const range = min === max ? fmt.format(min) : `${fmt.format(min)} – ${fmt.format(max)}`;
+    return `${range}${suffix}`;
   } catch {
-    return `$${job.salaryMin}K – $${job.salaryMax}K`;
+    // Unknown currency code or an Intl-less runtime. Show the real numbers with the code
+    // spelled out rather than inventing a symbol for a currency we failed to parse.
+    const range =
+      min === max
+        ? abbreviate(min, "en-US")
+        : `${abbreviate(min, "en-US")} – ${abbreviate(max, "en-US")}`;
+    return `${currency} ${range}${suffix}`;
   }
 }
 

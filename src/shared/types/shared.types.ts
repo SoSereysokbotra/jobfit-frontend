@@ -26,9 +26,26 @@ export interface Job {
   /** Token-backed background for the logo block, e.g. "var(--color-primary-700)". */
   logoBg: string;
   location: string;
-  /** Salary bounds in $K/year. */
-  salaryMin: number;
-  salaryMax: number;
+  /**
+   * The posting's pay band, ABSOLUTE and exactly as the employer stated it — 140000 is
+   * one hundred and forty thousand. `null` means the posting did not say, which is 348
+   * of the 367 jobs in the corpus.
+   *
+   * These used to be "$K/year" numbers produced by dividing the API value by 1000, and
+   * null became 0. Both halves were wrong (MENTOR_REVIEW_2026-08-18 §12): "$0K – $0K"
+   * showed on almost every card, and the rounding destroyed the range the product
+   * actually targets — a $300/month Phnom Penh salary became `0`, indistinguishable
+   * from "unknown". Never scale these; `formatSalaryRange` abbreviates for display.
+   */
+  salaryMin: number | null;
+  salaryMax: number | null;
+  /** ISO 4217, from the API. Absent means the API did not say — do not assume USD. */
+  salaryCurrency?: string;
+  /**
+   * How often the band is paid. ABSENT means unknown and must not be rendered as a
+   * period: 500 monthly and 500 annual are the same number without this.
+   */
+  salaryPeriod?: "HOURLY" | "DAILY" | "WEEKLY" | "MONTHLY" | "ANNUAL";
   /** Match score 0–100 (shown only when profile is complete). */
   match: number;
   /**

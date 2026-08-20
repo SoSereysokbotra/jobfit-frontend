@@ -56,7 +56,7 @@ export function JobRelatedList({ currentJobId }: JobRelatedListProps) {
               </p>
               <div className="flex items-center justify-between mt-2">
                 <span className="text-xs font-medium" style={{ color: "var(--color-success-600)" }}>
-                  {formatSalaryRange(job)}
+                  {formatSalaryRange(job) ?? "Salary not stated"}
                 </span>
                 <Link
                   href={`/jobs/${job.id}`}
