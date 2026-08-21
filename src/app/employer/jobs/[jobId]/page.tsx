@@ -44,7 +44,7 @@ export default function EmployerJobDetailPage() {
   }
 
   const appCount = analytics?.applicationsCount ?? applicants.length;
-  const avgMatch = analytics?.averageMatchScore ?? null;
+  const bands = analytics?.candidateBands ?? null;
   const views = analytics?.views ?? 0;
   const applyRate = views ? ((appCount / views) * 100).toFixed(1) : "0";
   const recent = applicants.slice(0, 3);
@@ -53,7 +53,10 @@ export default function EmployerJobDetailPage() {
     { label: "Views", value: `${views}`, icon: <Eye size={18} />, accent: "bg-info-50 text-info-600" },
     { label: "Applications", value: `${appCount}`, icon: <Users size={18} />, accent: "bg-primary-50 text-primary-600" },
     { label: "Apply Rate", value: `${applyRate}%`, icon: <Target size={18} />, accent: "bg-success-50 text-success-600" },
-    { label: "Avg Match", value: avgMatch !== null ? `${Math.round(avgMatch)}%` : "—", icon: <Star size={18} />, accent: "bg-warning-50 text-warning-600" },
+    // Was "Avg Match", reading an average the API could never compute — it rendered "—"
+    // on every load. A count of strong candidates is both real and what an employer
+    // actually wants; the score behind it is evidenced for ordering, not magnitude.
+    { label: "Strong Matches", value: bands ? `${bands.strong}` : "—", icon: <Star size={18} />, accent: "bg-warning-50 text-warning-600" },
   ];
 
   return (
