@@ -9,6 +9,7 @@ import {
   Award,
   User,
   FileText,
+  LayoutTemplate,
   BarChart3,
   Bell,
   HelpCircle,
@@ -57,6 +58,7 @@ export const NAVIGATION_GROUPS: NavigationGroup[] = [
     items: [
       { href: "/profile", label: "My Profile", iconName: "User", icon: <User size={18} /> },
       { href: "/resumes", label: "Resumes", iconName: "FileText", icon: <FileText size={18} /> },
+      { href: "/resume-builder", label: "Resume Builder", iconName: "LayoutTemplate", icon: <LayoutTemplate size={18} /> },
       { href: "/insights", label: "Career Insights", iconName: "BarChart3", icon: <BarChart3 size={18} /> },
     ],
   },
