@@ -11,7 +11,12 @@ import {
   type BuilderEducationDto,
   type EducationItemInput,
 } from "../api/resume-builder.api";
-import { useDebouncedSectionSave, useSectionDraft } from "../hooks/use-resume-builder";
+import {
+  rowIdentity,
+  useDebouncedSectionSave,
+  useLocalDocumentPatch,
+  useSectionDraft,
+} from "../hooks/use-resume-builder";
 import { fromDateInputValue, toDateInputValue, todayInputValue } from "../lib/dates";
 import { RepeatableList } from "./repeatable-list";
 import { SectionShell } from "./section-shell";
@@ -41,6 +46,25 @@ function toDraft(items: BuilderEducationDto[]): EducationItemInput[] {
   }));
 }
 
+/** Draft rows are Input-shaped; the preview reads DTO-shaped rows. */
+function toRows(
+  items: EducationItemInput[],
+  previous: BuilderEducationDto[],
+): BuilderEducationDto[] {
+  return items.map((item, index) => ({
+    ...rowIdentity(previous, index),
+    institution: item.institution,
+    degreeLevel: item.degreeLevel,
+    fieldOfStudy: item.fieldOfStudy,
+    startDate: item.startDate,
+    endDate: item.endDate,
+    // Same guard as the save payload — an emptied field must read as "no GPA"
+    // in the preview, not as `NaN`.
+    gpa: typeof item.gpa === "number" && Number.isFinite(item.gpa) ? item.gpa : undefined,
+    description: item.description,
+  }));
+}
+
 function isComplete(item: EducationItemInput): boolean {
   return item.institution.trim().length > 0 && item.fieldOfStudy.trim().length > 0;
 }
@@ -52,6 +76,7 @@ export function EducationEditor({
   action,
 }: EducationEditorProps) {
   const [draft, setDraft] = useSectionDraft(toDraft(educations), resetToken);
+  const patchDocument = useLocalDocumentPatch(documentId);
 
   const { status, schedule, saveNow } = useDebouncedSectionSave<EducationItemInput[]>((items) =>
     resumeBuilderApi.putEducation(
@@ -65,8 +90,14 @@ export function EducationEditor({
     ),
   );
 
+  /**
+   * The one place a row edit lands. Local draft (so the cursor is stable),
+   * preview cache (so the preview redraws this render) and the debounced PUT
+   * (so the server catches up in the background) all move together.
+   */
   const change = (items: EducationItemInput[]) => {
     setDraft(items);
+    patchDocument({ educations: toRows(items, educations) });
     schedule(items);
   };
 

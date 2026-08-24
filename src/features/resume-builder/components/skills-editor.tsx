@@ -11,7 +11,12 @@ import {
   type BuilderSkillDto,
   type SkillItemInput,
 } from "../api/resume-builder.api";
-import { useDebouncedSectionSave, useSectionDraft } from "../hooks/use-resume-builder";
+import {
+  rowIdentity,
+  useDebouncedSectionSave,
+  useLocalDocumentPatch,
+  useSectionDraft,
+} from "../hooks/use-resume-builder";
 import { RepeatableList } from "./repeatable-list";
 import { SectionShell } from "./section-shell";
 
@@ -30,19 +35,35 @@ function toDraft(items: BuilderSkillDto[]): SkillItemInput[] {
   return items.map((item) => ({ name: item.name, proficiencyLevel: item.proficiencyLevel }));
 }
 
+/** Draft rows are Input-shaped; the preview reads DTO-shaped rows. */
+function toRows(items: SkillItemInput[], previous: BuilderSkillDto[]): BuilderSkillDto[] {
+  return items.map((item, index) => ({
+    ...rowIdentity(previous, index),
+    name: item.name,
+    proficiencyLevel: item.proficiencyLevel,
+  }));
+}
+
 function isComplete(item: SkillItemInput): boolean {
   return item.name.trim().length > 0;
 }
 
 export function SkillsEditor({ documentId, skills, resetToken, action }: SkillsEditorProps) {
   const [draft, setDraft] = useSectionDraft(toDraft(skills), resetToken);
+  const patchDocument = useLocalDocumentPatch(documentId);
 
   const { status, schedule, saveNow } = useDebouncedSectionSave<SkillItemInput[]>((items) =>
     resumeBuilderApi.putSkills(documentId, items.filter(isComplete)),
   );
 
+  /**
+   * The one place a row edit lands. Local draft (so the cursor is stable),
+   * preview cache (so the preview redraws this render) and the debounced PUT
+   * (so the server catches up in the background) all move together.
+   */
   const change = (items: SkillItemInput[]) => {
     setDraft(items);
+    patchDocument({ skills: toRows(items, skills) });
     schedule(items);
   };
 
