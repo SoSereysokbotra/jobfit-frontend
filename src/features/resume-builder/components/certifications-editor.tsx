@@ -8,7 +8,12 @@ import {
   type BuilderCertificationDto,
   type CertificationItemInput,
 } from "../api/resume-builder.api";
-import { useDebouncedSectionSave, useSectionDraft } from "../hooks/use-resume-builder";
+import {
+  rowIdentity,
+  useDebouncedSectionSave,
+  useLocalDocumentPatch,
+  useSectionDraft,
+} from "../hooks/use-resume-builder";
 import { fromDateInputValue, toDateInputValue, todayInputValue } from "../lib/dates";
 import { RepeatableList } from "./repeatable-list";
 import { SectionShell } from "./section-shell";
@@ -31,6 +36,22 @@ function toDraft(items: BuilderCertificationDto[]): CertificationItemInput[] {
   }));
 }
 
+/** Draft rows are Input-shaped; the preview reads DTO-shaped rows. */
+function toRows(
+  items: CertificationItemInput[],
+  previous: BuilderCertificationDto[],
+): BuilderCertificationDto[] {
+  return items.map((item, index) => ({
+    ...rowIdentity(previous, index),
+    name: item.name,
+    issuer: item.issuer,
+    issueDate: item.issueDate,
+    expirationDate: item.expirationDate,
+    credentialId: item.credentialId,
+    credentialUrl: item.credentialUrl,
+  }));
+}
+
 /** `name` and `issuer` are both @IsNotEmpty server-side. */
 function isComplete(item: CertificationItemInput): boolean {
   return item.name.trim().length > 0 && item.issuer.trim().length > 0;
@@ -43,6 +64,7 @@ export function CertificationsEditor({
   action,
 }: CertificationsEditorProps) {
   const [draft, setDraft] = useSectionDraft(toDraft(certifications), resetToken);
+  const patchDocument = useLocalDocumentPatch(documentId);
 
   const { status, schedule, saveNow } = useDebouncedSectionSave<CertificationItemInput[]>((items) =>
     resumeBuilderApi.putCertifications(
@@ -55,8 +77,14 @@ export function CertificationsEditor({
     ),
   );
 
+  /**
+   * The one place a row edit lands. Local draft (so the cursor is stable),
+   * preview cache (so the preview redraws this render) and the debounced PUT
+   * (so the server catches up in the background) all move together.
+   */
   const change = (items: CertificationItemInput[]) => {
     setDraft(items);
+    patchDocument({ certifications: toRows(items, certifications) });
     schedule(items);
   };
 

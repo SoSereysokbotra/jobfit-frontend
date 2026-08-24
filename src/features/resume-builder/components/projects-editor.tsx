@@ -9,7 +9,12 @@ import {
   type BuilderProjectDto,
   type ProjectItemInput,
 } from "../api/resume-builder.api";
-import { useDebouncedSectionSave, useSectionDraft } from "../hooks/use-resume-builder";
+import {
+  rowIdentity,
+  useDebouncedSectionSave,
+  useLocalDocumentPatch,
+  useSectionDraft,
+} from "../hooks/use-resume-builder";
 import { RepeatableList } from "./repeatable-list";
 import { SectionShell } from "./section-shell";
 
@@ -28,6 +33,17 @@ function toDraft(items: BuilderProjectDto[]): ProjectItemInput[] {
   }));
 }
 
+/** Draft rows are Input-shaped; the preview reads DTO-shaped rows. */
+function toRows(items: ProjectItemInput[], previous: BuilderProjectDto[]): BuilderProjectDto[] {
+  return items.map((item, index) => ({
+    ...rowIdentity(previous, index),
+    name: item.name,
+    description: item.description,
+    technologies: item.technologies ?? [],
+    url: item.url,
+  }));
+}
+
 function isComplete(item: ProjectItemInput): boolean {
   return item.name.trim().length > 0;
 }
@@ -39,6 +55,7 @@ function isComplete(item: ProjectItemInput): boolean {
  */
 export function ProjectsEditor({ documentId, projects, resetToken }: ProjectsEditorProps) {
   const [draft, setDraft] = useSectionDraft(toDraft(projects), resetToken);
+  const patchDocument = useLocalDocumentPatch(documentId);
 
   const { status, schedule, saveNow } = useDebouncedSectionSave<ProjectItemInput[]>((items) =>
     resumeBuilderApi.putProjects(
@@ -51,8 +68,14 @@ export function ProjectsEditor({ documentId, projects, resetToken }: ProjectsEdi
     ),
   );
 
+  /**
+   * The one place a row edit lands. Local draft (so the cursor is stable),
+   * preview cache (so the preview redraws this render) and the debounced PUT
+   * (so the server catches up in the background) all move together.
+   */
   const change = (items: ProjectItemInput[]) => {
     setDraft(items);
+    patchDocument({ projects: toRows(items, projects) });
     schedule(items);
   };
 
