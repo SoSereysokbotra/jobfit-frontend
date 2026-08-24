@@ -6,6 +6,7 @@ import { AuthProvider } from "@/providers/auth-provider";
 import { OfflineProvider } from "@/providers/offline-provider";
 import { LocaleProvider } from "@/providers/locale-provider";
 import { ThemeProvider } from "@/providers/theme-provider";
+import { DevServiceWorkerGuard } from "@/shared/components/dev-service-worker-guard";
 
 import { ToastContainer } from "@/shared/components/feedback/toast-container";
 
@@ -90,6 +91,9 @@ export default function RootLayout({
         )}
       </head>
       <body style={{ fontFamily: "var(--font-family)" }}>
+        {/* Dev-only: clears a service worker left behind by a production build,
+            which would otherwise serve stale chunks over every dev session. */}
+        <DevServiceWorkerGuard />
         {/* QueryProvider wraps AuthProvider: the auth provider itself uses
             useQuery/useQueryClient for /auth/me. */}
         <QueryProvider>

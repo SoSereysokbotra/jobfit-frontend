@@ -5,6 +5,7 @@ import {
   Star,
   Bookmark,
   Briefcase,
+  KanbanSquare,
   Calendar,
   Award,
   User,
@@ -49,6 +50,7 @@ export const NAVIGATION_GROUPS: NavigationGroup[] = [
     group: "YOUR JOURNEY",
     items: [
       { href: "/applications", label: "Applications", iconName: "Briefcase", icon: <Briefcase size={18} /> },
+      { href: "/tracker", label: "Job Tracker", iconName: "KanbanSquare", icon: <KanbanSquare size={18} /> },
       { href: "/learning", label: "Interview Prep", iconName: "Calendar", icon: <Calendar size={18} /> },
       { href: "/offers", label: "Offers & Decisions", iconName: "Award", icon: <Award size={18} /> },
     ],
