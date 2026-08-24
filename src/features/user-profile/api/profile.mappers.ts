@@ -112,7 +112,7 @@ export function formatDateRange(startDate: string, endDate?: string, isCurrent?:
 
 export function formatSalaryRange(range: ProfileDto["salaryRange"]): string {
   if (!range) return "";
-  return helperFormatSalaryRange({ salaryMin: Math.round(range.min / 1000), salaryMax: Math.round(range.max / 1000) }, undefined, range.currency || "USD");
+  return helperFormatSalaryRange({ salaryMin: Math.round(range.min / 1000), salaryMax: Math.round(range.max / 1000) }, undefined, range.currency || "USD") ?? "";
 }
 
 // ---- View models ----
