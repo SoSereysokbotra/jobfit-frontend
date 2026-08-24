@@ -16,20 +16,21 @@ interface OfferThreadModalProps {
   candidateName: string;
 }
 
-const money = (n: number, currency: string) =>
-  new Intl.NumberFormat("en-US", { style: "currency", currency, maximumFractionDigits: 0 }).format(n);
+import { formatCurrency, formatDate } from "@/shared/utils/formatters";
+
+const money = (n: number, currency: string) => formatCurrency(n, currency);
 
 const when = (iso: string) =>
-  new Date(iso).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+  formatDate(iso, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
 
 function Terms({ offer }: { offer: EmployerOfferDto }) {
   const rows: [string, string][] = [
     ["Base salary", money(offer.baseSalary, offer.currency)],
     ...(offer.signingBonus ? ([["Signing bonus", money(offer.signingBonus, offer.currency)]] as [string, string][]) : []),
     ...(offer.annualBonusPct ? ([["Annual bonus", `${offer.annualBonusPct}%`]] as [string, string][]) : []),
-    ...(offer.startDate ? ([["Start date", new Date(offer.startDate).toLocaleDateString()]] as [string, string][]) : []),
+    ...(offer.startDate ? ([["Start date", formatDate(offer.startDate)]] as [string, string][]) : []),
     ...(offer.responseDeadline
-      ? ([["Responds by", new Date(offer.responseDeadline).toLocaleDateString()]] as [string, string][])
+      ? ([["Responds by", formatDate(offer.responseDeadline)]] as [string, string][])
       : []),
   ];
   return (

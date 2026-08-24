@@ -36,8 +36,9 @@ export default function UserManagementPage() {
   const searchParams = debounced.includes("@") ? { email: debounced } : { name: debounced };
   const { data, isLoading, isError, error } = useAdminUsers(debounced ? searchParams : {});
 
-  const users = data?.data ?? [];
+  const users = data?.data;
   const results = useMemo(() => {
+    if (!users) return [];
     return users.filter((u) => {
       const status = userStatus(u);
       if (filter === "Active") return status === "active";

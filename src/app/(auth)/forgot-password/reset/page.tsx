@@ -86,10 +86,10 @@ export default function ForgotPasswordResetPage() {
 
           {/* Copy */}
           <div>
-            <h2 className="text-2xl font-bold tracking-tight text-neutral-900">
+            <h2 className="text-2xl font-bold tracking-tight" style={{ color: "var(--color-text-primary)" }}>
               Password Reset Successful!
             </h2>
-            <p className="text-sm text-neutral-500 mt-2">
+            <p className="text-sm mt-2" style={{ color: "var(--color-text-secondary)" }}>
               Your password has been updated and all other sessions were signed
               out. You can now log in with your new password.
             </p>
@@ -104,7 +104,7 @@ export default function ForgotPasswordResetPage() {
               <span>Go to Login</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
-            <p className="text-xs text-neutral-400">
+            <p className="text-xs" style={{ color: "var(--color-text-tertiary)" }}>
               Redirecting automatically in {countdown}s…
             </p>
           </div>
@@ -195,7 +195,7 @@ export default function ForgotPasswordResetPage() {
         </form>
 
         {/* Fallback: session may have expired */}
-        <p className="text-center text-xs text-neutral-400 pt-1">
+        <p className="text-center text-xs pt-1" style={{ color: "var(--color-text-tertiary)" }}>
           Session expired?{" "}
           <Link href="/forgot-password" className="text-primary-600 font-semibold hover:underline">
             Start over

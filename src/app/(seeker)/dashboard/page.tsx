@@ -12,6 +12,9 @@ import { useProfile } from "@/features/user-profile/hooks/use-profile";
 import { profileCompleteness } from "@/features/user-profile/api/profile.mappers";
 import { StatCard } from "@/shared/components/data-display/stat-card";
 import { SectionCard } from "@/shared/components/layout/section-card";
+import { formatDate } from "@/shared/utils/formatters";
+import { Reveal } from "@/shared/components/motion/reveal";
+import { useCountUp } from "@/shared/hooks/use-count-up";
 
 /** Small "Sample" pill for sections with no backend endpoint yet. */
 function SamplePill() {
@@ -98,7 +101,9 @@ export default function DashboardPage() {
   const topJobs = jobs.slice(0, 3);
   // Real profile drives the completeness score + checklist.
   const { profile } = useProfile();
-  const profileScore = profileCompleteness(profile);
+  const rawProfileScore = profileCompleteness(profile);
+  const animatedProfileScore = useCountUp(rawProfileScore, 800);
+  const profileScore = rawProfileScore;
 
   const num = (n: number | undefined) => (typeof n === "number" ? String(n) : "—");
   const savedCount = savedIds.size;
@@ -115,7 +120,7 @@ export default function DashboardPage() {
   ];
   const checklistDone = profileChecklist.filter((c) => c.done).length;
 
-  const today = new Date().toLocaleDateString("en-US", {
+  const today = formatDate(new Date(), {
     weekday: "long", month: "long", day: "numeric"
   });
 
@@ -123,10 +128,11 @@ export default function DashboardPage() {
     <div className="p-4 sm:p-6 lg:p-8 space-y-6 min-h-full" style={{ background: "var(--color-bg-secondary)" }}>
 
       {/* ── WELCOME BANNER ────────────────────────────────── */}
-      <div
-        className="rounded-2xl p-6 sm:p-8 relative overflow-hidden"
-        style={{ background: "linear-gradient(135deg, var(--color-primary-900) 0%, var(--color-primary-700) 60%, var(--color-primary-600) 100%)" }}
-      >
+      <Reveal variant="fade" delay={0}>
+        <div
+          className="rounded-2xl p-6 sm:p-8 relative overflow-hidden"
+          style={{ background: "linear-gradient(135deg, var(--color-primary-900) 0%, var(--color-primary-700) 60%, var(--color-primary-600) 100%)" }}
+        >
         {/* Decorative blobs */}
         <div
           className="absolute -top-10 -right-10 w-56 h-56 rounded-full opacity-10"
@@ -173,11 +179,13 @@ export default function DashboardPage() {
                   strokeLinecap="round"
                 />
               </svg>
-              <span className="absolute inset-0 flex items-center justify-center text-on-primary font-extrabold text-sm">{profileScore}%</span>
+              <span className="absolute inset-0 flex items-center justify-center text-on-primary font-extrabold text-sm">{animatedProfileScore}%</span>
             </div>
             <div>
               <p className="text-on-primary font-bold text-sm">Profile Score</p>
-              <p className="text-on-primary-muted text-xs mt-0.5">Add education to reach 90%</p>
+              <p className="text-on-primary-muted text-xs mt-0.5">
+                {profileScore >= 100 ? "Profile complete" : "Add details to reach 90%+"}
+              </p>
               <Link
                 href="/profile"
                 className="text-xs font-bold text-on-primary-muted hover:text-on-primary mt-1 inline-flex items-center gap-1 transition-colors"
@@ -188,9 +196,11 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+      </Reveal>
 
       {/* ── STATS ROW ─────────────────────────────────────── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <Reveal variant="up" delay={80}>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           label="Applications"
           value={num(stats?.totalApplications)}
@@ -224,6 +234,7 @@ export default function DashboardPage() {
           href="/saved-jobs"
         />
       </div>
+      </Reveal>
 
       {/* ── MAIN 2-COLUMN GRID ────────────────────────────── */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
@@ -232,6 +243,7 @@ export default function DashboardPage() {
         <div className="xl:col-span-2 space-y-6">
 
           {/* Application Trend Chart — TODO(backend): no trend endpoint (Phase 10). */}
+          <Reveal variant="up" delay={160}>
           <SectionCard
             title="Application Activity"
             subtitle="Applications & interviews over the last 7 months"
@@ -269,8 +281,10 @@ export default function DashboardPage() {
               </AreaChart>
             </ResponsiveContainer>
           </SectionCard>
+          </Reveal>
 
           {/* Recent openings — real published jobs. Match scores await the AI service. */}
+          <Reveal variant="up" delay={240}>
           <SectionCard
             title="Recent Openings"
             subtitle="Latest jobs on JobFits"
@@ -304,12 +318,14 @@ export default function DashboardPage() {
               </div>
             )}
           </SectionCard>
+          </Reveal>
         </div>
 
         {/* RIGHT COLUMN (1/3) */}
         <div className="space-y-6">
 
           {/* Quick Actions */}
+          <Reveal variant="up" delay={180}>
           <SectionCard title="Quick Actions">
             <div className="grid grid-cols-2 gap-3">
               {quickActions.map((action) => (
@@ -332,8 +348,10 @@ export default function DashboardPage() {
               ))}
             </div>
           </SectionCard>
+          </Reveal>
 
           {/* Profile Completion */}
+          <Reveal variant="up" delay={260}>
           <SectionCard
             title="Profile Checklist"
             action={<span className="text-xs font-bold" style={{ color: "var(--color-primary-600)" }}>{checklistDone} / {profileChecklist.length} done</span>}
@@ -385,11 +403,12 @@ export default function DashboardPage() {
 
             <Link
               href="/profile"
-              className="mt-5 w-full flex items-center justify-center gap-2 py-2.5 rounded-md text-xs font-bold text-white bg-primary-600 hover:bg-primary-700 transition-all duration-200"
+              className="mt-5 w-full flex items-center justify-center gap-2 py-2.5 rounded-md text-xs font-bold text-white bg-primary-600 hover:bg-primary-700 transition-all duration-200 active:scale-95"
             >
               Complete Profile <ArrowRight size={13} />
             </Link>
           </SectionCard>
+          </Reveal>
         </div>
       </div>
     </div>

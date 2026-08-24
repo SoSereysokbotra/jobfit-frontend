@@ -60,7 +60,7 @@ export function JobRecommendationFilters({
       <FilterSection title="Match Score">
         <div className="flex justify-between text-xs mb-1.5">
           <span style={{ color: "var(--color-text-tertiary)" }}>Minimum Match</span>
-          <span className="font-bold" style={{ color: "var(--color-primary-600)" }}>
+          <span className="font-bold" style={{ color: "var(--color-primary-500)" }}>
             {filters.matchMin}%
           </span>
         </div>
@@ -73,11 +73,11 @@ export function JobRecommendationFilters({
           onChange={(e) => setFilter("matchMin", Number(e.target.value))}
           className="w-full h-2 rounded-full appearance-none cursor-pointer"
           style={{
-            accentColor: "var(--color-primary-600)",
-            background: `linear-gradient(to right, var(--color-primary-500) ${((Math.max(60, filters.matchMin) - 60) / 40) * 100}%, var(--color-neutral-200) ${((Math.max(60, filters.matchMin) - 60) / 40) * 100}%)`,
+            accentColor: "var(--color-primary-500)",
+            background: `linear-gradient(to right, var(--color-primary-500) ${((Math.max(60, filters.matchMin) - 60) / 40) * 100}%, var(--color-border) ${((Math.max(60, filters.matchMin) - 60) / 40) * 100}%)`,
           }}
         />
-        <div className="flex justify-between text-xs mt-1" style={{ color: "var(--color-text-disabled)" }}>
+        <div className="flex justify-between text-xs mt-1" style={{ color: "var(--color-text-tertiary)" }}>
           <span>60%</span>
           <span>100%</span>
         </div>
@@ -100,7 +100,7 @@ export function JobRecommendationFilters({
       <FilterSection title="Minimum Salary">
         <div className="flex justify-between text-xs mb-1.5">
           <span style={{ color: "var(--color-text-tertiary)" }}>Base salary</span>
-          <span className="font-bold" style={{ color: "var(--color-primary-600)" }}>
+          <span className="font-bold" style={{ color: "var(--color-primary-500)" }}>
             {filters.salaryMin > 0 ? `$${filters.salaryMin}K` : "Any"}
           </span>
         </div>
@@ -113,8 +113,8 @@ export function JobRecommendationFilters({
           onChange={(e) => setFilter("salaryMin", Number(e.target.value))}
           className="w-full h-2 rounded-full appearance-none cursor-pointer"
           style={{
-            accentColor: "var(--color-primary-600)",
-            background: `linear-gradient(to right, var(--color-primary-500) ${(filters.salaryMin / 250) * 100}%, var(--color-neutral-200) ${(filters.salaryMin / 250) * 100}%)`,
+            accentColor: "var(--color-primary-500)",
+            background: `linear-gradient(to right, var(--color-primary-500) ${(filters.salaryMin / 250) * 100}%, var(--color-border) ${(filters.salaryMin / 250) * 100}%)`,
           }}
         />
       </FilterSection>

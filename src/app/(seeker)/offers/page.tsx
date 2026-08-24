@@ -13,6 +13,7 @@ import { JobCardSkeleton } from "@/shared/components/feedback/skeleton";
 import { Alert } from "@/shared/components/feedback/alert";
 import { Modal } from "@/shared/components/ui/modal";
 import { formatCurrencyShort, formatInDays } from "@/lib/utils/format";
+import { formatDate } from "@/shared/utils/formatters";
 
 const SORT_OPTIONS: { value: OffersSortKey; label: string }[] = [
   { value: "deadline", label: "Deadline (soonest)" },
@@ -303,7 +304,7 @@ export default function OffersPage() {
                         {mine ? "You" : negotiatingOffer.job.company}
                       </span>
                       <span style={{ color: "var(--color-text-disabled)" }}>
-                        {new Date(m.createdAt).toLocaleString(undefined, {
+                        {formatDate(m.createdAt, {
                           month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
                         })}
                       </span>

@@ -53,11 +53,12 @@ export function columnIdForStatus(status: ApplicationStatus): string {
 }
 
 
+import { formatPostedDate, formatDate } from "@/shared/utils/formatters";
+
 function appliedLabel(iso: string): string {
   const days = daysSince(iso);
-  if (days === 0) return "Applied today";
-  if (days === 1) return "Applied yesterday";
-  return `Applied ${days} days ago`;
+  const formatted = formatPostedDate(days);
+  return `Applied ${formatted.toLowerCase()}`;
 }
 
 export interface ApplicationView extends ApplicationDto {
@@ -108,6 +109,6 @@ export function toTimelineView(entry: TimelineEntryDto): TimelineEntryView {
     description: entry.description,
     dateLabel: Number.isNaN(date.getTime())
       ? ""
-      : date.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" }),
+      : formatDate(date, { year: "numeric", month: "short", day: "numeric" }),
   };
 }

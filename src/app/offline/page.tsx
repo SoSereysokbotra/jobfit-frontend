@@ -33,10 +33,9 @@ export default function OfflinePage() {
           <img
             src="/logo.png"
             alt="JobFits Logo"
-            className="w-7 h-7 rounded-md object-contain bg-neutral-50 p-0.5 border"
-            style={{ borderColor: "var(--color-border)" }}
+            className="w-8 h-8 rounded-full object-contain flex-shrink-0"
           />
-          <span className="font-extrabold text-sm" style={{ color: "var(--color-primary-900)" }}>
+          <span className="font-extrabold text-sm" style={{ color: "var(--color-text-primary)" }}>
             JobFits
           </span>
         </div>

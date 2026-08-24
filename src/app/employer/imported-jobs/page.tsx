@@ -8,13 +8,15 @@ import { Skeleton } from "@/shared/components/feedback/skeleton";
 import { Alert } from "@/shared/components/feedback/alert";
 import { useImportedJobs } from "@/features/employer/hooks/use-employer";
 
+import { formatDate as helperFormatDate } from "@/shared/utils/formatters";
+
 /** "2026-07-20T..." → "Jul 20, 2026" */
 function formatDate(iso: string | null): string {
   if (!iso) return "—";
   const d = new Date(iso);
   return Number.isNaN(d.getTime())
     ? "—"
-    : d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+    : helperFormatDate(d, { month: "short", day: "numeric", year: "numeric" });
 }
 
 export default function ImportedJobsPage() {

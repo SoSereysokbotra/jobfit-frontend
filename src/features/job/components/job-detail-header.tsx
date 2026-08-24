@@ -7,6 +7,7 @@ interface JobDetailHeaderProps {
 }
 
 export function JobDetailHeader({ job }: JobDetailHeaderProps) {
+  const salary = formatSalaryRange(job);
   return (
     <div
       className="p-6 rounded-lg border"
@@ -34,13 +35,15 @@ export function JobDetailHeader({ job }: JobDetailHeaderProps) {
             {job.company} · {job.location}
           </p>
           <div className="flex flex-wrap gap-4 mt-3">
-            <span
-              className="flex items-center gap-1.5 text-xs font-medium"
-              style={{ color: "var(--color-success-600)" }}
-            >
-              <DollarSign size={14} />
-              {formatSalaryRange(job)}
-            </span>
+            {salary && (
+              <span
+                className="flex items-center gap-1.5 text-xs font-medium"
+                style={{ color: "var(--color-success-600)" }}
+              >
+                <DollarSign size={14} />
+                {salary}
+              </span>
+            )}
             <span
               className="flex items-center gap-1.5 text-xs font-medium"
               style={{ color: "var(--color-text-tertiary)" }}

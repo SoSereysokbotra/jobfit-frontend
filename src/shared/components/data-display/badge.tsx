@@ -4,12 +4,12 @@ import { cn } from "@/shared/utils/cn";
 export type BadgeTone = "primary" | "success" | "warning" | "error" | "info" | "neutral";
 
 const TONES: Record<BadgeTone, string> = {
-  primary: "bg-primary-50 text-primary-700",
-  success: "bg-success-50 text-success-600",
-  warning: "bg-warning-50 text-warning-600",
-  error: "bg-error-50 text-error-600",
-  info: "bg-info-50 text-info-600",
-  neutral: "bg-neutral-100 text-neutral-600",
+  primary: "bg-primary-50 text-primary-700 dark:text-primary-400",
+  success: "bg-success-50 text-success-600 dark:text-success-500",
+  warning: "bg-warning-50 text-warning-600 dark:text-warning-500",
+  error: "bg-error-50 text-error-600 dark:text-error-500",
+  info: "bg-info-50 text-info-600 dark:text-info-500",
+  neutral: "bg-neutral-100 text-neutral-600 dark:text-neutral-300",
 };
 
 interface BadgeProps {

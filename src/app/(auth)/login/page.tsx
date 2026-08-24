@@ -3,103 +3,94 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Mail, Lock, ArrowRight, ShieldAlert } from "lucide-react";
+import { Mail, Lock, ArrowRight, ShieldAlert, Check } from "lucide-react";
 import { AuthShell, AuthHeading, TextField, SocialAuthButtons } from "@/features/auth/components";
 import { homeForRole } from "@/features/auth/hooks/use-session";
 import { useAuth } from "@/providers/auth-provider";
 import { ApiError } from "@/lib/api/client";
 import { Alert } from "@/shared/components/feedback/alert";
 import { Button } from "@/shared/components/ui/button";
+import { useTranslation } from "@/providers/locale-provider";
 
 export default function LoginPage() {
   const router = useRouter();
   const { login } = useAuth();
+  const { t } = useTranslation();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-
-  // LOGIN_BLOCKED (429) — the backend owns lockout; we only reflect it.
-  const [isLocked, setIsLocked] = useState(false);
-  // EMAIL_NOT_VERIFIED (403) — offer the verification flow instead of a dead end.
+  const [isBlocked, setIsBlocked] = useState(false);
   const [needsVerification, setNeedsVerification] = useState(false);
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isLocked) return;
+    if (!email || !password) return;
 
     setIsLoading(true);
     setErrorMessage("");
+    setIsBlocked(false);
     setNeedsVerification(false);
 
     try {
       const user = await login(email.trim(), password);
-      // Land each role in its own area rather than assuming /dashboard.
-      router.replace(homeForRole(user.role));
-    } catch (error) {
-      const err = error as ApiError;
-      if (err instanceof ApiError && err.code === "LOGIN_BLOCKED") {
-        setIsLocked(true);
-      } else if (err instanceof ApiError && err.code === "EMAIL_NOT_VERIFIED") {
-        setNeedsVerification(true);
+
+      // Role-based routing
+      router.push(homeForRole(user.role));
+    } catch (err: unknown) {
+      if (err instanceof ApiError) {
+        if (err.statusCode === 403) {
+          setIsBlocked(true);
+          setErrorMessage(err.messages.join(" ") || "Your account has been suspended or is inactive.");
+        } else if (err.statusCode === 401 && err.messages.some((m: string) => m.toLowerCase().includes("verify"))) {
+          setNeedsVerification(true);
+          setErrorMessage(err.messages.join(" ") || "Please verify your email address before logging in.");
+        } else {
+          setErrorMessage(err.messages.join(" ") || "Invalid email or password.");
+        }
+      } else {
+        setErrorMessage("An unexpected error occurred. Please try again.");
       }
-      setErrorMessage(
-        err instanceof ApiError ? err.message : "Something went wrong. Please try again.",
-      );
+    } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <AuthShell>
-      {isLocked ? (
-        /* ACCOUNT LOCKED — the backend locks after repeated failures and unlocks
-           on its own timer. TODO(backend): no self-serve unlock endpoint exists
-           (only the admin-only POST /admin/users/{id}/unlock), so there is
-           nothing for the user to submit here. */
-        <div className="space-y-6 animate-fade-in">
-          <div className="text-center">
-            <div className="mx-auto flex items-center justify-center w-12 h-12 rounded-full bg-error-100 mb-4">
-              <ShieldAlert className="w-6 h-6 text-error-600" />
-            </div>
-            <h2 className="text-2xl font-bold tracking-tight text-neutral-900">Account Locked</h2>
-            <p className="text-sm text-neutral-500 mt-2">
-              {errorMessage || "Too many failed attempts. Please try again later."}
-            </p>
+    <AuthShell
+      quote="Choose a job you love, and you will never have to work a day in your life."
+      author="Confucius"
+    >
+      {isBlocked ? (
+        <div className="space-y-4 text-center">
+          <div className="mx-auto w-12 h-12 rounded-full bg-error-50 flex items-center justify-center">
+            <ShieldAlert className="w-6 h-6 text-error-600" />
           </div>
-
-          <Alert variant="warning">
-            For security, sign-in is paused for a short period. You can try again shortly, or
-            reset your password if you&apos;ve forgotten it.
-          </Alert>
-
-          <div className="space-y-3">
+          <h2 className="text-xl font-bold" style={{ color: "var(--color-text-primary)" }}>Account Access Suspended</h2>
+          <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
+            {errorMessage || "Your account has been deactivated or suspended. Please contact support if you believe this is an error."}
+          </p>
+          <div className="pt-2">
             <Button
+              variant="outline"
               fullWidth
-              variant="secondary"
               onClick={() => {
-                setIsLocked(false);
+                setIsBlocked(false);
                 setErrorMessage("");
                 setPassword("");
               }}
             >
-              Back to Sign In
+              Back to Login
             </Button>
-            <Link
-              href="/forgot-password"
-              className="block text-center text-xs text-primary-600 font-semibold hover:underline"
-            >
-              Reset your password
-            </Link>
           </div>
         </div>
       ) : (
         <>
           <AuthHeading
-            title="Sign in to your account"
-            subtitle="Enter your credentials to access your dashboard"
+            title={t("auth.welcomeBack")}
+            subtitle={t("auth.loginSubtitle")}
           />
 
           {errorMessage && (
@@ -118,41 +109,50 @@ export default function LoginPage() {
 
           <form className="space-y-4" onSubmit={handleEmailLogin}>
             <TextField
-              label="Email Address"
+              label={t("auth.emailLabel")}
               icon={Mail}
               type="email"
               required
-              placeholder="name@example.com"
+              placeholder={t("auth.emailPlaceholder")}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
 
             <TextField
-              label="Password"
+              label={t("auth.passwordLabel")}
               icon={Lock}
               passwordToggle
               required
-              placeholder="••••••••"
+              placeholder={t("auth.passwordPlaceholder")}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
 
             {/* Remember Me & Forgot Password */}
             <div className="flex items-center justify-between mt-2.5">
-              <div className="flex items-center">
+              <label htmlFor="remember-me" className="flex items-center gap-2 cursor-pointer select-none">
                 <input
                   id="remember-me"
                   type="checkbox"
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
-                  className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-neutral-200 rounded bg-white"
+                  className="sr-only"
                 />
-                <label htmlFor="remember-me" className="ml-2 block text-xs text-neutral-500">
-                  Remember me on this device
-                </label>
-              </div>
-              <Link href="/forgot-password" className="text-xs text-primary-600 hover:underline font-semibold">
-                Forgot password?
+                <span
+                  className="flex items-center justify-center w-4 h-4 rounded border transition-all duration-150 shrink-0"
+                  style={{
+                    background: rememberMe ? "var(--color-primary-600)" : "var(--color-bg)",
+                    borderColor: rememberMe ? "var(--color-primary-600)" : "var(--color-border)",
+                  }}
+                >
+                  {rememberMe && <Check size={11} style={{ color: "#ffffff" }} />}
+                </span>
+                <span className="text-xs" style={{ color: "var(--color-text-secondary)" }}>
+                  {t("auth.rememberMe")}
+                </span>
+              </label>
+              <Link href="/forgot-password" className="text-xs text-primary-600 dark:text-primary-400 hover:underline font-semibold">
+                {t("auth.forgotPassword")}
               </Link>
             </div>
 
@@ -160,10 +160,10 @@ export default function LoginPage() {
               type="submit"
               fullWidth
               loading={isLoading}
-              loadingText="Signing in..."
+              loadingText={t("auth.signingIn")}
               disabled={!email || !password}
             >
-              Sign In <ArrowRight className="w-4 h-4" />
+              {t("auth.signIn")} <ArrowRight className="w-4 h-4" />
             </Button>
           </form>
 
@@ -188,9 +188,9 @@ export default function LoginPage() {
 
           {/* SIGN UP LINK */}
           <div className="text-center text-xs mt-4">
-            <span className="text-neutral-500">Don&apos;t have an account? </span>
-            <Link href="/signup" className="text-primary-600 font-semibold hover:underline">
-              Sign up
+            <span style={{ color: "var(--color-text-tertiary)" }}>{t("auth.dontHaveAccount")} </span>
+            <Link href="/signup" className="text-primary-600 dark:text-primary-400 font-semibold hover:underline">
+              {t("auth.createAccount")}
             </Link>
           </div>
         </>

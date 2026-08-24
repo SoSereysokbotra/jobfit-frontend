@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { Loader2, CheckCircle2, X } from "lucide-react";
 import { GoogleIcon } from "./brand-icons";
+import { toast } from "@/stores/toast-store";
 
 export interface MockGoogleAccount {
   email: string;
@@ -160,7 +161,7 @@ export function GoogleOAuthModal({
               ))}
 
               <button
-                onClick={() => alert("Only the preset mock profiles are active in this demo.")}
+                onClick={() => toast.info("Only the preset mock profiles are active in this demo.")}
                 className="w-full flex items-center gap-3 p-3 rounded-md border border-dashed border-neutral-300 hover:bg-neutral-50 transition-all duration-200 text-left text-neutral-500 text-xs font-medium"
               >
                 <div className="w-10 h-10 rounded-full border border-dashed border-neutral-300 flex items-center justify-center bg-neutral-50 text-neutral-400">

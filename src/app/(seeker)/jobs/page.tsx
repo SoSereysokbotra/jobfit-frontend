@@ -6,15 +6,18 @@ import {
   SearchX, ArrowUpDown,
 } from "lucide-react";
 import { JobCard, JobSearchBar, JobFilters } from "@/features/job/components";
+import { JobCompareBar } from "@/features/job/components/job-compare-bar";
 import { useJobs } from "@/features/job/hooks/use-job";
 import { useJobSearch, type JobSortKey } from "@/features/job/hooks/use-job-search";
 import { useSavedJobIds, useToggleSavedJob } from "@/features/saved-jobs/hooks/use-saved-jobs";
 import { useSubmitApplication } from "@/features/application/hooks/use-applications";
 import { isExternalApply, openExternalPosting } from "@/features/application/lib/external-apply";
+import { useJobCompare } from "@/stores/job-compare-store";
 import { EmptyState } from "@/shared/components/data-display/empty-state";
 import { JobCardSkeleton } from "@/shared/components/feedback/skeleton";
 import { Alert } from "@/shared/components/feedback/alert";
 import { ApiError } from "@/lib/api/client";
+import { Reveal } from "@/shared/components/motion/reveal";
 
 const SORT_OPTIONS: { value: JobSortKey; label: string }[] = [
   { value: "match", label: "Match score" },
@@ -55,6 +58,7 @@ export default function JobSearchPage() {
   };
 
   const search = useJobSearch(jobs, 5);
+  const { isComparing, toggleJobCompare, canAdd } = useJobCompare();
 
   const filtersPanel = (
     <JobFilters
@@ -81,7 +85,12 @@ export default function JobSearchPage() {
       </div>
 
       {/* ── SEARCH BAR ────────────────────────────────────── */}
-      <JobSearchBar value={search.filters.query} onChange={(v) => search.setFilter("query", v)} />
+      <Reveal variant="fade" delay={0}>
+        <JobSearchBar
+          value={search.filters.query}
+          onChange={(v) => search.setFilter("query", v)}
+        />
+      </Reveal>
 
       {applyMsg && <Alert variant={applyMsg.tone}>{applyMsg.text}</Alert>}
 
@@ -113,8 +122,8 @@ export default function JobSearchPage() {
 
         {/* Results column */}
         <div className="lg:col-span-3 space-y-4">
-
           {/* Results toolbar */}
+          <Reveal variant="up" delay={80}>
           <div
             className="rounded-lg border px-4 py-3 flex flex-wrap items-center gap-3"
             style={{ background: "var(--color-card)", borderColor: "var(--color-border)", boxShadow: "var(--shadow-sm)" }}
@@ -170,7 +179,7 @@ export default function JobSearchPage() {
                   className="p-1.5 transition-colors"
                   style={{
                     background: view === mode ? "var(--color-primary-50)" : "var(--color-bg)",
-                    color: view === mode ? "var(--color-primary-600)" : "var(--color-text-tertiary)",
+                    color: view === mode ? "var(--color-primary-500)" : "var(--color-text-tertiary)",
                   }}
                 >
                   <Icon size={15} />
@@ -178,6 +187,7 @@ export default function JobSearchPage() {
               ))}
             </div>
           </div>
+          </Reveal>
 
           {/* Active filter pills */}
           {search.pills.length > 0 && (
@@ -190,7 +200,7 @@ export default function JobSearchPage() {
                   style={{
                     background: "var(--color-primary-50)",
                     borderColor: "var(--color-primary-100)",
-                    color: "var(--color-primary-700)",
+                    color: "var(--color-primary-500)",
                   }}
                 >
                   {pill.label}
@@ -208,6 +218,7 @@ export default function JobSearchPage() {
           )}
 
           {/* Results */}
+          <Reveal variant="up" delay={140}>
           {isLoading ? (
             <div
               className="rounded-lg border divide-y"
@@ -224,13 +235,15 @@ export default function JobSearchPage() {
                 <>
                   <button
                     onClick={search.clearFilters}
-                    className="px-4 py-2 rounded-md text-xs font-bold text-white bg-primary-600 hover:bg-primary-700 transition-all duration-200"
+                    className="px-4 py-2 rounded-md text-xs font-bold text-white transition-all duration-200 active:scale-95"
+                    style={{ background: "var(--color-primary-600)" }}
                   >
                     Clear all filters
                   </button>
                   <button
                     onClick={() => search.setFilter("query", "")}
-                    className="px-4 py-2 rounded-md text-xs font-bold border border-neutral-200 text-neutral-600 hover:bg-neutral-50 transition-all duration-200"
+                    className="px-4 py-2 rounded-md text-xs font-bold border transition-all duration-200 hover:bg-[var(--color-surface-hover)]"
+                    style={{ borderColor: "var(--color-border)", color: "var(--color-text-secondary)" }}
                   >
                     Reset search
                   </button>
@@ -240,7 +253,7 @@ export default function JobSearchPage() {
           ) : view === "list" ? (
             <div
               className="rounded-lg border divide-y overflow-hidden"
-              style={{ background: "var(--color-card)", borderColor: "var(--color-neutral-100)", boxShadow: "var(--shadow-sm)" }}
+              style={{ background: "var(--color-card)", borderColor: "var(--color-border)", boxShadow: "var(--shadow-sm)" }}
             >
               {search.paged.map((job) => (
                 <JobCard
@@ -250,6 +263,9 @@ export default function JobSearchPage() {
                   saved={savedIds.has(job.id)}
                   onToggleSave={toggleSave}
                   onApply={handleApply}
+                  comparing={isComparing(job.id)}
+                  onToggleCompare={toggleJobCompare}
+                  compareDisabled={!canAdd}
                 />
               ))}
             </div>
@@ -263,10 +279,14 @@ export default function JobSearchPage() {
                   saved={savedIds.has(job.id)}
                   onToggleSave={toggleSave}
                   onApply={handleApply}
+                  comparing={isComparing(job.id)}
+                  onToggleCompare={toggleJobCompare}
+                  compareDisabled={!canAdd}
                 />
               ))}
             </div>
           )}
+          </Reveal>
 
           {/* Pagination */}
           {!isLoading && search.results.length > 0 && (
@@ -313,6 +333,8 @@ export default function JobSearchPage() {
           )}
         </div>
       </div>
+      {/* Docked compare bar — appears whenever ≥1 job is selected for comparison */}
+      <JobCompareBar />
     </div>
   );
 }

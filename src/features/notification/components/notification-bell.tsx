@@ -13,7 +13,7 @@ export function NotificationBell() {
     <Link
       href="/notifications"
       aria-label={unread > 0 ? `Notifications (${unread} unread)` : "Notifications"}
-      className="relative p-2 rounded-lg hover:bg-neutral-100 transition-colors"
+      className="relative p-2 rounded-md hover:bg-[var(--color-surface-hover)] transition-colors"
       style={{ color: "var(--color-text-secondary)" }}
     >
       <Bell size={20} />

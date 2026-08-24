@@ -42,7 +42,15 @@ export interface JobAnalyticsDto {
   jobId: string;
   applicationsCount: number;
   applicationsByStatus: Record<string, number>;
-  averageMatchScore: number | null;
+  /**
+   * Matched candidates by confidence band.
+   *
+   * Replaces `averageMatchScore`, which the API sourced from a table with no rows — it
+   * was null on every response ever sent. It is counts rather than an average because
+   * the match score is calibrated for ORDERING, not magnitude
+   * (MENTOR_REVIEW_2026-08-18 §13, §15).
+   */
+  candidateBands: { strong: number; possible: number; weak: number };
   views: number;
 }
 
@@ -116,6 +124,7 @@ export interface CreateJobInput {
 export type UpdateJobInput = Partial<CreateJobInput>;
 
 export interface UpdateCompanyInput {
+  name?: string;
   description?: string;
   website?: string;
   logoUrl?: string;
