@@ -123,8 +123,16 @@ function MatchRow({
 }
 
 function SalaryRow({ jobs }: { jobs: Job[] }) {
-  const salaryMids = jobs.map((j) => (j.salaryMin + j.salaryMax) / 2);
-  const winners = winnerIndices(salaryMids);
+  // A job that states no salary has no midpoint and cannot win the comparison. Scoring
+  // it as 0 would rank it as the WORST-paid rather than as unmeasured — the same
+  // "missing looks like measured" mistake as "$0K – $0K" (MENTOR_REVIEW_2026-08-18 §12).
+  const salaryMids = jobs.map((j) =>
+    j.salaryMin != null && j.salaryMax != null && j.salaryMax > 0
+      ? (j.salaryMin + j.salaryMax) / 2
+      : Number.NEGATIVE_INFINITY
+  );
+  const anyKnown = salaryMids.some((m) => m !== Number.NEGATIVE_INFINITY);
+  const winners = anyKnown ? winnerIndices(salaryMids) : new Set<number>();
 
   return (
     <tr style={{ borderBottom: "1px solid var(--color-border)" }}>

@@ -36,7 +36,15 @@ export const DEFAULT_FILTERS: JobSearchFilters = {
 const SORTERS: Record<JobSortKey, (a: Job, b: Job) => number> = {
   match: (a, b) => b.match - a.match,
   newest: (a, b) => a.postedDaysAgo - b.postedDaysAgo,
-  salary: (a, b) => b.salaryMax - a.salaryMax,
+  // Unknown pay sorts LAST rather than as zero. 348 of 367 jobs state no salary, so
+  // treating null as 0 would silently bury every one of them at the bottom as though we
+  // had measured them and found them worthless.
+  salary: (a, b) => {
+    if (a.salaryMax == null && b.salaryMax == null) return 0;
+    if (a.salaryMax == null) return 1;
+    if (b.salaryMax == null) return -1;
+    return b.salaryMax - a.salaryMax;
+  },
 };
 
 /**
@@ -64,7 +72,10 @@ export function filterJobs(
     if (ignore !== "levels" && filters.levels.length && !(job.level && filters.levels.includes(job.level))) return false;
     if (ignore !== "locations" && filters.locations.length && !filters.locations.includes(job.location)) return false;
     if (ignore !== "industries" && filters.industries.length && !(job.industry && filters.industries.includes(job.industry))) return false;
-    if (ignore !== "salaryMin" && filters.salaryMin > 0 && job.salaryMax < filters.salaryMin) return false;
+    // A job that states no pay cannot be SHOWN to clear a pay bar, so an explicit
+    // salary filter excludes it. This hides most of the corpus — which is the honest
+    // consequence of the corpus not carrying salaries, not a reason to pretend it does.
+    if (ignore !== "salaryMin" && filters.salaryMin > 0 && (job.salaryMax == null || job.salaryMax < filters.salaryMin)) return false;
     if (ignore !== "matchMin" && filters.matchMin > 0 && job.match < filters.matchMin) return false;
     if (ignore !== "postedWithin" && filters.postedWithin !== null && job.postedDaysAgo > filters.postedWithin) return false;
     return true;
