@@ -48,7 +48,7 @@ export function LanguageSwitcher({ className = "" }: { className?: string }) {
         aria-expanded={isOpen}
         aria-haspopup="true"
         aria-label="Select language"
-        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-semibold transition-all hover:bg-neutral-50 active:scale-95"
+        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border text-xs font-semibold transition-all hover:bg-[var(--color-surface-hover)] active:scale-95"
         style={{
           borderColor: "var(--color-border)",
           background: "var(--color-card)",
@@ -68,14 +68,14 @@ export function LanguageSwitcher({ className = "" }: { className?: string }) {
         <div
           role="menu"
           aria-orientation="vertical"
-          className="absolute right-0 mt-1.5 w-44 rounded-xl border p-1.5 animate-slide-up z-50 overflow-hidden"
+          className="absolute right-0 mt-1.5 w-44 rounded-lg border p-1.5 animate-slide-up z-50 overflow-hidden"
           style={{
             background: "var(--color-card)",
             borderColor: "var(--color-border)",
             boxShadow: "var(--shadow-lg)",
           }}
         >
-          <div className="px-2.5 py-1.5 text-[10px] font-extrabold uppercase tracking-wider text-neutral-400 border-b mb-1" style={{ borderColor: "var(--color-neutral-100)" }}>
+          <div className="px-2.5 py-1.5 text-[10px] font-extrabold uppercase tracking-wider border-b mb-1" style={{ borderColor: "var(--color-border)", color: "var(--color-text-tertiary)" }}>
             Select Language
           </div>
 
@@ -90,25 +90,25 @@ export function LanguageSwitcher({ className = "" }: { className?: string }) {
                     setLocale(item.code);
                     setIsOpen(false);
                   }}
-                  className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-xs font-medium transition-colors ${
+                  className={`w-full flex items-center justify-between px-2.5 py-2 rounded-md text-xs font-medium transition-colors ${
                     isSelected
-                      ? "bg-primary-50 text-primary-900 font-bold"
-                      : "hover:bg-neutral-50 text-neutral-700"
+                      ? "font-bold"
+                      : "hover:bg-[var(--color-surface-hover)]"
                   }`}
                   style={{
                     background: isSelected ? "var(--color-primary-50)" : undefined,
-                    color: isSelected ? "var(--color-primary-800)" : "var(--color-text-primary)",
+                    color: isSelected ? "var(--color-primary-500)" : "var(--color-text-primary)",
                   }}
                 >
                   <div className="flex items-center gap-2">
                     <span className="text-sm">{item.flag}</span>
                     <div className="text-left">
                       <p className="leading-none">{item.nativeName}</p>
-                      <p className="text-[10px] text-neutral-400 mt-0.5">{item.name}</p>
+                      <p className="text-[10px] mt-0.5" style={{ color: "var(--color-text-tertiary)" }}>{item.name}</p>
                     </div>
                   </div>
                   {isSelected && (
-                    <Check size={14} style={{ color: "var(--color-primary-600)" }} />
+                    <Check size={14} style={{ color: "var(--color-primary-500)" }} />
                   )}
                 </button>
               );

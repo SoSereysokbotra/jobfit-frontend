@@ -66,6 +66,28 @@ export default function RootLayout({
             `,
           }}
         />
+        {process.env.NODE_ENV === "development" && (
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `
+                if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+                  navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                    for (var i = 0; i < registrations.length; i++) {
+                      registrations[i].unregister();
+                    }
+                  });
+                  if ('caches' in window) {
+                    caches.keys().then(function(names) {
+                      for (var i = 0; i < names.length; i++) {
+                        caches.delete(names[i]);
+                      }
+                    });
+                  }
+                }
+              `,
+            }}
+          />
+        )}
       </head>
       <body style={{ fontFamily: "var(--font-family)" }}>
         {/* QueryProvider wraps AuthProvider: the auth provider itself uses

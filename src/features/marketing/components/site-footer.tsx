@@ -46,7 +46,7 @@ export function SiteFooter() {
               <img
                 src="/logo.png"
                 alt="JobFits Logo"
-                className="w-9 h-9 rounded-lg object-contain p-1 bg-on-primary-surface border border-on-primary-border"
+                className="w-9 h-9 rounded-full object-contain flex-shrink-0"
               />
               <span className="text-lg font-extrabold tracking-tight text-on-primary">JobFits</span>
             </Link>

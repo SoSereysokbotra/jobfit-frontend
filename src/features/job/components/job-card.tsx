@@ -31,8 +31,8 @@ function TypePill({ children, tone = "primary" }: { children: React.ReactNode; t
       className="text-xs font-semibold px-2 py-0.5 rounded-full whitespace-nowrap"
       style={
         tone === "primary"
-          ? { background: "var(--color-primary-50)", color: "var(--color-primary-700)" }
-          : { background: "var(--color-neutral-100)", color: "var(--color-neutral-600)" }
+          ? { background: "var(--color-primary-50)", color: "var(--color-primary-500)" }
+          : { background: "var(--color-neutral-100)", color: "var(--color-text-secondary)" }
       }
     >
       {children}
@@ -81,7 +81,8 @@ export function JobCard({
       <AppliedPill jobId={job.id}>
         <button
           onClick={() => onApply?.(job.id)}
-          className="px-3 py-1.5 rounded-md text-xs font-bold text-white bg-primary-600 hover:bg-primary-700 transition-all duration-200 active:scale-95"
+          className="px-3 py-1.5 rounded-md text-xs font-bold text-white transition-all duration-200 active:scale-95"
+          style={{ background: "var(--color-primary-600)" }}
         >
           Apply
         </button>
@@ -93,7 +94,7 @@ export function JobCard({
           "px-3 py-1.5 rounded-md text-xs font-bold border transition-all duration-200 active:scale-95 inline-flex items-center justify-center gap-1",
           saved
             ? "border-primary-300 text-primary-600 bg-primary-50"
-            : "border-neutral-200 text-neutral-500 bg-transparent hover:bg-neutral-50",
+            : "border-[var(--color-border)] text-[var(--color-text-secondary)] bg-transparent hover:bg-[var(--color-surface-hover)]",
         )}
       >
         <Heart size={12} className={saved ? "fill-current" : ""} />
@@ -152,7 +153,7 @@ export function JobCard({
           <MatchScoreBadge score={job.match} size="sm" />
         </div>
         <Link href={`/jobs/${job.id}`} className="block">
-          <h3 className="text-sm font-bold group-hover:text-primary-700 transition-colors" style={{ color: "var(--color-text-primary)" }}>
+          <h3 className="text-sm font-bold transition-colors hover:underline" style={{ color: "var(--color-text-primary)" }}>
             {job.title}
           </h3>
         </Link>
@@ -163,8 +164,8 @@ export function JobCard({
             {job.description}
           </p>
         )}
-        <div className="flex items-center justify-between mt-4 pt-3 border-t" style={{ borderColor: "var(--color-neutral-100)" }}>
-          <span className="flex items-center gap-1 text-xs" style={{ color: "var(--color-text-disabled)" }}>
+        <div className="flex items-center justify-between mt-4 pt-3 border-t" style={{ borderColor: "var(--color-border)" }}>
+          <span className="flex items-center gap-1 text-xs" style={{ color: "var(--color-text-tertiary)" }}>
             <Clock size={11} /> {formatPostedDate(job.postedDaysAgo)}
           </span>
           <div className="flex gap-1.5">{actions}</div>
@@ -176,7 +177,7 @@ export function JobCard({
   /* LIST variant */
   return (
     <div
-      className="flex items-start gap-3 px-5 py-4 hover:bg-primary-50 transition-colors group"
+      className="flex items-start gap-3 px-5 py-4 transition-colors group hover:bg-[var(--color-surface-hover)]"
       style={comparing ? { background: "var(--color-primary-50)" } : {}}
     >
       {/* Compare checkbox — only in list view when enabled */}
@@ -191,7 +192,7 @@ export function JobCard({
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
             <Link href={`/jobs/${job.id}`} className="block">
-              <h3 className="text-sm font-bold truncate group-hover:text-primary-700 transition-colors" style={{ color: "var(--color-text-primary)" }}>
+              <h3 className="text-sm font-bold truncate transition-colors hover:underline" style={{ color: "var(--color-text-primary)" }}>
                 {job.title}
               </h3>
             </Link>
@@ -205,7 +206,7 @@ export function JobCard({
             <p className="text-xs mt-2 line-clamp-1" style={{ color: "var(--color-text-tertiary)" }}>
               {job.description}
             </p>
-            <span className="flex items-center gap-1 text-xs mt-1.5" style={{ color: "var(--color-text-disabled)" }}>
+            <span className="flex items-center gap-1 text-xs mt-1.5" style={{ color: "var(--color-text-tertiary)" }}>
               <Clock size={11} /> {formatPostedDate(job.postedDaysAgo)}
             </span>
           </>

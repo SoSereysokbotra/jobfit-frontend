@@ -179,7 +179,7 @@ export default function JobSearchPage() {
                   className="p-1.5 transition-colors"
                   style={{
                     background: view === mode ? "var(--color-primary-50)" : "var(--color-bg)",
-                    color: view === mode ? "var(--color-primary-600)" : "var(--color-text-tertiary)",
+                    color: view === mode ? "var(--color-primary-500)" : "var(--color-text-tertiary)",
                   }}
                 >
                   <Icon size={15} />
@@ -200,7 +200,7 @@ export default function JobSearchPage() {
                   style={{
                     background: "var(--color-primary-50)",
                     borderColor: "var(--color-primary-100)",
-                    color: "var(--color-primary-700)",
+                    color: "var(--color-primary-500)",
                   }}
                 >
                   {pill.label}
@@ -235,13 +235,15 @@ export default function JobSearchPage() {
                 <>
                   <button
                     onClick={search.clearFilters}
-                    className="px-4 py-2 rounded-md text-xs font-bold text-white bg-primary-600 hover:bg-primary-700 transition-all duration-200"
+                    className="px-4 py-2 rounded-md text-xs font-bold text-white transition-all duration-200 active:scale-95"
+                    style={{ background: "var(--color-primary-600)" }}
                   >
                     Clear all filters
                   </button>
                   <button
                     onClick={() => search.setFilter("query", "")}
-                    className="px-4 py-2 rounded-md text-xs font-bold border border-neutral-200 text-neutral-600 hover:bg-neutral-50 transition-all duration-200"
+                    className="px-4 py-2 rounded-md text-xs font-bold border transition-all duration-200 hover:bg-[var(--color-surface-hover)]"
+                    style={{ borderColor: "var(--color-border)", color: "var(--color-text-secondary)" }}
                   >
                     Reset search
                   </button>
@@ -251,7 +253,7 @@ export default function JobSearchPage() {
           ) : view === "list" ? (
             <div
               className="rounded-lg border divide-y overflow-hidden"
-              style={{ background: "var(--color-card)", borderColor: "var(--color-neutral-100)", boxShadow: "var(--shadow-sm)" }}
+              style={{ background: "var(--color-card)", borderColor: "var(--color-border)", boxShadow: "var(--shadow-sm)" }}
             >
               {search.paged.map((job) => (
                 <JobCard

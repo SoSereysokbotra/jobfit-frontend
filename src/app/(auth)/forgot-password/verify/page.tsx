@@ -104,13 +104,13 @@ function VerifyContent() {
         subtitle={
           <>
             Enter the 6-digit code sent to{" "}
-            <strong className="text-neutral-900">{email || "your email"}</strong>
+            <strong style={{ color: "var(--color-text-primary)" }}>{email || "your email"}</strong>
           </>
         }
         icon={<ShieldCheck className="w-5 h-5 text-primary-600" />}
       />
 
-      <p className="text-xs text-neutral-500">
+      <p className="text-xs" style={{ color: "var(--color-text-tertiary)" }}>
         If an account exists for that address, a code is on its way.
       </p>
 
@@ -120,13 +120,14 @@ function VerifyContent() {
         {/* Code field with expiry timer */}
         <div>
           <div className="flex justify-between items-center mb-1.5">
-            <label className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider">
+            <label className="block text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--color-text-secondary)" }}>
               Verification Code
             </label>
             <span
               className={`text-xs font-medium ${
-                timeLeft <= 0 ? "text-error-600" : "text-neutral-500"
+                timeLeft <= 0 ? "text-error-600" : ""
               }`}
+              style={timeLeft > 0 ? { color: "var(--color-text-tertiary)" } : {}}
             >
               {timeLeft > 0 ? `Expires in ${formatTime(timeLeft)}` : "Code expired"}
             </span>
@@ -167,7 +168,8 @@ function VerifyContent() {
 
         <Link
           href="/forgot-password"
-          className="text-xs text-neutral-500 hover:underline"
+          className="text-xs hover:underline"
+          style={{ color: "var(--color-text-tertiary)" }}
         >
           <span className="inline-flex items-center gap-1">
             <ArrowLeft className="w-3 h-3" />
@@ -186,7 +188,7 @@ export default function ForgotPasswordVerifyPage() {
       author="JobFits Team"
     >
       {/* Suspense required because useSearchParams() suspends during SSR */}
-      <Suspense fallback={<div className="h-64 animate-pulse rounded-lg bg-neutral-100" />}>
+      <Suspense fallback={<div className="h-64 animate-pulse rounded-lg" style={{ background: "var(--color-surface-hover)" }} />}>
         <VerifyContent />
       </Suspense>
     </AuthShell>

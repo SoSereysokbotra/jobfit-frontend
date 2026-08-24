@@ -66,56 +66,40 @@ export default function Sidebar({
     >
       {/* Brand Header */}
       <div
-        className={`flex items-center border-b transition-all duration-200 ${collapsed ? "flex-col gap-2 p-4" : "gap-3 p-6"}`}
+        className={`flex items-center border-b transition-all duration-200 ${collapsed ? "flex-col gap-2.5 p-3" : "gap-3 p-5"}`}
         style={{ borderColor: "var(--color-border)" }}
       >
-        {collapsed ? (
-          <button
-            type="button"
-            onClick={() => setCollapsed(false)}
-            className="group relative w-8 h-8 flex-shrink-0 cursor-pointer"
-            title="Expand sidebar"
-            aria-label="Expand sidebar"
-          >
+        <div className={`flex items-center ${collapsed ? "flex-col gap-2.5 w-full" : "justify-between w-full"}`}>
+          <Link href="/dashboard" className="flex items-center gap-3">
             <img
               src="/logo.png"
               alt="JobFits Logo"
-              className="absolute inset-0 w-8 h-8 rounded-lg object-contain bg-neutral-50 p-1 border transition-opacity duration-150 group-hover:opacity-0"
-              style={{ borderColor: "var(--color-border)" }}
+              className="w-8 h-8 rounded-full object-contain flex-shrink-0"
             />
-            <span
-              className="absolute inset-0 flex items-center justify-center rounded-lg opacity-0 transition-opacity duration-150 group-hover:opacity-100"
-              style={{ color: "var(--color-primary-700)" }}
+            {!collapsed && (
+              <div className="min-w-0">
+                <h1 className="text-base font-extrabold tracking-tight" style={{ color: "var(--color-text-primary)" }}>
+                  JobFits
+                </h1>
+                <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: "var(--color-text-tertiary)" }}>
+                  {workspaceName}
+                </span>
+              </div>
+            )}
+          </Link>
+          {collapsible && (
+            <button
+              type="button"
+              onClick={() => setCollapsed(!collapsed)}
+              className="p-1.5 rounded-lg transition-colors flex-shrink-0 hover:bg-[var(--color-surface-hover)]"
+              style={{ color: "var(--color-text-tertiary)" }}
+              title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+              aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             >
-              <PanelLeftOpen size={18} />
-            </span>
-          </button>
-        ) : (
-          <img
-            src="/logo.png"
-            alt="JobFits Logo"
-            className="w-8 h-8 rounded-lg object-contain bg-neutral-50 p-1 border flex-shrink-0"
-            style={{ borderColor: "var(--color-border)" }}
-          />
-        )}
-        {!collapsed && (
-          <div className="min-w-0">
-            <h1 className="text-base font-extrabold tracking-tight" style={{ color: "var(--color-primary-900)" }}>
-              JobFits
-            </h1>
-            <span className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider">{workspaceName}</span>
-          </div>
-        )}
-        {collapsible && !collapsed && (
-          <button
-            onClick={() => setCollapsed(!collapsed)}
-            className="p-1.5 rounded-lg hover:bg-neutral-100 text-neutral-400 hover:text-neutral-600 transition-colors flex-shrink-0 ml-auto"
-            title="Collapse sidebar"
-            aria-label="Collapse sidebar"
-          >
-            <PanelLeftClose size={18} />
-          </button>
-        )}
+              {collapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Navigation Items */}
@@ -125,7 +109,7 @@ export default function Sidebar({
             {group.group && !collapsed && (
               <p
                 className="text-[10px] font-extrabold px-3 py-1.5 uppercase tracking-wider"
-                style={{ color: "var(--color-neutral-400)" }}
+                style={{ color: "var(--color-text-tertiary)" }}
               >
                 {group.group}
               </p>
@@ -138,24 +122,33 @@ export default function Sidebar({
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`group relative flex items-center rounded-lg text-sm font-medium transition-all duration-200 ${collapsed ? "justify-center px-0 py-2" : "justify-between px-3 py-2"}`}
+                  className={`group relative flex items-center rounded-md text-sm font-medium transition-all duration-200 ${collapsed ? "w-10 h-10 mx-auto justify-center" : "justify-between px-3 py-2"}`}
                   style={{
                     background: isActive ? "var(--color-primary-50)" : "transparent",
-                    color: isActive ? "var(--color-primary-700)" : "var(--color-text-secondary)",
-                    // borderLeft: isActive ? "3px solid var(--color-primary-500)" : "3px solid transparent",
+                    color: isActive ? "var(--color-primary-500)" : "var(--color-text-secondary)",
                   }}
                 >
                   <div className={`flex items-center ${collapsed ? "" : "gap-2.5"}`}>
-                    <span className={`relative ${isActive ? "text-primary-600" : "text-neutral-400"}`}>
+                    <span
+                      className="relative flex items-center justify-center transition-colors"
+                      style={{ color: isActive ? "var(--color-primary-500)" : "var(--color-text-tertiary)" }}
+                    >
                       {item.icon}
                       {collapsed && item.badge ? (
                         <span
-                          className="absolute -top-1 -right-1 w-2 h-2 rounded-full ring-2 ring-white"
+                          className="absolute -top-1 -right-1 w-2 h-2 rounded-full ring-2 ring-[var(--color-card)]"
                           style={{ background: "var(--color-primary-500)" }}
                         />
                       ) : null}
                     </span>
-                    {!collapsed && <span className={isActive ? "font-bold text-primary-900" : ""}>{item.label}</span>}
+                    {!collapsed && (
+                      <span
+                        className={isActive ? "font-bold" : ""}
+                        style={{ color: isActive ? "var(--color-primary-500)" : "var(--color-text-secondary)" }}
+                      >
+                        {item.label}
+                      </span>
+                    )}
                   </div>
                   {!collapsed && item.badge && (
                     <span
@@ -182,8 +175,13 @@ export default function Sidebar({
 
       {/* User profile footer */}
       <div className={`border-t transition-all duration-200 ${collapsed ? "p-2" : "p-4"}`} style={{ borderColor: "var(--color-border)" }}>
-        <div className={`flex items-center rounded-lg hover:bg-neutral-50 transition-colors ${collapsed ? "flex-col gap-2 p-2" : "gap-3 p-2"}`}>
-          <div className="w-9 h-9 rounded-full bg-primary-100 flex items-center justify-center font-bold text-primary-700 text-sm flex-shrink-0">
+        <div
+          className={`flex items-center rounded-lg transition-colors hover:bg-[var(--color-surface-hover)] ${collapsed ? "flex-col gap-2 p-2" : "gap-3 p-2"}`}
+        >
+          <div
+            className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0"
+            style={{ background: "var(--color-primary-100)", color: "var(--color-primary-600)" }}
+          >
             {displayUser.initials}
           </div>
           {!collapsed && (
@@ -194,7 +192,8 @@ export default function Sidebar({
           )}
           <button
             onClick={handleLogout}
-            className="p-1.5 rounded hover:bg-red-50 text-neutral-400 hover:text-red-600 transition-colors flex-shrink-0"
+            className="p-1.5 rounded transition-colors flex-shrink-0 hover:bg-[var(--color-error-50)] hover:text-[var(--color-error-600)]"
+            style={{ color: "var(--color-text-tertiary)" }}
             title="Log Out"
           >
             <LogOut size={16} />

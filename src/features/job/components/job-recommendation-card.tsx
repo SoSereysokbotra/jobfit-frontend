@@ -49,13 +49,18 @@ export function JobRecommendationCard({
 
   return (
     <div
-      className="rounded-lg border p-5 transition-all duration-200 hover:shadow-md mb-4 bg-white relative group"
-      style={{ borderColor: "var(--color-border)", boxShadow: "var(--shadow-sm)" }}
+      className="rounded-lg border p-5 transition-all duration-200 hover:shadow-md mb-4 relative group"
+      style={{
+        background: "var(--color-card)",
+        borderColor: "var(--color-border)",
+        boxShadow: "var(--shadow-sm)",
+      }}
     >
       {/* Dismiss Button */}
       <button
         onClick={handleDismiss}
-        className="absolute top-4 right-4 p-1.5 rounded-md text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 opacity-0 group-hover:opacity-100 transition-all focus:opacity-100"
+        className="absolute top-4 right-4 p-1.5 rounded-md opacity-0 group-hover:opacity-100 transition-all focus:opacity-100 hover:bg-[var(--color-surface-hover)]"
+        style={{ color: "var(--color-text-tertiary)" }}
         aria-label="Dismiss recommendation"
       >
         <X size={16} />
@@ -63,18 +68,17 @@ export function JobRecommendationCard({
 
       <div className="flex flex-col md:flex-row gap-6">
         {/* Left Side: Match Score (Very Prominent) */}
-        <div className="flex flex-col items-center justify-center shrink-0 w-32 border-b md:border-b-0 md:border-r pb-4 md:pb-0 md:pr-6" style={{ borderColor: "var(--color-neutral-100)" }}>
+        <div className="flex flex-col items-center justify-center shrink-0 w-32 border-b md:border-b-0 md:border-r pb-4 md:pb-0 md:pr-6" style={{ borderColor: "var(--color-border)" }}>
           <div className="relative w-24 h-24 mb-2">
             <svg viewBox="0 0 36 36" className="w-full h-full transform -rotate-90">
               <path
-                className="text-neutral-100"
                 strokeWidth="3"
-                stroke="currentColor"
+                stroke="var(--color-border)"
                 fill="none"
                 d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
               />
               <path
-                style={{ color: job.match >= 90 ? "var(--color-success-600)" : job.match >= 75 ? "var(--color-warning-600)" : "var(--color-primary-500)" }}
+                style={{ color: job.match >= 90 ? "var(--color-success-600)" : job.match >= 75 ? "var(--color-warning-500)" : "var(--color-primary-500)" }}
                 strokeWidth="3"
                 strokeDasharray={`${job.match}, 100`}
                 strokeLinecap="round"
@@ -87,14 +91,14 @@ export function JobRecommendationCard({
               <span className="text-2xl font-extrabold leading-none" style={{ color: "var(--color-text-primary)" }}>
                 {job.match}%
               </span>
-              <span className="text-[10px] font-bold uppercase tracking-wider mt-1" style={{ color: "var(--color-text-secondary)" }}>Match</span>
+              <span className="text-[10px] font-bold uppercase tracking-wider mt-1" style={{ color: "var(--color-text-tertiary)" }}>Match</span>
             </div>
           </div>
           
           <button
             onClick={() => setExpanded(!expanded)}
             className="text-xs font-semibold flex items-center gap-1 hover:underline"
-            style={{ color: "var(--color-primary-600)" }}
+            style={{ color: "var(--color-primary-500)" }}
           >
             Click to see why {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
           </button>
@@ -150,7 +154,7 @@ export function JobRecommendationCard({
                 "px-4 py-2 rounded-md text-sm font-bold border transition-all duration-200 active:scale-95 inline-flex items-center gap-2",
                 saved
                   ? "border-primary-300 text-primary-600 bg-primary-50"
-                  : "border-neutral-200 text-neutral-600 bg-transparent hover:bg-neutral-50",
+                  : "border-[var(--color-border)] text-[var(--color-text-secondary)] bg-transparent hover:bg-[var(--color-surface-hover)]",
               )}
             >
               <Heart size={16} className={saved ? "fill-current" : ""} />
@@ -158,7 +162,8 @@ export function JobRecommendationCard({
             </button>
             <Link
               href={`/jobs/${job.id}`}
-              className="px-4 py-2 rounded-md text-sm font-bold text-neutral-600 hover:bg-neutral-100 transition-colors inline-flex items-center"
+              className="px-4 py-2 rounded-md text-sm font-bold transition-colors inline-flex items-center hover:bg-[var(--color-surface-hover)]"
+              style={{ color: "var(--color-text-secondary)" }}
             >
               View Details
             </Link>
@@ -168,42 +173,52 @@ export function JobRecommendationCard({
 
       {/* Expandable Breakdown — driven by the real backend sub-scores. */}
       {expanded && (
-        <div className="mt-6 pt-5 border-t" style={{ borderColor: "var(--color-neutral-100)" }}>
+        <div className="mt-6 pt-5 border-t" style={{ borderColor: "var(--color-border)" }}>
           <h4 className="text-sm font-bold mb-3" style={{ color: "var(--color-text-primary)" }}>Match Breakdown</h4>
           {breakdownEntries.length === 0 ? (
-            <p className="text-xs text-neutral-500">No breakdown available for this recommendation.</p>
+            <p className="text-xs" style={{ color: "var(--color-text-tertiary)" }}>No breakdown available for this recommendation.</p>
           ) : (
             <>
               <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mb-4">
                 {breakdownEntries.map(([key, value]) => (
-                  <div key={key} className="p-2.5 rounded-lg bg-neutral-50 border border-neutral-100 text-center">
+                  <div
+                    key={key}
+                    className="p-2.5 rounded-lg border text-center"
+                    style={{ background: "var(--color-bg-secondary)", borderColor: "var(--color-border)" }}
+                  >
                     <p className="text-lg font-extrabold" style={{ color: "var(--color-text-primary)" }}>{value}%</p>
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">{label(key)}</p>
+                    <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: "var(--color-text-tertiary)" }}>{label(key)}</p>
                   </div>
                 ))}
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="p-3 rounded-lg bg-neutral-50 border border-neutral-100">
-                  <p className="text-xs font-bold text-success-700 mb-2 flex items-center gap-1.5">
+                <div
+                  className="p-3 rounded-lg border"
+                  style={{ background: "var(--color-bg-secondary)", borderColor: "var(--color-border)" }}
+                >
+                  <p className="text-xs font-bold mb-2 flex items-center gap-1.5" style={{ color: "var(--color-success-600)" }}>
                     <Check size={14} /> Strong Alignments
                   </p>
-                  <ul className="text-xs space-y-1.5 text-neutral-600">
+                  <ul className="text-xs space-y-1.5" style={{ color: "var(--color-text-secondary)" }}>
                     {strong.length > 0 ? (
                       strong.map(([key, value]) => <li key={key}>• {label(key)}: {value}%</li>)
                     ) : (
-                      <li className="text-neutral-400">No standout strengths yet.</li>
+                      <li style={{ color: "var(--color-text-tertiary)" }}>No standout strengths yet.</li>
                     )}
                   </ul>
                 </div>
-                <div className="p-3 rounded-lg bg-warning-50 border border-warning-100">
-                  <p className="text-xs font-bold text-warning-700 mb-2 flex items-center gap-1.5">
+                <div
+                  className="p-3 rounded-lg border"
+                  style={{ background: "var(--color-warning-50)", borderColor: "var(--color-warning-100)" }}
+                >
+                  <p className="text-xs font-bold mb-2 flex items-center gap-1.5" style={{ color: "var(--color-warning-600)" }}>
                     <AlertTriangle size={14} /> Areas to Improve
                   </p>
-                  <ul className="text-xs space-y-1.5 text-neutral-600">
+                  <ul className="text-xs space-y-1.5" style={{ color: "var(--color-text-secondary)" }}>
                     {gaps.length > 0 ? (
                       gaps.map(([key, value]) => <li key={key}>• {label(key)}: {value}%</li>)
                     ) : (
-                      <li className="text-neutral-400">No significant gaps.</li>
+                      <li style={{ color: "var(--color-text-tertiary)" }}>No significant gaps.</li>
                     )}
                   </ul>
                 </div>

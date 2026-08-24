@@ -65,13 +65,23 @@ export const toast = {
   },
 };
 
+const EMPTY_TOASTS: ToastMessage[] = [];
+
+function subscribe(callback: () => void) {
+  listeners.add(callback);
+  return () => {
+    listeners.delete(callback);
+  };
+}
+
+function getSnapshot(): ToastMessage[] {
+  return toasts;
+}
+
+function getServerSnapshot(): ToastMessage[] {
+  return EMPTY_TOASTS;
+}
+
 export function useToastStore(): ToastMessage[] {
-  return useSyncExternalStore(
-    (callback) => {
-      listeners.add(callback);
-      return () => listeners.delete(callback);
-    },
-    () => toasts,
-    () => []
-  );
+  return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 }

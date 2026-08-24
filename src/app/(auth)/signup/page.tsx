@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Mail, Lock, User, ArrowRight, AlertCircle } from "lucide-react";
+import { Mail, Lock, User, ArrowRight, AlertCircle, Check } from "lucide-react";
 import {
   AuthShell,
   AuthHeading,
@@ -29,11 +29,14 @@ export default function SignupPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
-  // RegisterDto requires @MinLength(8); mirror it so the user sees it before submitting.
   const passwordTooShort = password.length > 0 && password.length < 8;
 
-  const handleEmailSignup = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!agreeTerms || !email || !password || password !== confirmPassword || passwordTooShort) {
+      return;
+    }
+
     setIsSubmitting(true);
     setErrorMessage("");
 
@@ -41,29 +44,27 @@ export default function SignupPage() {
       await authApi.register({
         email: email.trim(),
         password,
-        name: name.trim() || undefined,
-        agreeToTerms: agreeTerms,
+        name: name.trim(),
+        agreeToTerms: true,
       });
-      // The 6-digit code is tied to an httpOnly cookie the browser now holds, but
-      // the *email* is not readable from JS — pass it along so the verify page can
-      // offer "resend", which needs it in the request body.
+
+      // The backend does not auto-login on register; send them to verify their email.
       router.push(`/verify-email?email=${encodeURIComponent(email.trim())}`);
-    } catch (error) {
-      const err = error as ApiError;
-      setErrorMessage(
-        err instanceof ApiError
-          ? // Validation failures return one message per field.
-            err.messages.join(" ")
-          : "Something went wrong. Please try again.",
-      );
+    } catch (err: unknown) {
+      if (err instanceof ApiError) {
+        setErrorMessage(err.messages.join(" ") || "Registration failed. Please try again.");
+      } else {
+        setErrorMessage("An unexpected error occurred. Please try again.");
+      }
+    } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
     <AuthShell
-      quote="The only way to do great work is to love what you do. Find your fit with JobFits."
-      author="Steve Jobs"
+      quote="The secret of getting ahead is getting started."
+      author="Mark Twain"
     >
       <AuthHeading
         title={t("auth.createAccount")}
@@ -76,13 +77,11 @@ export default function SignupPage() {
         </Alert>
       )}
 
-      {/* EMAIL/PASSWORD FORM */}
-      <form className="space-y-4" onSubmit={handleEmailSignup}>
+      <form className="space-y-4" onSubmit={handleSubmit}>
         <TextField
           label={t("auth.fullNameLabel")}
           icon={User}
-          type="text"
-          maxLength={120}
+          required
           placeholder={t("auth.fullNamePlaceholder")}
           value={name}
           onChange={(e) => setName(e.target.value)}
@@ -135,55 +134,67 @@ export default function SignupPage() {
 
         {/* Terms checkbox — RegisterDto @Equals(true), so this gates submission. */}
         <div className="flex items-start mt-2">
-          <div className="flex items-center h-5">
+          <label htmlFor="terms" className="flex items-start gap-2.5 cursor-pointer select-none">
             <input
               id="terms"
               type="checkbox"
               checked={agreeTerms}
               onChange={(e) => setAgreeTerms(e.target.checked)}
-              className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-neutral-300 rounded bg-white"
+              className="sr-only"
             />
-          </div>
-          <div className="ml-3 text-xs">
-            <label htmlFor="terms" className="text-neutral-500">
+            <span
+              className="flex items-center justify-center w-4 h-4 rounded border transition-all duration-150 shrink-0 mt-0.5"
+              style={{
+                background: agreeTerms ? "var(--color-primary-600)" : "var(--color-bg)",
+                borderColor: agreeTerms ? "var(--color-primary-600)" : "var(--color-border)",
+              }}
+            >
+              {agreeTerms && <Check size={11} style={{ color: "#ffffff" }} />}
+            </span>
+            <span className="text-xs" style={{ color: "var(--color-text-secondary)" }}>
               I agree to the{" "}
-              <a href="#" className="text-primary-600 hover:underline">Terms of Service</a> and{" "}
-              <a href="#" className="text-primary-600 hover:underline">Privacy Policy</a>
-            </label>
-          </div>
+              <a href="#" className="text-primary-600 dark:text-primary-400 hover:underline">Terms of Service</a> and{" "}
+              <a href="#" className="text-primary-600 dark:text-primary-400 hover:underline">Privacy Policy</a>
+            </span>
+          </label>
         </div>
 
         <Button
           type="submit"
           fullWidth
           loading={isSubmitting}
-          loadingText="Creating account…"
+          loadingText={t("auth.signingUp")}
           disabled={!agreeTerms || !email || !password || password !== confirmPassword || passwordTooShort}
         >
-          {t("auth.createAccount")} <ArrowRight className="w-4 h-4" />
+          {t("auth.signUp")} <ArrowRight className="w-4 h-4" />
         </Button>
       </form>
 
       {/* DIVIDER */}
       <div className="relative my-4">
         <div className="absolute inset-0 flex items-center" aria-hidden="true">
-          <div className="w-full border-t border-neutral-200" />
+          <div className="w-full border-t" style={{ borderColor: "var(--color-border)" }} />
         </div>
         <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-white px-3 text-neutral-500">Or continue with</span>
+          <span
+            className="px-3"
+            style={{ background: "var(--color-card)", color: "var(--color-text-tertiary)" }}
+          >
+            Or continue with
+          </span>
         </div>
       </div>
 
       {/* TODO(backend): no OAuth endpoints exist. Kept visible but disabled. */}
       <SocialAuthButtons onGoogle={() => {}} onLinkedIn={() => {}} disabled />
-      <p className="text-center text-xs text-neutral-400 mt-2">
+      <p className="text-center text-xs mt-2" style={{ color: "var(--color-text-tertiary)" }}>
         Social sign-up is coming soon.
       </p>
 
       {/* SIGN IN LINK */}
       <div className="text-center text-xs mt-4">
-        <span className="text-neutral-500">{t("auth.haveAccount")} </span>
-        <Link href="/login" className="text-primary-600 font-semibold hover:underline">
+        <span style={{ color: "var(--color-text-tertiary)" }}>{t("auth.alreadyHaveAccount")} </span>
+        <Link href="/login" className="text-primary-600 dark:text-primary-400 font-semibold hover:underline">
           {t("auth.signIn")}
         </Link>
       </div>

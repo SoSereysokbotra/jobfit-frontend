@@ -113,7 +113,7 @@ export default function RecommendationsPage() {
             <button
               onClick={handleRefresh}
               disabled={isFetching}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-semibold transition-all duration-200 hover:bg-neutral-50 disabled:opacity-60"
+              className="flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-semibold transition-all duration-200 hover:bg-[var(--color-surface-hover)] disabled:opacity-60"
               style={{ borderColor: "var(--color-border)", color: "var(--color-text-secondary)", background: "var(--color-card)" }}
             >
               <RefreshCw size={16} className={isFetching ? "animate-spin" : ""} />
@@ -141,7 +141,7 @@ export default function RecommendationsPage() {
             <div className="flex items-center justify-between mb-4 gap-4 flex-wrap">
               <div>
                 <p className="text-sm font-semibold" style={{ color: "var(--color-text-primary)" }}>
-                  <span className="font-extrabold" style={{ color: "var(--color-primary-600)" }}>
+                  <span className="font-extrabold" style={{ color: "var(--color-primary-500)" }}>
                     {visibleResults.length}
                   </span>{" "}
                   recommendations matched
@@ -157,7 +157,7 @@ export default function RecommendationsPage() {
                 {/* Mobile filter toggle */}
                 <button
                   onClick={() => setFilterDrawerOpen(true)}
-                  className="lg:hidden flex items-center gap-2 px-3 py-2 rounded-md border text-sm font-semibold transition-colors hover:bg-neutral-50"
+                  className="lg:hidden flex items-center gap-2 px-3 py-2 rounded-md border text-sm font-semibold transition-colors hover:bg-[var(--color-surface-hover)]"
                   style={{ borderColor: "var(--color-border)", color: "var(--color-text-secondary)", background: "var(--color-card)" }}
                 >
                   <SlidersHorizontal size={16} />
@@ -221,7 +221,7 @@ export default function RecommendationsPage() {
                     className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border transition-colors hover:opacity-80"
                     style={{
                       background: "var(--color-primary-50)",
-                      color: "var(--color-primary-700)",
+                      color: "var(--color-primary-500)",
                       borderColor: "var(--color-primary-200)",
                     }}
                   >

@@ -48,12 +48,12 @@ export default function SeekerLayout({ children }: { children: React.ReactNode }
           className="fixed inset-0 z-[999] flex flex-col items-center justify-center gap-4"
           style={{ background: "var(--color-bg-secondary)" }}
         >
-          <Image src="/logo.png" alt="JobFits" width={64} height={64} className="rounded-xl" />
+          <Image src="/logo.png" alt="JobFits" width={64} height={64} className="rounded-full object-contain" />
           <Loader2
             className="w-7 h-7 animate-spin"
-            style={{ color: "var(--color-primary-600)" }}
+            style={{ color: "var(--color-primary-500)" }}
           />
-          <p className="text-sm" style={{ color: "var(--color-text-tertiary)" }}>
+          <p className="text-sm font-medium" style={{ color: "var(--color-text-secondary)" }}>
             Loading your workspace…
           </p>
         </div>

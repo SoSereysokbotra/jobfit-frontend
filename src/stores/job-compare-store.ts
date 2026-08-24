@@ -69,9 +69,11 @@ function getSnapshot(): Job[] {
   return selectedJobs;
 }
 
+const EMPTY_JOBS: Job[] = [];
+
 // Always empty on the server; real value hydrates after mount.
 function getServerSnapshot(): Job[] {
-  return [];
+  return EMPTY_JOBS;
 }
 
 // ── Mutators ──────────────────────────────────────────────────────────────────

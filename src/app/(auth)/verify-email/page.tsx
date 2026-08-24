@@ -183,17 +183,17 @@ function VerifyEmailContent() {
                 </div>
               </div>
               <div>
-                <h1 className="text-2xl font-bold tracking-tight text-neutral-900">
+                <h1 className="text-2xl font-bold tracking-tight" style={{ color: "var(--color-text-primary)" }}>
                   {t("auth.emailVerified")}
                 </h1>
-                <p className="text-sm text-neutral-500 mt-1">
+                <p className="text-sm mt-1" style={{ color: "var(--color-text-secondary)" }}>
                   Your account is ready. Let&apos;s set up your profile.
                 </p>
               </div>
               <Button fullWidth onClick={() => router.push("/onboarding/resume")}>
                 {t("auth.continueToOnboarding")} <ArrowRight className="w-4 h-4" />
               </Button>
-              <p className="text-xs text-neutral-400">
+              <p className="text-xs" style={{ color: "var(--color-text-tertiary)" }}>
                 Redirecting automatically in {redirectCountdown}s…
               </p>
             </div>
@@ -204,12 +204,12 @@ function VerifyEmailContent() {
 
               {/* Title block */}
               <div className="text-center space-y-2">
-                <h1 className="text-2xl font-bold tracking-tight text-neutral-900">
+                <h1 className="text-2xl font-bold tracking-tight" style={{ color: "var(--color-text-primary)" }}>
                   {t("auth.checkInbox")}
                 </h1>
-                <p className="text-sm text-neutral-500 leading-relaxed">
+                <p className="text-sm leading-relaxed" style={{ color: "var(--color-text-secondary)" }}>
                   We&apos;ve sent a 6-digit code to{" "}
-                  <span className="font-semibold text-neutral-900 break-all">
+                  <span className="font-semibold break-all" style={{ color: "var(--color-text-primary)" }}>
                     {email || "your email address"}
                   </span>
                   .<br />
@@ -223,10 +223,10 @@ function VerifyEmailContent() {
               <form className="space-y-4" onSubmit={handleVerify}>
                 <div>
                   <div className="flex justify-between items-center mb-1.5">
-                    <label className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider">
+                    <label className="block text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--color-text-secondary)" }}>
                       {t("auth.verificationCode")}
                     </label>
-                    <span className={`text-xs font-medium ${timeLeft <= 0 ? "text-error-600" : "text-neutral-500"}`}>
+                    <span className={`text-xs font-medium ${timeLeft <= 0 ? "text-error-600" : ""}`} style={timeLeft > 0 ? { color: "var(--color-text-tertiary)" } : {}}>
                       {timeLeft > 0 ? `Expires in ${formatTime(timeLeft)}` : "Code expired"}
                     </span>
                   </div>
@@ -253,10 +253,10 @@ function VerifyEmailContent() {
               {/* Divider */}
               <div className="relative">
                 <div className="absolute inset-0 flex items-center" aria-hidden="true">
-                  <div className="w-full border-t border-neutral-200" />
+                  <div className="w-full border-t" style={{ borderColor: "var(--color-border)" }} />
                 </div>
                 <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-white px-3 text-neutral-400 tracking-wider">
+                  <span className="px-3 tracking-wider" style={{ background: "var(--color-card)", color: "var(--color-text-tertiary)" }}>
                     {t("auth.openEmailApp")}
                   </span>
                 </div>
@@ -269,12 +269,13 @@ function VerifyEmailContent() {
                     key={client.id}
                     type="button"
                     onClick={() => window.open(client.url, "_blank", "noopener,noreferrer")}
-                    className="group flex flex-col items-center gap-2 p-4 rounded-lg border border-neutral-200 bg-white hover:border-primary-300 hover:bg-primary-50 transition-all duration-200 active:scale-[0.97]"
+                    className="group flex flex-col items-center gap-2 p-4 rounded-lg border transition-all duration-200 active:scale-[0.97] hover:border-primary-300 hover:bg-[var(--color-surface-hover)]"
+                    style={{ background: "var(--color-bg)", borderColor: "var(--color-border)" }}
                   >
-                    <span className="text-neutral-500 group-hover:text-primary-700 transition-colors duration-200">
+                    <span className="group-hover:text-primary-500 transition-colors duration-200" style={{ color: "var(--color-text-tertiary)" }}>
                       {client.icon}
                     </span>
-                    <span className="text-xs font-medium text-neutral-600 group-hover:text-primary-700 transition-colors duration-200">
+                    <span className="text-xs font-medium group-hover:text-primary-500 transition-colors duration-200" style={{ color: "var(--color-text-secondary)" }}>
                       {client.label}
                     </span>
                   </button>
@@ -282,14 +283,14 @@ function VerifyEmailContent() {
               </div>
 
               {/* Divider */}
-              <div className="w-full border-t border-neutral-200" />
+              <div className="w-full border-t" style={{ borderColor: "var(--color-border)" }} />
 
               {/* Help text */}
               <div className="space-y-1 text-center">
-                <p className="text-sm text-neutral-500">
+                <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
                   Can&apos;t see the e-mail? Please check the spam folder.
                 </p>
-                <p className="text-sm text-neutral-500">
+                <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
                   <button
                     type="button"
                     disabled={!email || resendTimer > 0}
@@ -299,7 +300,7 @@ function VerifyEmailContent() {
                     {resendTimer > 0 ? `Resend code in ${resendTimer}s` : "Resend code"}
                   </button>
                 </p>
-                <p className="text-sm text-neutral-500">
+                <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
                   Wrong e-mail?{" "}
                   <Link href="/signup" className="font-semibold text-primary-600 hover:underline">
                     Please re-enter your address.

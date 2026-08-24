@@ -126,14 +126,14 @@ export default function ProfilePage() {
           </div>
 
           <div className="flex-1 min-w-0">
-            <h1 className="text-2xl font-bold text-neutral-900 truncate">
+            <h1 className="text-2xl font-bold truncate" style={{ color: "var(--color-text-primary)" }}>
               {profile!.fullName}
             </h1>
             {profile!.headline && (
-              <p className="text-sm text-neutral-600 mt-0.5">{profile!.headline}</p>
+              <p className="text-sm mt-0.5" style={{ color: "var(--color-text-secondary)" }}>{profile!.headline}</p>
             )}
 
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 mt-3 text-xs text-neutral-500">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 mt-3 text-xs" style={{ color: "var(--color-text-tertiary)" }}>
               {profile!.locationLabel && (
                 <span className="inline-flex items-center gap-1.5">
                   <MapPin className="w-3.5 h-3.5" /> {profile!.locationLabel}
@@ -153,17 +153,17 @@ export default function ProfilePage() {
 
             <div className="flex flex-wrap gap-2 mt-3">
               {profile!.linkedinUrl && (
-                <Link href={profile!.linkedinUrl} target="_blank" className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary-600 hover:underline">
+                <Link href={profile!.linkedinUrl} target="_blank" className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary-600 dark:text-primary-400 hover:underline">
                   <Linkedin className="w-3.5 h-3.5" /> LinkedIn
                 </Link>
               )}
               {profile!.githubUrl && (
-                <Link href={profile!.githubUrl} target="_blank" className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary-600 hover:underline">
+                <Link href={profile!.githubUrl} target="_blank" className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary-600 dark:text-primary-400 hover:underline">
                   <Github className="w-3.5 h-3.5" /> GitHub
                 </Link>
               )}
               {profile!.portfolioUrl && (
-                <Link href={profile!.portfolioUrl} target="_blank" className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary-600 hover:underline">
+                <Link href={profile!.portfolioUrl} target="_blank" className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary-600 dark:text-primary-400 hover:underline">
                   <Globe className="w-3.5 h-3.5" /> Portfolio
                 </Link>
               )}
@@ -173,12 +173,12 @@ export default function ProfilePage() {
           {/* Completeness meter — derived client-side; the backend has no such field. */}
           <div className="sm:w-40 shrink-0">
             <div className="flex items-center justify-between mb-1.5">
-              <span className="text-xs font-semibold text-neutral-500 uppercase tracking-wider">
+              <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--color-text-tertiary)" }}>
                 Complete
               </span>
-              <span className="text-xs font-bold text-primary-700">{completeness}%</span>
+              <span className="text-xs font-bold" style={{ color: "var(--color-primary-500)" }}>{completeness}%</span>
             </div>
-            <div className="h-2 w-full rounded-full bg-neutral-100 overflow-hidden">
+            <div className="h-2 w-full rounded-full overflow-hidden" style={{ background: "var(--color-border)" }}>
               <div
                 className="h-full rounded-full transition-all duration-500"
                 style={{ width: `${completeness}%`, background: "var(--color-primary-500)" }}
@@ -208,8 +208,8 @@ export default function ProfilePage() {
             className={cn(
               "px-4 py-2.5 text-sm font-semibold whitespace-nowrap border-b-2 -mb-px transition-all duration-200",
               tab === item.id
-                ? "border-primary-500 text-primary-700"
-                : "border-transparent text-neutral-500 hover:text-neutral-700",
+                ? "border-primary-500 text-primary-600 dark:text-primary-400"
+                : "border-transparent text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200",
             )}
           >
             {item.label}

@@ -10,6 +10,7 @@ import MatchScoreBadge from "@/shared/components/data-display/match-score-badge"
 import { Reveal } from "@/shared/components/motion/reveal";
 import { LogoMarquee, type MarqueeLogo } from "./logo-marquee";
 import { LanguageSwitcher } from "@/shared/components/ui/language-switcher";
+import { ThemeToggle } from "@/shared/components/ui/theme-toggle";
 import { useTranslation } from "@/providers/locale-provider";
 
 /* Auto-scrolling platform logos shown above the product preview. */
@@ -50,8 +51,8 @@ export function HeroSection() {
   ];
 
   return (
-    <section className="relative overflow-hidden" style={{ background: "var(--color-bg)" }}>
-      {/* Soft brand tint behind the headline */}
+    <section className="relative overflow-hidden pt-4 pb-20 lg:pb-32" style={{ background: "var(--color-bg)" }}>
+      {/* Background glow */}
       <div
         className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-4xl h-96 rounded-full opacity-40 pointer-events-none"
         style={{ background: "var(--color-primary-50)", filter: "blur(90px)" }}
@@ -65,10 +66,9 @@ export function HeroSection() {
             <img
               src="/logo.png"
               alt="JobFits Logo"
-              className="w-9 h-9 rounded-lg object-contain p-1 border"
-              style={{ borderColor: "var(--color-border)", background: "var(--color-bg-secondary)" }}
+              className="w-9 h-9 rounded-full object-contain flex-shrink-0"
             />
-            <span className="text-lg font-extrabold tracking-tight" style={{ color: "var(--color-primary-900)" }}>
+            <span className="text-lg font-extrabold tracking-tight" style={{ color: "var(--color-text-primary)" }}>
               JobFits
             </span>
           </Link>
@@ -79,7 +79,7 @@ export function HeroSection() {
               <Link
                 key={link.label}
                 href={link.href}
-                className="px-3.5 py-2 rounded-md text-sm font-medium transition-colors hover:bg-neutral-50"
+                className="px-3.5 py-2 rounded-md text-sm font-medium transition-colors hover:bg-[var(--color-surface-hover)]"
                 style={{ color: "var(--color-text-secondary)" }}
               >
                 {link.label}
@@ -89,9 +89,10 @@ export function HeroSection() {
 
           <div className="flex items-center gap-2.5">
             <LanguageSwitcher />
+            <ThemeToggle />
             <Link
               href="/login"
-              className="hidden sm:inline-flex px-4 py-2 rounded-md text-sm font-semibold transition-colors hover:bg-neutral-50"
+              className="hidden sm:inline-flex px-4 py-2 rounded-md text-sm font-semibold transition-colors hover:bg-[var(--color-surface-hover)]"
               style={{ color: "var(--color-text-secondary)" }}
             >
               {t("marketing.login")}

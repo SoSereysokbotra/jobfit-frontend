@@ -156,18 +156,19 @@ export function EducationList({
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="text-sm font-bold text-neutral-900 truncate">
+                    <p className="text-sm font-bold truncate" style={{ color: "var(--color-text-primary)" }}>
                       {item.degreeLevelLabel} · {item.fieldOfStudy}
                     </p>
-                    <p className="text-sm text-neutral-600 truncate">{item.institution}</p>
-                    <p className="text-xs text-neutral-400 mt-0.5">{item.dateRangeLabel}</p>
+                    <p className="text-sm truncate" style={{ color: "var(--color-text-secondary)" }}>{item.institution}</p>
+                    <p className="text-xs mt-0.5" style={{ color: "var(--color-text-tertiary)" }}>{item.dateRangeLabel}</p>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
                     <button
                       type="button"
                       onClick={() => openEdit(item)}
                       aria-label={`Edit ${item.fieldOfStudy}`}
-                      className="p-1.5 rounded-md text-neutral-400 hover:bg-neutral-50 hover:text-neutral-600 transition-colors duration-200"
+                      className="p-1.5 rounded-md hover:bg-[var(--color-surface-hover)] transition-colors duration-200"
+                      style={{ color: "var(--color-text-tertiary)" }}
                     >
                       <Pencil className="w-4 h-4" />
                     </button>
@@ -176,7 +177,8 @@ export function EducationList({
                       onClick={() => void onRemove(item.id)}
                       disabled={isMutating}
                       aria-label={`Delete ${item.fieldOfStudy}`}
-                      className="p-1.5 rounded-md text-neutral-400 hover:bg-error-50 hover:text-error-600 transition-colors duration-200 disabled:opacity-40"
+                      className="p-1.5 rounded-md hover:bg-error-50 hover:text-error-600 transition-colors duration-200 disabled:opacity-40"
+                      style={{ color: "var(--color-text-tertiary)" }}
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -190,7 +192,7 @@ export function EducationList({
                 )}
 
                 {item.description && (
-                  <p className="text-sm text-neutral-600 mt-3 whitespace-pre-line">
+                  <p className="text-sm mt-3 whitespace-pre-line" style={{ color: "var(--color-text-secondary)" }}>
                     {item.description}
                   </p>
                 )}

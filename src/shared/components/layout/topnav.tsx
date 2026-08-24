@@ -39,10 +39,9 @@ export default function TopNav({ onMenuToggle, className = "", user }: TopNavPro
           <img
             src="/logo.png"
             alt="JobFits Logo"
-            className="w-7 h-7 rounded-md object-contain bg-neutral-50 p-0.5 border"
-            style={{ borderColor: "var(--color-border)" }}
+            className="w-7 h-7 rounded-full object-contain flex-shrink-0"
           />
-          <span className="font-extrabold text-sm" style={{ color: "var(--color-primary-900)" }}>JobFits</span>
+          <span className="font-extrabold text-sm" style={{ color: "var(--color-text-primary)" }}>JobFits</span>
         </Link>
 
         {/* Search Bar Button Trigger (desktop) */}
@@ -66,7 +65,7 @@ export default function TopNav({ onMenuToggle, className = "", user }: TopNavPro
             className="px-1.5 py-0.5 text-[10px] font-mono font-semibold rounded border"
             style={{
               background: "var(--color-primary-50)",
-              color: "var(--color-primary-700)",
+              color: "var(--color-primary-500)",
               borderColor: "var(--color-primary-100)",
             }}
           >

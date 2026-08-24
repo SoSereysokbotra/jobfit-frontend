@@ -99,19 +99,24 @@ export function SkillsEditor({
           {skills.map((skill) => (
             <span
               key={skill.id}
-              className="inline-flex items-center gap-2 pl-3 pr-2 py-1.5 rounded-full border border-neutral-200 bg-white"
+              className="inline-flex items-center gap-2 pl-3 pr-2 py-1.5 rounded-full border"
+              style={{
+                background: "var(--color-bg)",
+                borderColor: "var(--color-border)",
+              }}
             >
-              <span className="text-sm font-semibold text-neutral-900">{skill.name}</span>
+              <span className="text-sm font-semibold" style={{ color: "var(--color-text-primary)" }}>{skill.name}</span>
               <Badge variant="neutral">{PROFICIENCY_LABELS[skill.proficiencyLevel]}</Badge>
               {typeof skill.yearsOfExperience === "number" && (
-                <span className="text-xs text-neutral-500">{skill.yearsOfExperience}y</span>
+                <span className="text-xs" style={{ color: "var(--color-text-tertiary)" }}>{skill.yearsOfExperience}y</span>
               )}
               <button
                 type="button"
                 onClick={() => void onEndorse(skill.skillId)}
                 disabled={isMutating}
                 aria-label={`Endorse ${skill.name}`}
-                className="inline-flex items-center gap-1 text-xs text-neutral-500 hover:text-primary-600 transition-colors duration-200 disabled:opacity-40"
+                className="inline-flex items-center gap-1 text-xs hover:text-primary-600 transition-colors duration-200 disabled:opacity-40"
+                style={{ color: "var(--color-text-tertiary)" }}
               >
                 <ThumbsUp className="w-3.5 h-3.5" />
                 {skill.endorsementCount}
@@ -121,7 +126,8 @@ export function SkillsEditor({
                 onClick={() => void onRemove(skill.skillId)}
                 disabled={isMutating}
                 aria-label={`Remove ${skill.name}`}
-                className="p-1 rounded-full text-neutral-400 hover:bg-error-50 hover:text-error-600 transition-colors duration-200 disabled:opacity-40"
+                className="p-1 rounded-full hover:bg-error-50 hover:text-error-600 transition-colors duration-200 disabled:opacity-40"
+                style={{ color: "var(--color-text-tertiary)" }}
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -132,7 +138,11 @@ export function SkillsEditor({
             <button
               type="button"
               onClick={() => setShowForm(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-dashed border-neutral-200 text-xs font-semibold text-neutral-600 hover:bg-neutral-50 transition-all duration-200"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-dashed text-xs font-semibold transition-all duration-200 hover:bg-[var(--color-surface-hover)]"
+              style={{
+                borderColor: "var(--color-border)",
+                color: "var(--color-text-secondary)",
+              }}
             >
               <Plus className="w-3.5 h-3.5" /> Add skill
             </button>
@@ -143,7 +153,11 @@ export function SkillsEditor({
       {showForm && (
         <form
           onSubmit={handleAdd}
-          className="rounded-lg border border-neutral-200 bg-white p-4 space-y-4"
+          className="rounded-lg border p-4 space-y-4"
+          style={{
+            background: "var(--color-card)",
+            borderColor: "var(--color-border)",
+          }}
         >
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <Select
