@@ -103,23 +103,16 @@ export function fromDateInputValue(value: string): string | undefined {
   return Number.isNaN(date.getTime()) ? undefined : date.toISOString();
 }
 
+import { formatDateRange as helperFormatDateRange, formatSalaryRange as helperFormatSalaryRange } from "@/shared/utils/formatters";
+
 /** "Mar 2022 — Present" */
 export function formatDateRange(startDate: string, endDate?: string, isCurrent?: boolean): string {
-  const fmt = (iso: string) => {
-    const date = new Date(iso);
-    return Number.isNaN(date.getTime())
-      ? ""
-      : date.toLocaleDateString("en-US", { month: "short", year: "numeric" });
-  };
-  const start = fmt(startDate);
-  const end = isCurrent || !endDate ? "Present" : fmt(endDate);
-  return start ? `${start} — ${end}` : end;
+  return helperFormatDateRange(startDate, endDate, isCurrent);
 }
 
 export function formatSalaryRange(range: ProfileDto["salaryRange"]): string {
   if (!range) return "";
-  const fmt = (n: number) => `${Math.round(n / 1000)}K`;
-  return `${range.currency} ${fmt(range.min)} – ${fmt(range.max)}`;
+  return helperFormatSalaryRange({ salaryMin: Math.round(range.min / 1000), salaryMax: Math.round(range.max / 1000) }, undefined, range.currency || "USD");
 }
 
 // ---- View models ----

@@ -12,12 +12,15 @@ export function AuthHeading({ title, subtitle, icon }: AuthHeadingProps) {
   return (
     <div>
       {icon && (
-        <div className="flex items-center justify-center w-12 h-12 rounded-full bg-primary-50 border border-primary-100 mb-4">
+        <div
+          className="flex items-center justify-center w-12 h-12 rounded-full border mb-4"
+          style={{ background: "var(--color-primary-50)", borderColor: "var(--color-primary-100)" }}
+        >
           {icon}
         </div>
       )}
-      <h2 className="text-2xl font-bold tracking-tight text-neutral-900">{title}</h2>
-      {subtitle && <p className="text-sm text-neutral-500 mt-1">{subtitle}</p>}
+      <h2 className="text-2xl font-bold tracking-tight" style={{ color: "var(--color-text-primary)" }}>{title}</h2>
+      {subtitle && <p className="text-sm mt-1" style={{ color: "var(--color-text-secondary)" }}>{subtitle}</p>}
     </div>
   );
 }

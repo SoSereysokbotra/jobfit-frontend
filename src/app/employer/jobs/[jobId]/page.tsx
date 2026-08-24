@@ -44,7 +44,7 @@ export default function EmployerJobDetailPage() {
   }
 
   const appCount = analytics?.applicationsCount ?? applicants.length;
-  const avgMatch = analytics?.averageMatchScore ?? null;
+  const bands = analytics?.candidateBands ?? null;
   const views = analytics?.views ?? 0;
   const applyRate = views ? ((appCount / views) * 100).toFixed(1) : "0";
   const recent = applicants.slice(0, 3);
@@ -53,7 +53,10 @@ export default function EmployerJobDetailPage() {
     { label: "Views", value: `${views}`, icon: <Eye size={18} />, accent: "bg-info-50 text-info-600" },
     { label: "Applications", value: `${appCount}`, icon: <Users size={18} />, accent: "bg-primary-50 text-primary-600" },
     { label: "Apply Rate", value: `${applyRate}%`, icon: <Target size={18} />, accent: "bg-success-50 text-success-600" },
-    { label: "Avg Match", value: avgMatch !== null ? `${Math.round(avgMatch)}%` : "—", icon: <Star size={18} />, accent: "bg-warning-50 text-warning-600" },
+    // Was "Avg Match", reading an average the API could never compute — it rendered "—"
+    // on every load. A count of strong candidates is both real and what an employer
+    // actually wants; the score behind it is evidenced for ordering, not magnitude.
+    { label: "Strong Matches", value: bands ? `${bands.strong}` : "—", icon: <Star size={18} />, accent: "bg-warning-50 text-warning-600" },
   ];
 
   return (
@@ -71,7 +74,9 @@ export default function EmployerJobDetailPage() {
           </div>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-sm text-content-tertiary">
             <span className="flex items-center gap-1"><MapPin size={13} /> {job.location}</span>
-            <span className="flex items-center gap-1 text-success-600"><DollarSign size={13} /> ${job.salaryMin}K – ${job.salaryMax}K</span>
+            {job.salary && (
+              <span className="flex items-center gap-1 text-success-600"><DollarSign size={13} /> {job.salary}</span>
+            )}
             <span>Posted {job.postedAt}</span>
           </div>
         </div>
@@ -107,7 +112,7 @@ export default function EmployerJobDetailPage() {
           <dl className="space-y-2 text-sm">
             <InfoRow label="Type" value={`${job.employmentType} · ${job.remote}`} />
             <InfoRow label="Location" value={job.location} />
-            <InfoRow label="Salary" value={`$${job.salaryMin}K – $${job.salaryMax}K`} />
+            <InfoRow label="Salary" value={job.salary ?? "Not stated"} />
             <InfoRow label="Skills" value={`${job.skillCount} listed`} />
           </dl>
         </div>

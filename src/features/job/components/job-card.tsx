@@ -2,7 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { MapPin, DollarSign, Clock, Heart, ExternalLink } from "lucide-react";
+import { MapPin, DollarSign, Clock, Heart, ExternalLink, Check } from "lucide-react";
 import { cn } from "@/shared/utils/cn";
 import MatchScoreBadge from "@/shared/components/data-display/match-score-badge";
 import { AppliedPill } from "@/features/application/components/applied-pill";
@@ -17,6 +17,12 @@ interface JobCardProps {
   saved?: boolean;
   onToggleSave?: (id: string) => void;
   onApply?: (id: string) => void;
+  /** Whether this job is currently selected for comparison. */
+  comparing?: boolean;
+  /** Called when the user clicks the compare checkbox. Undefined = hide the checkbox. */
+  onToggleCompare?: (job: Job) => void;
+  /** When true the checkbox is shown but disabled (max 3 reached and not selected). */
+  compareDisabled?: boolean;
 }
 
 function TypePill({ children, tone = "primary" }: { children: React.ReactNode; tone?: "primary" | "neutral" }) {
@@ -25,8 +31,8 @@ function TypePill({ children, tone = "primary" }: { children: React.ReactNode; t
       className="text-xs font-semibold px-2 py-0.5 rounded-full whitespace-nowrap"
       style={
         tone === "primary"
-          ? { background: "var(--color-primary-50)", color: "var(--color-primary-700)" }
-          : { background: "var(--color-neutral-100)", color: "var(--color-neutral-600)" }
+          ? { background: "var(--color-primary-50)", color: "var(--color-primary-500)" }
+          : { background: "var(--color-neutral-100)", color: "var(--color-text-secondary)" }
       }
     >
       {children}
@@ -46,7 +52,28 @@ export function JobCard({
   saved = false,
   onToggleSave,
   onApply,
+  comparing = false,
+  onToggleCompare,
+  compareDisabled = false,
 }: JobCardProps) {
+  const compareBtn = onToggleCompare ? (
+    <button
+      onClick={(e) => { e.preventDefault(); onToggleCompare(job); }}
+      disabled={compareDisabled && !comparing}
+      aria-label={comparing ? `Remove ${job.title} from compare` : `Add ${job.title} to compare`}
+      aria-pressed={comparing}
+      title={compareDisabled && !comparing ? "Max 3 jobs selected" : comparing ? "Remove from compare" : "Add to compare"}
+      className="flex items-center justify-center w-5 h-5 rounded border transition-all duration-150 shrink-0"
+      style={{
+        background: comparing ? "var(--color-primary-600)" : "var(--color-card)",
+        borderColor: comparing ? "var(--color-primary-600)" : "var(--color-border)",
+        opacity: compareDisabled && !comparing ? 0.35 : 1,
+        cursor: compareDisabled && !comparing ? "not-allowed" : "pointer",
+      }}
+    >
+      {comparing && <Check size={11} style={{ color: "#ffffff" }} />}
+    </button>
+  ) : null;
   const actions = (
     <>
       {/* Same treatment as the job detail page: once an application exists, show it and
@@ -54,7 +81,8 @@ export function JobCard({
       <AppliedPill jobId={job.id}>
         <button
           onClick={() => onApply?.(job.id)}
-          className="px-3 py-1.5 rounded-md text-xs font-bold text-white bg-primary-600 hover:bg-primary-700 transition-all duration-200 active:scale-95"
+          className="px-3 py-1.5 rounded-md text-xs font-bold text-white transition-all duration-200 active:scale-95"
+          style={{ background: "var(--color-primary-600)" }}
         >
           Apply
         </button>
@@ -66,7 +94,7 @@ export function JobCard({
           "px-3 py-1.5 rounded-md text-xs font-bold border transition-all duration-200 active:scale-95 inline-flex items-center justify-center gap-1",
           saved
             ? "border-primary-300 text-primary-600 bg-primary-50"
-            : "border-neutral-200 text-neutral-500 bg-transparent hover:bg-neutral-50",
+            : "border-[var(--color-border)] text-[var(--color-text-secondary)] bg-transparent hover:bg-[var(--color-surface-hover)]",
         )}
       >
         <Heart size={12} className={saved ? "fill-current" : ""} />
@@ -75,14 +103,20 @@ export function JobCard({
     </>
   );
 
+  const salary = formatSalaryRange(job);
+
   const meta = (
     <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2">
       <span className="flex items-center gap-1 text-xs" style={{ color: "var(--color-text-tertiary)" }}>
         <MapPin size={11} /> {job.location}
       </span>
-      <span className="flex items-center gap-1 text-xs font-medium" style={{ color: "var(--color-success-600)" }}>
-        <DollarSign size={11} /> {formatSalaryRange(job)}
-      </span>
+      {/* The whole span, not just the text: a null range with the icon still rendered
+          leaves a bare "$" promising a number that never arrives. */}
+      {salary && (
+        <span className="flex items-center gap-1 text-xs font-medium" style={{ color: "var(--color-success-600)" }}>
+          <DollarSign size={11} /> {salary}
+        </span>
+      )}
       {/* No pill when the employer has not said. This rendered `job.type` unconditionally,
           and the mapper defaulted it to "Full-time", so every card claimed full-time —
           including the part-time teaching post. An absent fact shows as nothing. */}
@@ -110,19 +144,22 @@ export function JobCard({
     return (
       <div
         className="rounded-lg border p-5 flex flex-col transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 group"
-        style={{ background: "var(--color-card)", borderColor: "var(--color-border)", boxShadow: "var(--shadow-sm)" }}
+        style={{ background: "var(--color-card)", borderColor: comparing ? "var(--color-primary-400)" : "var(--color-border)", boxShadow: comparing ? "var(--shadow-md)" : "var(--shadow-sm)" }}
       >
         <div className="flex items-start justify-between mb-3">
-          <div
-            className="w-11 h-11 rounded-lg flex items-center justify-center text-white font-extrabold text-base"
-            style={{ background: job.logoBg, boxShadow: "var(--shadow-sm)" }}
-          >
-            {job.logo}
+          <div className="flex items-center gap-2">
+            {compareBtn}
+            <div
+              className="w-11 h-11 rounded-lg flex items-center justify-center text-white font-extrabold text-base"
+              style={{ background: job.logoBg, boxShadow: "var(--shadow-sm)" }}
+            >
+              {job.logo}
+            </div>
           </div>
           <MatchScoreBadge score={job.match} size="sm" />
         </div>
         <Link href={`/jobs/${job.id}`} className="block">
-          <h3 className="text-sm font-bold group-hover:text-primary-700 transition-colors" style={{ color: "var(--color-text-primary)" }}>
+          <h3 className="text-sm font-bold transition-colors hover:underline" style={{ color: "var(--color-text-primary)" }}>
             {job.title}
           </h3>
         </Link>
@@ -133,8 +170,8 @@ export function JobCard({
             {job.description}
           </p>
         )}
-        <div className="flex items-center justify-between mt-4 pt-3 border-t" style={{ borderColor: "var(--color-neutral-100)" }}>
-          <span className="flex items-center gap-1 text-xs" style={{ color: "var(--color-text-disabled)" }}>
+        <div className="flex items-center justify-between mt-4 pt-3 border-t" style={{ borderColor: "var(--color-border)" }}>
+          <span className="flex items-center gap-1 text-xs" style={{ color: "var(--color-text-tertiary)" }}>
             <Clock size={11} /> {formatPostedDate(job.postedDaysAgo)}
           </span>
           <div className="flex gap-1.5">{actions}</div>
@@ -145,7 +182,12 @@ export function JobCard({
 
   /* LIST variant */
   return (
-    <div className="flex items-start gap-4 px-5 py-4 hover:bg-primary-50 transition-colors group">
+    <div
+      className="flex items-start gap-3 px-5 py-4 transition-colors group hover:bg-[var(--color-surface-hover)]"
+      style={comparing ? { background: "var(--color-primary-50)" } : {}}
+    >
+      {/* Compare checkbox — only in list view when enabled */}
+      {compareBtn && <div className="flex items-center pt-1">{compareBtn}</div>}
       <div
         className="w-11 h-11 rounded-lg flex items-center justify-center text-white font-extrabold text-base shrink-0"
         style={{ background: job.logoBg, boxShadow: "var(--shadow-sm)" }}
@@ -156,7 +198,7 @@ export function JobCard({
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
             <Link href={`/jobs/${job.id}`} className="block">
-              <h3 className="text-sm font-bold truncate group-hover:text-primary-700 transition-colors" style={{ color: "var(--color-text-primary)" }}>
+              <h3 className="text-sm font-bold truncate transition-colors hover:underline" style={{ color: "var(--color-text-primary)" }}>
                 {job.title}
               </h3>
             </Link>
@@ -170,7 +212,7 @@ export function JobCard({
             <p className="text-xs mt-2 line-clamp-1" style={{ color: "var(--color-text-tertiary)" }}>
               {job.description}
             </p>
-            <span className="flex items-center gap-1 text-xs mt-1.5" style={{ color: "var(--color-text-disabled)" }}>
+            <span className="flex items-center gap-1 text-xs mt-1.5" style={{ color: "var(--color-text-tertiary)" }}>
               <Clock size={11} /> {formatPostedDate(job.postedDaysAgo)}
             </span>
           </>

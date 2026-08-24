@@ -25,7 +25,7 @@ export function SectionCard({
       className={`rounded-lg border overflow-hidden ${className}`}
       style={{ background: "var(--color-card)", borderColor: "var(--color-border)", boxShadow: "var(--shadow-sm)" }}
     >
-      <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: "var(--color-neutral-100)" }}>
+      <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: "var(--color-border)" }}>
         <div className="flex items-center gap-3">
           {headerIcon}
           <div>

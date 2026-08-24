@@ -1,5 +1,8 @@
+"use client";
+
 import React from "react";
 import Link from "next/link";
+import { useTranslation } from "@/providers/locale-provider";
 
 const FOOTER_COLUMNS = [
   {
@@ -31,6 +34,8 @@ const FOOTER_COLUMNS = [
 
 /** Site footer — dark brand bookend with link columns and legal row. */
 export function SiteFooter() {
+  const { t } = useTranslation();
+
   return (
     <footer style={{ background: "var(--color-primary-900)" }}>
       <div className="max-w-7xl mx-auto px-6 lg:px-8 py-14">
@@ -41,7 +46,7 @@ export function SiteFooter() {
               <img
                 src="/logo.png"
                 alt="JobFits Logo"
-                className="w-9 h-9 rounded-lg object-contain p-1 bg-on-primary-surface border border-on-primary-border"
+                className="w-9 h-9 rounded-full object-contain flex-shrink-0"
               />
               <span className="text-lg font-extrabold tracking-tight text-on-primary">JobFits</span>
             </Link>
@@ -78,7 +83,7 @@ export function SiteFooter() {
           className="mt-12 pt-6 border-t border-on-primary-border flex flex-col sm:flex-row items-center justify-between gap-3"
         >
           <p className="text-xs text-on-primary-muted">
-            © {new Date().getFullYear()} JobFits. All rights reserved.
+            © {new Date().getFullYear()} JobFits. {t("marketing.copyright")}
           </p>
           <div className="flex items-center gap-5">
             <Link href="#" className="text-xs text-on-primary-muted hover:text-on-primary transition-colors">

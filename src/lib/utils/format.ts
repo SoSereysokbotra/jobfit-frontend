@@ -6,6 +6,8 @@
  * `@/shared/types/shared.types` — these are the derivation helpers that feed them.
  */
 
+import { getStoredLocale } from "@/stores/locale-store";
+
 /** Logo background tokens, mirroring the palette the mock job data used. */
 const LOGO_BG_TOKENS = [
   "var(--color-primary-700)",
@@ -22,14 +24,13 @@ const LOGO_BG_TOKENS = [
   "var(--color-success-500)",
 ] as const;
 
-/**
- * Backend salaries are absolute yearly amounts; the frontend `Job` type carries
- * $K bounds. Returns a whole number of thousands.
- */
-export function toSalaryK(amount: number | null | undefined): number {
-  if (amount == null || !Number.isFinite(amount)) return 0;
-  return Math.round(amount / 1000);
-}
+// REMOVED: toSalaryK (MENTOR_REVIEW_2026-08-18 §12).
+//
+// It divided the API's absolute amount by 1000 and rounded, and mapped a missing salary
+// to 0. Both were lossy in ways that showed on screen: every salary-less job (348 of 367)
+// rendered as "$0K – $0K", and a $300/month Phnom Penh salary rounded to 0 — the same
+// output as "unknown". `Job.salaryMin/salaryMax` now carry the absolute amount or null,
+// and `formatSalaryRange` abbreviates only where abbreviating loses nothing.
 
 /**
  * Whole days between an ISO timestamp and now, floored at 0 so a
@@ -72,34 +73,76 @@ export function logoBgFor(key: string | null | undefined): string {
    (applications, saved jobs, offers). ── */
 
 /** "today" / "yesterday" / "5 days ago" / "2 weeks ago" */
-export function formatDaysAgo(daysAgo: number): string {
-  if (daysAgo <= 0) return "today";
-  if (daysAgo === 1) return "yesterday";
-  if (daysAgo < 14) return `${daysAgo} days ago`;
-  return `${Math.round(daysAgo / 7)} weeks ago`;
+export function formatDaysAgo(daysAgo: number, locale?: string): string {
+  const currentLocale = locale || getStoredLocale();
+  try {
+    const rtf = new Intl.RelativeTimeFormat(currentLocale, { numeric: "auto" });
+    if (daysAgo <= 0) return rtf.format(0, "day");
+    if (daysAgo < 14) return rtf.format(-Math.round(daysAgo), "day");
+    return rtf.format(-Math.round(daysAgo / 7), "week");
+  } catch {
+    if (daysAgo <= 0) return "today";
+    if (daysAgo === 1) return "yesterday";
+    if (daysAgo < 14) return `${daysAgo} days ago`;
+    return `${Math.round(daysAgo / 7)} weeks ago`;
+  }
 }
 
 /** "today" / "tomorrow" / "in 3 days" */
-export function formatInDays(inDays: number): string {
-  if (inDays <= 0) return "today";
-  if (inDays === 1) return "tomorrow";
-  return `in ${inDays} days`;
+export function formatInDays(inDays: number, locale?: string): string {
+  const currentLocale = locale || getStoredLocale();
+  try {
+    const rtf = new Intl.RelativeTimeFormat(currentLocale, { numeric: "auto" });
+    return rtf.format(Math.round(inDays), "day");
+  } catch {
+    if (inDays <= 0) return "today";
+    if (inDays === 1) return "tomorrow";
+    return `in ${inDays} days`;
+  }
 }
 
 /** A future calendar date N days from today, e.g. "Jul 21". */
-export function formatDateInDays(inDays: number): string {
+export function formatDateInDays(inDays: number, locale?: string): string {
+  const currentLocale = locale || getStoredLocale();
   const d = new Date();
   d.setDate(d.getDate() + inDays);
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  try {
+    return new Intl.DateTimeFormat(currentLocale, { month: "short", day: "numeric" }).format(d);
+  } catch {
+    return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  }
 }
 
 /** Whole-dollar currency, e.g. 155000 → "$155,000". */
-export function formatCurrency(amount: number): string {
-  return `$${Math.round(amount).toLocaleString("en-US")}`;
+export function formatCurrency(amount: number, locale?: string, currency: string = "USD"): string {
+  const currentLocale = locale || getStoredLocale();
+  try {
+    return new Intl.NumberFormat(currentLocale, {
+      style: "currency",
+      currency,
+      maximumFractionDigits: 0,
+    }).format(amount);
+  } catch {
+    return `$${Math.round(amount).toLocaleString()}`;
+  }
 }
 
 /** Compact currency for tight spaces, e.g. 201000 → "$201K". */
-export function formatCurrencyShort(amount: number): string {
-  if (amount >= 1000) return `$${Math.round(amount / 1000)}K`;
-  return `$${Math.round(amount)}`;
+export function formatCurrencyShort(amount: number, locale?: string, currency: string = "USD"): string {
+  const currentLocale = locale || getStoredLocale();
+  try {
+    if (amount >= 1000) {
+      const kValue = Math.round(amount / 1000);
+      const formatted = new Intl.NumberFormat(currentLocale, { maximumFractionDigits: 0 }).format(kValue);
+      return currency === "USD" ? `$${formatted}K` : `${formatted}K ${currency}`;
+    }
+    return new Intl.NumberFormat(currentLocale, {
+      style: "currency",
+      currency,
+      maximumFractionDigits: 0,
+    }).format(amount);
+  } catch {
+    if (amount >= 1000) return `$${Math.round(amount / 1000)}K`;
+    return `$${Math.round(amount)}`;
+  }
 }

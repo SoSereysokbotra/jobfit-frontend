@@ -1,7 +1,8 @@
 /** Backend DTO -> view adapters for the employer feature. */
 import type { BadgeTone } from "@/shared/components/data-display/badge";
 import type { ApplicationStatus } from "@/features/application/api/application.api";
-import { daysSince, initialsFrom, toSalaryK } from "@/lib/utils/format";
+import { daysSince, initialsFrom } from "@/lib/utils/format";
+import { formatSalaryRange } from "@/shared/utils/formatters";
 import type {
   EmployerApplicationDto,
   EmployerCompanyDto,
@@ -44,8 +45,13 @@ export interface EmployerJobView {
   statusTone: BadgeTone;
   postedAt: string;
   location: string;
-  salaryMin: number;
-  salaryMax: number;
+  /**
+   * Preformatted pay band, or null when the posting states none. A STRING, not two
+   * numbers, so the two screens that render it cannot re-invent the "$…K" they both
+   * hardcoded (MENTOR_REVIEW_2026-08-18 §12) — the currency and period live in the
+   * formatter, which reads them off the API.
+   */
+  salary: string | null;
   remote: string;
   /** TODO(backend): Job has no employmentType column — defaulted. */
   employmentType: string;
@@ -62,8 +68,12 @@ export function toEmployerJobView(dto: EmployerJobDto): EmployerJobView {
     statusTone: JOB_STATUS_TONE[status],
     postedAt: postedLabel(dto.createdAt),
     location: dto.location?.trim() || (REMOTE_LABEL[dto.remoteType] === "Remote" ? "Remote" : "—"),
-    salaryMin: toSalaryK(dto.salaryRange?.min),
-    salaryMax: toSalaryK(dto.salaryRange?.max),
+    salary: formatSalaryRange({
+      salaryMin: dto.salaryRange?.min ?? null,
+      salaryMax: dto.salaryRange?.max ?? null,
+      salaryCurrency: dto.salaryRange?.currency,
+      salaryPeriod: dto.salaryRange?.period,
+    }),
     remote: REMOTE_LABEL[(dto.remoteType ?? "").toUpperCase()] ?? "On-site",
     employmentType: "Full-time",
     skillCount: dto.skillIds.length,
@@ -177,6 +187,7 @@ export interface CompanyView {
   website: string;
   industry: string;
   size: string;
+  foundedYear: number | null;
   isVerified: boolean;
   city: string;
   state: string;
@@ -192,6 +203,7 @@ export function toCompanyView(dto: EmployerCompanyDto): CompanyView {
     website: dto.website ?? "",
     industry: dto.industry ?? "",
     size: dto.size ?? "",
+    foundedYear: dto.foundedYear ?? null,
     isVerified: dto.isVerified,
     city: dto.city ?? "",
     state: dto.state ?? "",

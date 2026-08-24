@@ -102,9 +102,11 @@ export function OtpInput({ value, onChange, length = 6, disabled = false, autoFo
           onPaste={(e) => handlePaste(i, e)}
           onFocus={(e) => e.target.select()}
           className={cn(
-            "text-center text-lg font-bold rounded-md border-2 outline-none transition-all duration-200 text-primary-700 disabled:opacity-50 disabled:cursor-not-allowed",
+            "text-center text-lg font-bold rounded-md border-2 outline-none transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed",
             fullWidth ? "flex-1 min-w-0 aspect-square" : "w-12 h-12",
-            digit ? "border-primary-500 bg-primary-50" : "border-neutral-200 bg-white",
+            digit
+              ? "border-primary-500 bg-primary-50 text-primary-600 dark:text-primary-400"
+              : "border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text-primary)]",
           )}
         />
       ))}

@@ -13,13 +13,14 @@
 import React from "react";
 import { Building2, ExternalLink, StickyNote, Trash2, Wallet } from "lucide-react";
 import type { SavedExternalJob } from "../api/saved-external-jobs.api";
+import { formatDate } from "@/shared/utils/formatters";
 
 /** "2026-08-13T…" → "13 Aug 2026". */
 function formatSavedAt(iso: string): string {
   const date = new Date(iso);
   return Number.isNaN(date.getTime())
     ? ""
-    : date.toLocaleDateString(undefined, {
+    : formatDate(date, {
         day: "numeric",
         month: "short",
         year: "numeric",

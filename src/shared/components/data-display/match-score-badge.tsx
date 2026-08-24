@@ -23,7 +23,7 @@ export default function MatchScoreBadge({ score, size = "md", className = "" }: 
   const dashArray = `${(scored ? score / 100 : 0) * circumference} ${circumference}`;
 
   const scoreColor = !scored ? "var(--color-text-tertiary)" :
-    score >= 85 ? "var(--color-primary-600)" :
+    score >= 85 ? "var(--color-primary-500)" :
     score >= 70 ? "var(--color-warning-500)" :
     "var(--color-error-500)";
 
@@ -33,7 +33,7 @@ export default function MatchScoreBadge({ score, size = "md", className = "" }: 
         <circle
           cx={dim / 2} cy={dim / 2} r={r}
           fill="none"
-          stroke="var(--color-neutral-100)"
+          stroke="var(--color-border)"
           strokeWidth={sw}
         />
         <circle

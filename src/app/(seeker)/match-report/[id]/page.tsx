@@ -42,6 +42,7 @@ import { SectionCard } from "@/shared/components/layout/section-card";
 import { EmptyState } from "@/shared/components/data-display/empty-state";
 import { Skeleton } from "@/shared/components/feedback/skeleton";
 import { Alert } from "@/shared/components/feedback/alert";
+import { formatDate } from "@/shared/utils/formatters";
 
 const cta =
   "px-4 py-2 rounded-md text-xs font-bold text-white bg-primary-600 hover:bg-primary-700 transition-all duration-200 inline-flex items-center gap-1.5";
@@ -610,7 +611,7 @@ export default function MatchReportPage() {
             </span>
           )}
           <span style={{ color: "var(--color-text-tertiary)" }}>
-            Scanned {generated.toLocaleDateString()} from {job.source}
+            Scanned {formatDate(generated)} from {job.source}
           </span>
         </div>
       </header>

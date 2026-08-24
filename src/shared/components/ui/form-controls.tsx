@@ -9,7 +9,8 @@ function FieldLabel({ htmlFor, children }: { htmlFor?: string; children: React.R
   return (
     <label
       htmlFor={htmlFor}
-      className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-1.5"
+      className="block text-xs font-semibold uppercase tracking-wider mb-1.5"
+      style={{ color: "var(--color-text-secondary)" }}
     >
       {children}
     </label>
@@ -41,6 +42,7 @@ export function Select<T extends string>({
   error,
   id,
   className,
+  style,
   ...props
 }: SelectProps<T>) {
   return (
@@ -53,23 +55,28 @@ export function Select<T extends string>({
           onChange={(e) => onChange(e.target.value as T)}
           aria-invalid={error ? true : undefined}
           className={cn(
-            "block w-full appearance-none py-2.5 pl-3 pr-10 border bg-white rounded-md text-neutral-900 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm transition-all duration-200",
-            error ? "border-error-500" : "border-neutral-200",
-            !value && "text-neutral-400",
+            "block w-full appearance-none py-2.5 pl-3 pr-10 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm transition-all duration-200",
+            !value && "opacity-60",
             className,
           )}
+          style={{
+            background: "var(--color-bg)",
+            borderColor: error ? "var(--color-error-500)" : "var(--color-border)",
+            color: "var(--color-text-primary)",
+            ...style,
+          }}
           {...props}
         >
-          {placeholder && <option value="">{placeholder}</option>}
+          {placeholder && <option value="" style={{ background: "var(--color-card)", color: "var(--color-text-primary)" }}>{placeholder}</option>}
           {options.map((option) => (
-            <option key={option.value} value={option.value} className="text-neutral-900">
+            <option key={option.value} value={option.value} style={{ background: "var(--color-card)", color: "var(--color-text-primary)" }}>
               {option.label}
             </option>
           ))}
         </select>
-        <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
+        <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: "var(--color-text-tertiary)" }} />
       </div>
-      {error && <p className="mt-1 text-xs text-error-500">{error}</p>}
+      {error && <p className="mt-1 text-xs" style={{ color: "var(--color-error-500)" }}>{error}</p>}
     </div>
   );
 }
@@ -81,7 +88,7 @@ interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement
 }
 
 /** Labeled textarea (bio, descriptions). */
-export function Textarea({ label, error, hint, id, className, ...props }: TextareaProps) {
+export function Textarea({ label, error, hint, id, className, style, ...props }: TextareaProps) {
   return (
     <div>
       {label && <FieldLabel htmlFor={id}>{label}</FieldLabel>}
@@ -89,16 +96,21 @@ export function Textarea({ label, error, hint, id, className, ...props }: Textar
         id={id}
         aria-invalid={error ? true : undefined}
         className={cn(
-          "block w-full py-2.5 px-3 border bg-white rounded-md text-neutral-900 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm transition-all duration-200 resize-y",
-          error ? "border-error-500" : "border-neutral-200",
+          "block w-full py-2.5 px-3 border rounded-md placeholder:text-[var(--color-text-disabled)] focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm transition-all duration-200 resize-y",
           className,
         )}
+        style={{
+          background: "var(--color-bg)",
+          borderColor: error ? "var(--color-error-500)" : "var(--color-border)",
+          color: "var(--color-text-primary)",
+          ...style,
+        }}
         {...props}
       />
       {error ? (
-        <p className="mt-1 text-xs text-error-500">{error}</p>
+        <p className="mt-1 text-xs" style={{ color: "var(--color-error-500)" }}>{error}</p>
       ) : hint ? (
-        <p className="mt-1 text-xs text-neutral-400">{hint}</p>
+        <p className="mt-1 text-xs" style={{ color: "var(--color-text-tertiary)" }}>{hint}</p>
       ) : null}
     </div>
   );
@@ -200,9 +212,10 @@ export function PillMultiSelect<T extends string>({
               className={cn(
                 "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold transition-all duration-200",
                 selected
-                  ? "bg-primary-50 border-primary-500 text-primary-700"
-                  : "bg-white border-neutral-200 text-neutral-600 hover:bg-neutral-50",
+                  ? "bg-primary-50 border-primary-500 text-primary-700 dark:text-primary-400"
+                  : "border-[var(--color-border)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)]",
               )}
+              style={selected ? undefined : { background: "var(--color-bg)" }}
             >
               {selected && <Check className="w-3.5 h-3.5" />}
               {option.label}
@@ -210,7 +223,7 @@ export function PillMultiSelect<T extends string>({
           );
         })}
       </div>
-      {hint && <p className="mt-1.5 text-xs text-neutral-400">{hint}</p>}
+      {hint && <p className="mt-1.5 text-xs" style={{ color: "var(--color-text-tertiary)" }}>{hint}</p>}
     </div>
   );
 }

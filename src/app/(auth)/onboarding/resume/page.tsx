@@ -28,6 +28,7 @@ import { useParsingStatus, useParsedData } from "@/features/resume/hooks/use-res
 import { validateResumeFile, RESUME_ACCEPT_ATTR, type ParsedResumeDataDto } from "@/features/resume/api/resume.api";
 import { useSession, displayName } from "@/features/auth/hooks/use-session";
 import { useCreateProfile, useUpdatePreferences, useProfile } from "@/features/user-profile/hooks/use-profile";
+import { toast } from "@/stores/toast-store";
 import { parseLocationInput } from "@/features/user-profile/api/profile.mappers";
 import type { EmploymentType, RemoteType } from "@/features/user-profile/api/profile.api";
 import { ApiError } from "@/lib/api/client";
@@ -1512,7 +1513,7 @@ function FirstMatchesStep({
                           Apply Now
                         </button>
                         <button
-                          onClick={() => alert(`Saved ${job.title} to saved jobs list!`)}
+                          onClick={() => toast.success(`Saved ${job.title} to saved jobs list!`)}
                           className="py-1.5 px-3 border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-700 font-semibold rounded text-xs transition-colors"
                         >
                           Save for later

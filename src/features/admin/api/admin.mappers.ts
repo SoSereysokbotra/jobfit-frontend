@@ -21,13 +21,13 @@ export function userStatus(u: { isActive: boolean; deletedAt: string | null; isL
   return "active";
 }
 
+import { formatPostedDate, formatDate } from "@/shared/utils/formatters";
+
 /** "just now" / "3 days ago" / "—" for a nullable ISO timestamp. */
 export function ago(iso: string | null | undefined): string {
   if (!iso) return "—";
   const d = daysSince(iso);
-  if (d === 0) return "today";
-  if (d === 1) return "yesterday";
-  return `${d} days ago`;
+  return formatPostedDate(d);
 }
 
 export function dateLabel(iso: string | null | undefined): string {
@@ -35,7 +35,7 @@ export function dateLabel(iso: string | null | undefined): string {
   const d = new Date(iso);
   return Number.isNaN(d.getTime())
     ? "—"
-    : d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+    : formatDate(d, { year: "numeric", month: "short", day: "numeric" });
 }
 
 export function userInitials(u: { name: string; email: string }): string {

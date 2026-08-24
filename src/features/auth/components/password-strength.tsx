@@ -35,12 +35,12 @@ export function PasswordStrengthMeter({ password }: { password: string }) {
 
   return (
     <div className="mt-2 space-y-1">
-      <div className="h-1 w-full bg-neutral-200 rounded-full overflow-hidden">
+      <div className="h-1 w-full rounded-full overflow-hidden" style={{ background: "var(--color-border)" }}>
         <div className={`h-full ${strength.color} ${strength.width} transition-all duration-300`} />
       </div>
       <div className="flex justify-between items-center text-xs">
-        <span className="text-neutral-500">Strength: {strength.label}</span>
-        <span className="text-neutral-400">Min 8 chars, 1 upper, 1 num</span>
+        <span style={{ color: "var(--color-text-secondary)" }}>Strength: {strength.label}</span>
+        <span style={{ color: "var(--color-text-tertiary)" }}>Min 8 chars, 1 upper, 1 num</span>
       </div>
     </div>
   );

@@ -3,6 +3,7 @@
 import React from "react";
 import { Info } from "lucide-react";
 import { useJobMatch } from "@/features/matching/hooks/use-job-match";
+import { useCountUp } from "@/shared/hooks/use-count-up";
 
 interface MatchScoreWidgetProps {
   jobId: string;
@@ -23,6 +24,8 @@ interface MatchScoreWidgetProps {
  */
 export function MatchScoreWidget({ jobId }: MatchScoreWidgetProps) {
   const { data, isLoading, isError } = useJobMatch(jobId);
+  const rawScore = data ? Math.round(data.score) : 0;
+  const animatedScore = useCountUp(rawScore, 900);
 
   if (isLoading) {
     return (
@@ -46,7 +49,7 @@ export function MatchScoreWidget({ jobId }: MatchScoreWidgetProps) {
     );
   }
 
-  const score = Math.round(data.score);
+  const score = rawScore;
   const bars = [
     { label: "Skills", score: data.breakdown.skills },
     { label: "Experience", score: data.breakdown.experience },
@@ -75,7 +78,7 @@ export function MatchScoreWidget({ jobId }: MatchScoreWidgetProps) {
           </svg>
           <div className="absolute inset-0 flex items-center justify-center">
             <span className="text-lg font-bold" style={{ color: "var(--color-primary-600)" }}>
-              {score}%
+              {animatedScore}%
             </span>
           </div>
         </div>

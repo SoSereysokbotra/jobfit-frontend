@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useMemo } from "react";
+import { Check } from "lucide-react";
 import type { EmploymentType, ExperienceLevel, Job, RemoteType } from "@/shared/types/shared.types";
 import { filterJobs, type JobSearchFilters } from "../hooks/use-job-search";
 
@@ -43,7 +44,7 @@ export function valuesOf(jobs: Job[], pick: (j: Job) => string | undefined): str
 
 export function FilterSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="pb-4 border-b last:border-b-0 last:pb-0" style={{ borderColor: "var(--color-neutral-100)" }}>
+    <div className="pb-4 border-b last:border-b-0 last:pb-0" style={{ borderColor: "var(--color-border)" }}>
       <p className="text-xs font-bold uppercase tracking-wider mb-2.5" style={{ color: "var(--color-text-tertiary)" }}>
         {title}
       </p>
@@ -61,18 +62,26 @@ export function CheckOption({
   onChange: () => void;
 }) {
   return (
-    <label className="flex items-center justify-between gap-2 py-1 cursor-pointer group">
-      <span className="flex items-center gap-2 text-sm" style={{ color: "var(--color-text-primary)" }}>
+    <label className="flex items-center justify-between gap-2 py-1 cursor-pointer group select-none">
+      <span className="flex items-center gap-2.5 text-sm" style={{ color: "var(--color-text-primary)" }}>
         <input
           type="checkbox"
           checked={checked}
           onChange={onChange}
-          className="w-4 h-4 rounded border-neutral-300"
-          style={{ accentColor: "var(--color-primary-600)" }}
+          className="sr-only"
         />
-        <span className="group-hover:text-primary-700 transition-colors">{label}</span>
+        <span
+          className="flex items-center justify-center w-4 h-4 rounded border transition-all duration-150 shrink-0"
+          style={{
+            background: checked ? "var(--color-primary-600)" : "var(--color-card)",
+            borderColor: checked ? "var(--color-primary-600)" : "var(--color-border)",
+          }}
+        >
+          {checked && <Check size={11} style={{ color: "#ffffff" }} />}
+        </span>
+        <span className="transition-colors group-hover:text-[var(--color-primary-500)]">{label}</span>
       </span>
-      <span className="text-xs" style={{ color: "var(--color-text-disabled)" }}>{count}</span>
+      <span className="text-xs" style={{ color: "var(--color-text-tertiary)" }}>{count}</span>
     </label>
   );
 }
@@ -189,7 +198,7 @@ export function JobFilters({
       <FilterSection title="Minimum Salary">
         <div className="flex justify-between text-xs mb-1.5">
           <span style={{ color: "var(--color-text-tertiary)" }}>Show jobs paying at least</span>
-          <span className="font-bold" style={{ color: "var(--color-primary-600)" }}>
+          <span className="font-bold" style={{ color: "var(--color-primary-500)" }}>
             {filters.salaryMin > 0 ? `$${filters.salaryMin}K` : "Any"}
           </span>
         </div>
@@ -202,29 +211,50 @@ export function JobFilters({
           onChange={(e) => setFilter("salaryMin", Number(e.target.value))}
           className="w-full h-2 rounded-full appearance-none cursor-pointer"
           style={{
-            accentColor: "var(--color-primary-600)",
-            background: `linear-gradient(to right, var(--color-primary-500) ${(filters.salaryMin / 250) * 100}%, var(--color-neutral-200) ${(filters.salaryMin / 250) * 100}%)`,
+            accentColor: "var(--color-primary-500)",
+            background: `linear-gradient(to right, var(--color-primary-500) ${(filters.salaryMin / 250) * 100}%, var(--color-border) ${(filters.salaryMin / 250) * 100}%)`,
           }}
         />
-        <p className="text-xs mt-1.5" style={{ color: "var(--color-text-disabled)" }}>
+        <p className="text-xs mt-1.5" style={{ color: "var(--color-text-tertiary)" }}>
           Market median for your profile: $155K
         </p>
       </FilterSection>
 
       <FilterSection title="Posted Date">
-        {POSTED_OPTIONS.map((opt) => (
-          <label key={opt.label} className="flex items-center gap-2 py-1 cursor-pointer text-sm" style={{ color: "var(--color-text-primary)" }}>
-            <input
-              type="radio"
-              name="posted-date"
-              checked={filters.postedWithin === opt.value}
-              onChange={() => setFilter("postedWithin", opt.value)}
-              className="w-4 h-4"
-              style={{ accentColor: "var(--color-primary-600)" }}
-            />
-            {opt.label}
-          </label>
-        ))}
+        {POSTED_OPTIONS.map((opt) => {
+          const isSelected = filters.postedWithin === opt.value;
+          return (
+            <label
+              key={opt.label}
+              className="flex items-center justify-between gap-2 py-1 cursor-pointer text-sm group select-none"
+            >
+              <span className="flex items-center gap-2.5" style={{ color: "var(--color-text-primary)" }}>
+                <input
+                  type="radio"
+                  name="posted-date"
+                  checked={isSelected}
+                  onChange={() => setFilter("postedWithin", opt.value)}
+                  className="sr-only"
+                />
+                <span
+                  className="flex items-center justify-center w-4 h-4 rounded-full border transition-all duration-150 shrink-0"
+                  style={{
+                    background: "var(--color-card)",
+                    borderColor: isSelected ? "var(--color-primary-600)" : "var(--color-border)",
+                  }}
+                >
+                  {isSelected && (
+                    <span
+                      className="w-2 h-2 rounded-full"
+                      style={{ background: "var(--color-primary-600)" }}
+                    />
+                  )}
+                </span>
+                <span className="transition-colors group-hover:text-[var(--color-primary-500)]">{opt.label}</span>
+              </span>
+            </label>
+          );
+        })}
       </FilterSection>
     </div>
   );

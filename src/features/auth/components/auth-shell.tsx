@@ -80,7 +80,7 @@ export function AuthShell({ quote, author, children }: AuthShellProps) {
             />
             <h1
               className="mt-4 text-xl font-extrabold tracking-tight"
-              style={{ color: "var(--color-primary-900)" }}
+              style={{ color: "var(--color-text-primary)" }}
             >
               JobFits
             </h1>
