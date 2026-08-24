@@ -2,6 +2,7 @@ import React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 const putSkills = vi.fn();
 vi.mock("../api/resume-builder.api", async (importOriginal) => {
@@ -16,17 +17,49 @@ vi.mock("../api/resume-builder.api", async (importOriginal) => {
 });
 
 import { SkillsEditor } from "./skills-editor";
-import type { BuilderSkillDto } from "../api/resume-builder.api";
+import { qk } from "@/lib/api/query-keys";
+import type {
+  BuilderSkillDto,
+  ResumeDocumentDetailDto,
+} from "../api/resume-builder.api";
 
 const SKILLS: BuilderSkillDto[] = [
   { id: "s1", order: 0, name: "TypeScript", proficiencyLevel: "EXPERT" },
   { id: "s2", order: 1, name: "Postgres", proficiencyLevel: "ADVANCED" },
 ];
 
+/**
+ * The editor writes its edits into the document detail cache — that entry is what
+ * the preview renders off — so it needs a real client, not just a provider.
+ */
 function renderEditor(skills = SKILLS, resetToken = 0) {
-  return render(
-    <SkillsEditor documentId="doc-1" skills={skills} resetToken={resetToken} />,
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
+  client.setQueryData(qk.resumeBuilder.document("doc-1"), {
+    id: "doc-1",
+    skills,
+  } as unknown as ResumeDocumentDetailDto);
+
+  const result = render(
+    <QueryClientProvider client={client}>
+      <SkillsEditor documentId="doc-1" skills={skills} resetToken={resetToken} />
+    </QueryClientProvider>,
   );
+
+  /** The skills the preview would render right now. */
+  const previewSkills = () =>
+    client.getQueryData<ResumeDocumentDetailDto>(qk.resumeBuilder.document("doc-1"))?.skills ?? [];
+
+  /** Keeps the provider around — a bare rerender would drop the editor's client. */
+  const rerenderEditor = (next: BuilderSkillDto[], nextResetToken: number) =>
+    result.rerender(
+      <QueryClientProvider client={client}>
+        <SkillsEditor documentId="doc-1" skills={next} resetToken={nextResetToken} />
+      </QueryClientProvider>,
+    );
+
+  return { ...result, client, previewSkills, rerenderEditor };
 }
 
 /** Row labels, in DOM order — the array order the backend will receive. */
@@ -103,14 +136,40 @@ describe("SkillsEditor", () => {
     expect(screen.getByText(/one skill needs a name/i)).toBeInTheDocument();
   });
 
+  /**
+   * The regression this guards: the preview used to render off a separate GET
+   * that only refetched on remount, so an edit was invisible until a page
+   * refresh. It now reads the same cache entry the editor writes, and must see
+   * the edit before the debounced PUT has fired at all.
+   */
+  it("updates the preview's cache entry on edit, ahead of the autosave", async () => {
+    const user = userEvent.setup();
+    const { previewSkills } = renderEditor();
+
+    await user.type(screen.getAllByLabelText("Skill")[0], "!");
+
+    expect(previewSkills().map((s) => s.name)).toEqual(["TypeScript!", "Postgres"]);
+    // Still inside the debounce window — the preview did not wait on the server.
+    expect(putSkills).not.toHaveBeenCalled();
+  });
+
+  it("keeps row ids stable while typing so the preview does not remount rows", async () => {
+    const user = userEvent.setup();
+    const { previewSkills } = renderEditor();
+
+    await user.type(screen.getAllByLabelText("Skill")[0], "!");
+
+    expect(previewSkills().map((s) => s.id)).toEqual(["s1", "s2"]);
+  });
+
   it("re-seeds from props when the document is replaced by an import", () => {
-    const { rerender } = renderEditor();
+    const { rerenderEditor } = renderEditor();
     expect(rowOrder()).toEqual(["TypeScript", "Postgres"]);
 
     const imported: BuilderSkillDto[] = [
       { id: "s9", order: 0, name: "Kubernetes", proficiencyLevel: "BEGINNER" },
     ];
-    rerender(<SkillsEditor documentId="doc-1" skills={imported} resetToken={1} />);
+    rerenderEditor(imported, 1);
 
     expect(rowOrder()).toEqual(["Kubernetes"]);
   });

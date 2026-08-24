@@ -9,7 +9,12 @@ import {
   type BuilderExperienceDto,
   type ExperienceItemInput,
 } from "../api/resume-builder.api";
-import { useDebouncedSectionSave, useSectionDraft } from "../hooks/use-resume-builder";
+import {
+  rowIdentity,
+  useDebouncedSectionSave,
+  useLocalDocumentPatch,
+  useSectionDraft,
+} from "../hooks/use-resume-builder";
 import { fromDateInputValue, toDateInputValue, todayInputValue } from "../lib/dates";
 import { RepeatableList } from "./repeatable-list";
 import { SectionShell } from "./section-shell";
@@ -34,6 +39,26 @@ function toDraft(items: BuilderExperienceDto[]): ExperienceItemInput[] {
   }));
 }
 
+/** Draft rows are Input-shaped; the preview reads DTO-shaped rows. */
+function toRows(
+  items: ExperienceItemInput[],
+  previous: BuilderExperienceDto[],
+): BuilderExperienceDto[] {
+  return items.map((item, index) => ({
+    ...rowIdentity(previous, index),
+    company: item.company,
+    title: item.title,
+    location: item.location,
+    startDate: item.startDate,
+    // Mirrors what the save payload does, so the preview shows "Present" the
+    // moment the box is ticked rather than the stale end date underneath it.
+    endDate: item.isCurrentJob ? undefined : item.endDate,
+    isCurrentJob: item.isCurrentJob ?? false,
+    description: item.description,
+    technologies: item.technologies ?? [],
+  }));
+}
+
 /** `company` and `title` are @IsNotEmpty server-side — a half-typed row would 400. */
 function isComplete(item: ExperienceItemInput): boolean {
   return item.company.trim().length > 0 && item.title.trim().length > 0;
@@ -46,6 +71,7 @@ export function ExperienceEditor({
   action,
 }: ExperienceEditorProps) {
   const [draft, setDraft] = useSectionDraft(toDraft(experiences), resetToken);
+  const patchDocument = useLocalDocumentPatch(documentId);
 
   const { status, schedule, saveNow } = useDebouncedSectionSave<ExperienceItemInput[]>((items) =>
     resumeBuilderApi.putExperience(
@@ -61,8 +87,14 @@ export function ExperienceEditor({
     ),
   );
 
+  /**
+   * The one place a row edit lands. Local draft (so the cursor is stable),
+   * preview cache (so the preview redraws this render) and the debounced PUT
+   * (so the server catches up in the background) all move together.
+   */
   const change = (items: ExperienceItemInput[]) => {
     setDraft(items);
+    patchDocument({ experiences: toRows(items, experiences) });
     schedule(items);
   };
 

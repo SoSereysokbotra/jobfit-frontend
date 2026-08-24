@@ -42,32 +42,115 @@ export function useResumeDocument(documentId: string | undefined) {
   });
 }
 
+/**
+ * Optimistic local write into the document detail cache.
+ *
+ * This is what makes the preview live. The preview renders off this one cache
+ * entry, so the section editors patch it on every keystroke: the editor's draft
+ * and the preview become the same state, and the debounced section PUT becomes a
+ * pure background write that nothing renders off.
+ *
+ * Deliberately no invalidation afterwards. The section PUTs answer 204 with no
+ * body, so a refetch could only re-fetch what we just wrote — and would race the
+ * next keystroke to replace it with older data.
+ */
+export function useLocalDocumentPatch(documentId: string) {
+  const qc = useQueryClient();
+  return useCallback(
+    (patch: Partial<ResumeDocumentDetailDto>) => {
+      qc.setQueryData<ResumeDocumentDetailDto>(
+        qk.resumeBuilder.document(documentId),
+        (previous) => (previous ? { ...previous, ...patch } : previous),
+      );
+    },
+    [qc, documentId],
+  );
+}
+
+/**
+ * `id` and `order` are server-owned and a draft row carries neither, but the
+ * preview keys its rows off `id`. Reusing whatever id already sits at this index
+ * keeps those keys stable while the user types; a row added since the last read
+ * has no server id yet, so it gets a local placeholder until the next read.
+ */
+export function rowIdentity(
+  previous: { id: string }[],
+  index: number,
+): { id: string; order: number } {
+  return { id: previous[index]?.id ?? `local-${index}`, order: index };
+}
+
+/**
+ * PATCH input merged onto the cached document.
+ *
+ * `fontFamily` needs its own line: the input type allows `null` to mean "clear
+ * it" while the stored DTO only knows `string | undefined`, and a key that is
+ * absent altogether must leave the stored value alone rather than clear it.
+ */
+function applyUpdate(
+  current: ResumeDocumentDetailDto,
+  input: UpdateResumeDocumentInput,
+): ResumeDocumentDetailDto {
+  return {
+    ...current,
+    ...input,
+    fontFamily: "fontFamily" in input ? input.fontFamily ?? undefined : current.fontFamily,
+  };
+}
+
+/**
+ * Every `documents()` invalidation below is `exact: true` on purpose.
+ *
+ * `qk.resumeBuilder.document(id)` is built as `[...documents(), id]`, so a plain
+ * prefix invalidation of the list also refetches the detail query the editor is
+ * sitting on — which would replace the optimistic, not-yet-saved preview state
+ * with whatever the server last stored. The list and the detail are invalidated
+ * separately wherever both genuinely need it.
+ */
 export function useCreateResumeDocument() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (input: CreateResumeDocumentInput) => resumeBuilderApi.create(input),
-    onSuccess: () => qc.invalidateQueries({ queryKey: qk.resumeBuilder.documents() }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk.resumeBuilder.documents(), exact: true }),
   });
 }
 
 /**
  * Settings/title/header updates.
  *
- * The detail cache is patched directly on success so the preview reflects a new
- * colour or spacing immediately, without a refetch round-trip. The list is
- * invalidated because PATCH moves the document in `updatedAt` ordering.
+ * The detail cache is patched in `onMutate`, not `onSuccess`, so a new colour or
+ * spacing redraws the preview on the click rather than a round-trip later — the
+ * same optimistic rule the section editors follow. `onError` puts the old
+ * document back so a rejected PATCH never leaves the preview showing a setting
+ * the document does not actually have.
+ *
+ * The list is invalidated because PATCH moves the document in `updatedAt`
+ * ordering.
  */
 export function useUpdateResumeDocument(documentId: string) {
   const qc = useQueryClient();
+  const key = qk.resumeBuilder.document(documentId);
+
   return useMutation({
     mutationFn: (input: UpdateResumeDocumentInput) =>
       resumeBuilderApi.update(documentId, input),
-    onSuccess: (updated) => {
-      qc.setQueryData<ResumeDocumentDetailDto>(
-        qk.resumeBuilder.document(documentId),
-        (previous) => (previous ? { ...previous, ...updated } : previous),
+    onMutate: async (input) => {
+      // An in-flight GET would otherwise land after this and undo it.
+      await qc.cancelQueries({ queryKey: key });
+      const previous = qc.getQueryData<ResumeDocumentDetailDto>(key);
+      qc.setQueryData<ResumeDocumentDetailDto>(key, (current) =>
+        current ? applyUpdate(current, input) : current,
       );
-      void qc.invalidateQueries({ queryKey: qk.resumeBuilder.documents() });
+      return { previous };
+    },
+    onError: (_error, _input, context) => {
+      if (context?.previous) qc.setQueryData(key, context.previous);
+    },
+    onSuccess: (updated) => {
+      qc.setQueryData<ResumeDocumentDetailDto>(key, (previous) =>
+        previous ? { ...previous, ...updated } : previous,
+      );
+      void qc.invalidateQueries({ queryKey: qk.resumeBuilder.documents(), exact: true });
     },
   });
 }
@@ -76,7 +159,7 @@ export function useDuplicateResumeDocument() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (documentId: string) => resumeBuilderApi.duplicate(documentId),
-    onSuccess: () => qc.invalidateQueries({ queryKey: qk.resumeBuilder.documents() }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk.resumeBuilder.documents(), exact: true }),
   });
 }
 
@@ -86,7 +169,7 @@ export function useDeleteResumeDocument() {
     mutationFn: (documentId: string) => resumeBuilderApi.remove(documentId),
     onSuccess: (_result, documentId) => {
       qc.removeQueries({ queryKey: qk.resumeBuilder.document(documentId) });
-      void qc.invalidateQueries({ queryKey: qk.resumeBuilder.documents() });
+      void qc.invalidateQueries({ queryKey: qk.resumeBuilder.documents(), exact: true });
     },
   });
 }
@@ -99,7 +182,7 @@ export function useImportFromProfile(documentId: string) {
       resumeBuilderApi.importFromProfile(documentId, sections),
     onSuccess: (document) => {
       qc.setQueryData(qk.resumeBuilder.document(documentId), document);
-      void qc.invalidateQueries({ queryKey: qk.resumeBuilder.documents() });
+      void qc.invalidateQueries({ queryKey: qk.resumeBuilder.documents(), exact: true });
     },
   });
 }
@@ -118,7 +201,7 @@ export function useExportResumeDocument() {
     onSuccess: (_result, documentId) => {
       // Export sets exportedResumeId, so the document itself is stale too.
       void qc.invalidateQueries({ queryKey: qk.resumeBuilder.document(documentId) });
-      void qc.invalidateQueries({ queryKey: qk.resumeBuilder.documents() });
+      void qc.invalidateQueries({ queryKey: qk.resumeBuilder.documents(), exact: true });
       void qc.invalidateQueries({ queryKey: qk.resumes.all });
     },
   });

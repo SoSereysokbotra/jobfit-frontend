@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Copy, Download, Trash2, Upload } from "lucide-react";
@@ -20,6 +20,10 @@ import { CertificationsEditor } from "@/features/resume-builder/components/certi
 import { ProjectsEditor } from "@/features/resume-builder/components/projects-editor";
 import { ResumePreview } from "@/features/resume-builder/components/resume-preview";
 import { ImportDialog } from "@/features/resume-builder/components/import-dialog";
+import {
+  ViewModeToggle,
+  type EditorViewMode,
+} from "@/features/resume-builder/components/view-mode-toggle";
 import { SaveIndicator } from "@/features/resume-builder/components/section-shell";
 import { openExportedResume } from "@/features/resume-builder/lib/download";
 import {
@@ -32,6 +36,24 @@ import {
   useResumeTemplates,
   useUpdateResumeDocument,
 } from "@/features/resume-builder/hooks/use-resume-builder";
+
+/**
+ * Only "split" is a two-column layout; the single-mode views give the visible
+ * panel the full width. The hidden panel stays mounted (see below), so this is
+ * purely how many columns the grid hands out.
+ */
+const GRID_COLUMNS: Record<EditorViewMode, string> = {
+  edit: "grid-cols-1",
+  split: "grid-cols-1 lg:grid-cols-2",
+  preview: "grid-cols-1",
+};
+
+/** Remembered per browser; a reload restoring the last layout is a nicety, not a contract. */
+const VIEW_MODE_STORAGE_KEY = "jobfit:resume-builder:view-mode";
+
+function isViewMode(value: unknown): value is EditorViewMode {
+  return value === "edit" || value === "split" || value === "preview";
+}
 
 export default function ResumeBuilderEditorPage() {
   const params = useParams<{ id: string }>();
@@ -57,6 +79,21 @@ export default function ResumeBuilderEditorPage() {
    * An ordinary autosave must NOT bump it or the user's cursor would jump.
    */
   const [resetToken, setResetToken] = useState(0);
+
+  const [viewMode, setViewMode] = useState<EditorViewMode>("split");
+
+  // Read after mount rather than in a lazy initialiser: localStorage does not
+  // exist during the server render, and seeding from it there is a hydration
+  // mismatch.
+  useEffect(() => {
+    const stored = window.localStorage.getItem(VIEW_MODE_STORAGE_KEY);
+    if (isViewMode(stored)) setViewMode(stored);
+  }, []);
+
+  const changeViewMode = (mode: EditorViewMode) => {
+    setViewMode(mode);
+    window.localStorage.setItem(VIEW_MODE_STORAGE_KEY, mode);
+  };
 
   const [title, setTitle] = useState<string | null>(null);
   const [importOpen, setImportOpen] = useState(false);
@@ -185,14 +222,25 @@ export default function ResumeBuilderEditorPage() {
           <Button variant="ghost" onClick={() => setDeleteOpen(true)}>
             <Trash2 className="w-4 h-4" style={{ color: "var(--color-error-600)" }} /> Delete
           </Button>
+
+          {/* Trailing edge of the existing action row — no new toolbar, and it
+              wraps with the buttons on narrow screens rather than overflowing. */}
+          <div className="ml-auto">
+            <ViewModeToggle value={viewMode} onChange={changeViewMode} />
+          </div>
         </div>
       </div>
 
       {actionError && <Alert variant="error">{actionError}</Alert>}
 
-      {/* ── Two panels: controls on the left, preview on the right ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-        <div className="space-y-4">
+      {/* ── Two panels: controls on the left, preview on the right ──
+          The inactive panel is hidden with CSS rather than unmounted. Unmounting
+          the editors would discard any edit still inside the autosave debounce,
+          and would throw away scroll and focus position every time the user
+          flicks between modes. Hidden, both panels stay live, so switching to
+          Preview shows the state as of the last keystroke. */}
+      <div className={`grid ${GRID_COLUMNS[viewMode]} gap-6 items-start`}>
+        <div className={`space-y-4 ${viewMode === "preview" ? "hidden" : ""}`}>
           <SettingsPanel
             document={document}
             templates={templates}
@@ -221,13 +269,23 @@ export default function ResumeBuilderEditorPage() {
           <ProjectsEditor documentId={documentId} projects={document.projects} resetToken={resetToken} />
         </div>
 
-        <div className="lg:sticky lg:top-6">
+        <div
+          className={
+            viewMode === "edit"
+              ? "hidden"
+              : viewMode === "split"
+                ? "lg:sticky lg:top-6"
+                : // Full width would stretch the page-proportioned sheet far past
+                  // any readable line length, so preview-only caps it instead.
+                  "max-w-3xl mx-auto w-full"
+          }
+        >
           <div className="mb-2 flex items-center justify-between gap-2">
             <h2 className="text-sm font-bold" style={{ color: "var(--color-text-primary)" }}>
               Preview
             </h2>
             <span className="text-xs" style={{ color: "var(--color-text-tertiary)" }}>
-              Approximate — export to see the real PDF
+              Page size, type and colour match the export; item layout is approximate
             </span>
           </div>
           <ResumePreview document={document} template={activeTemplate} />
