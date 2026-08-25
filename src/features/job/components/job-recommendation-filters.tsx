@@ -4,6 +4,7 @@ import React, { useMemo } from "react";
 import type { ExperienceLevel, Job } from "@/shared/types/shared.types";
 import { filterJobs, type JobSearchFilters } from "../hooks/use-job-search";
 import { FilterSection, CheckOption, valuesOf } from "./job-filters";
+import { FilterPanelShell, type FilterPanelCollapse } from "./filter-panel-shell";
 
 const EXPERIENCE_LEVELS: ExperienceLevel[] = [
   "Intern", "Entry-level", "Mid-level", "Senior", "Lead", "Manager", "Director", "C-level",
@@ -19,6 +20,10 @@ interface JobRecommendationFiltersProps {
   setFilter: <K extends keyof JobSearchFilters>(key: K, value: JobSearchFilters[K]) => void;
   clearFilters: () => void;
   activeFilterCount: number;
+  /** Collapse state, owned by the page so it can widen the results column. */
+  collapse: FilterPanelCollapse;
+  /** Offer the whole-panel collapse. Desktop only — see `FilterPanelShell`. */
+  collapsible?: boolean;
 }
 
 /**
@@ -27,6 +32,7 @@ interface JobRecommendationFiltersProps {
  */
 export function JobRecommendationFilters({
   jobs, filters, toggleFilter, setFilter, clearFilters, activeFilterCount,
+  collapse, collapsible = false,
 }: JobRecommendationFiltersProps) {
   const locations = useMemo(() => [...new Set(jobs.map((j) => j.location))].sort(), [jobs]);
   const industries = useMemo(() => valuesOf(jobs, (j) => j.industry), [jobs]);
@@ -38,25 +44,13 @@ export function JobRecommendationFilters({
     filterJobs(jobs, { ...filters, [key]: [value] }, undefined).length;
 
   return (
-    <div
-      className="rounded-lg border p-5 space-y-4"
-      style={{ background: "var(--color-card)", borderColor: "var(--color-border)", boxShadow: "var(--shadow-sm)" }}
+    <FilterPanelShell
+      title="Filter Matches"
+      collapse={collapse}
+      collapsible={collapsible}
+      activeFilterCount={activeFilterCount}
+      clearFilters={clearFilters}
     >
-      <div className="flex items-center justify-between">
-        <h2 className="text-base font-bold" style={{ color: "var(--color-text-primary)" }}>
-          Filter Matches
-        </h2>
-        {activeFilterCount > 0 && (
-          <button
-            onClick={clearFilters}
-            className="text-xs font-bold hover:underline"
-            style={{ color: "var(--color-primary-600)" }}
-          >
-            Clear all ({activeFilterCount})
-          </button>
-        )}
-      </div>
-
       <FilterSection title="Match Score">
         <div className="flex justify-between text-xs mb-1.5">
           <span style={{ color: "var(--color-text-tertiary)" }}>Minimum Match</span>
@@ -146,6 +140,6 @@ export function JobRecommendationFilters({
           ))}
         </FilterSection>
       )}
-    </div>
+    </FilterPanelShell>
   );
 }

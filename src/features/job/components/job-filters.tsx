@@ -3,7 +3,13 @@
 import React, { useMemo } from "react";
 import { Check } from "lucide-react";
 import type { EmploymentType, ExperienceLevel, Job, RemoteType } from "@/shared/types/shared.types";
+import { CollapsibleSection } from "@/shared/components/ui/collapsible-section";
 import { filterJobs, type JobSearchFilters } from "../hooks/use-job-search";
+import {
+  FilterPanelShell,
+  useFilterCollapseContext,
+  type FilterPanelCollapse,
+} from "./filter-panel-shell";
 
 const EMPLOYMENT_TYPES: EmploymentType[] = [
   "Full-time", "Part-time", "Contract", "Temporary", "Freelance",
@@ -29,6 +35,10 @@ interface JobFiltersProps {
   setFilter: <K extends keyof JobSearchFilters>(key: K, value: JobSearchFilters[K]) => void;
   clearFilters: () => void;
   activeFilterCount: number;
+  /** Collapse state, owned by the page so it can widen the results column. */
+  collapse: FilterPanelCollapse;
+  /** Offer the whole-panel collapse. Desktop only — see `FilterPanelShell`. */
+  collapsible?: boolean;
 }
 
 /**
@@ -42,13 +52,52 @@ export function valuesOf(jobs: Job[], pick: (j: Job) => string | undefined): str
   return [...new Set(jobs.map(pick).filter((v): v is string => Boolean(v)))].sort();
 }
 
+/** Turns a section title into an id usable in the DOM and in localStorage. */
+function sectionPanelId(title: string): string {
+  return `filter-section-${title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
+}
+
+/**
+ * One facet of a filter panel — collapsible when rendered inside a
+ * `FilterPanelShell`, and a plain labelled block when rendered anywhere else.
+ *
+ * Collapsing only clips the content; the checkboxes stay mounted and the filter
+ * state lives in the page's search hook either way, so tidying a section away
+ * never drops the selections inside it.
+ */
 export function FilterSection({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div className="pb-4 border-b last:border-b-0 last:pb-0" style={{ borderColor: "var(--color-border)" }}>
+  const collapse = useFilterCollapseContext();
+
+  const body = collapse ? (
+    <CollapsibleSection
+      panelId={sectionPanelId(title)}
+      title={title}
+      collapsed={Boolean(collapse.sections[title])}
+      onToggle={() => collapse.toggleSection(title)}
+      /* Same type scale and casing as the static label it replaces. The negative
+         margins cancel the padding, so the hover target grows without moving
+         anything — the panel's vertical rhythm is unchanged. */
+      headerClassName="text-xs font-bold uppercase tracking-wider rounded px-1.5 -mx-1.5 py-0.5 -my-0.5"
+      headerStyle={{ color: "var(--color-text-tertiary)" }}
+      /* Reproduces the old label's `mb-2.5`, but inside the collapsing region so
+         it folds away too rather than leaving a gap under a closed section. */
+      contentClassName="pt-2.5"
+      chevronSize={13}
+    >
+      {children}
+    </CollapsibleSection>
+  ) : (
+    <>
       <p className="text-xs font-bold uppercase tracking-wider mb-2.5" style={{ color: "var(--color-text-tertiary)" }}>
         {title}
       </p>
       {children}
+    </>
+  );
+
+  return (
+    <div className="pb-4 border-b last:border-b-0 last:pb-0" style={{ borderColor: "var(--color-border)" }}>
+      {body}
     </div>
   );
 }
@@ -93,6 +142,7 @@ export function CheckOption({
  */
 export function JobFilters({
   jobs, filters, toggleFilter, setFilter, clearFilters, activeFilterCount,
+  collapse, collapsible = false,
 }: JobFiltersProps) {
   const locations = useMemo(() => [...new Set(jobs.map((j) => j.location))].sort(), [jobs]);
   const industries = useMemo(() => valuesOf(jobs, (j) => j.industry), [jobs]);
@@ -108,25 +158,13 @@ export function JobFilters({
     filterJobs(jobs, { ...filters, [key]: [value] }, undefined).length;
 
   return (
-    <div
-      className="rounded-lg border p-5 space-y-4"
-      style={{ background: "var(--color-card)", borderColor: "var(--color-border)", boxShadow: "var(--shadow-sm)" }}
+    <FilterPanelShell
+      title="Refine your search"
+      collapse={collapse}
+      collapsible={collapsible}
+      activeFilterCount={activeFilterCount}
+      clearFilters={clearFilters}
     >
-      <div className="flex items-center justify-between">
-        <h2 className="text-base font-bold" style={{ color: "var(--color-text-primary)" }}>
-          Refine your search
-        </h2>
-        {activeFilterCount > 0 && (
-          <button
-            onClick={clearFilters}
-            className="text-xs font-bold hover:underline"
-            style={{ color: "var(--color-primary-600)" }}
-          >
-            Clear all ({activeFilterCount})
-          </button>
-        )}
-      </div>
-
       {anyType && (
         <FilterSection title="Employment Type">
           {EMPLOYMENT_TYPES.map((t) => (
@@ -256,6 +294,6 @@ export function JobFilters({
           );
         })}
       </FilterSection>
-    </div>
+    </FilterPanelShell>
   );
 }

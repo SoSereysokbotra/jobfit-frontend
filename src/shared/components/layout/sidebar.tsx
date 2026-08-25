@@ -8,6 +8,24 @@ import { useAuth } from "@/providers/auth-provider";
 import { useSidebarCollapsed } from "@/stores/ui-store";
 import { useSession, displayName } from "@/features/auth/hooks/use-session";
 import { NAVIGATION_GROUPS } from "@/shared/config/navigation";
+import { useCollapsedSections } from "@/shared/hooks/use-collapsed-sections";
+import { CollapsibleSection } from "@/shared/components/ui/collapsible-section";
+
+/**
+ * Whether a nav item matches the current route.
+ *
+ * Hoisted out of the render so the per-item highlight and the per-section
+ * "does this section contain the active page" check use one definition — if they
+ * disagreed, a section could stay collapsed while holding the active item.
+ */
+function isItemActive(
+  item: { href: string; exact?: boolean },
+  pathname: string | null,
+): boolean {
+  return item.exact
+    ? pathname === item.href
+    : pathname === item.href || Boolean(pathname?.startsWith(item.href + "/"));
+}
 
 export interface SidebarMenuGroup {
   group: string;
@@ -45,6 +63,11 @@ export default function Sidebar({
   const { logout } = useAuth();
   const [collapsedState, setCollapsed] = useSidebarCollapsed();
   const collapsed = collapsible && collapsedState;
+
+  // Per-section collapse, independent of the icon-only rail above. In the rail
+  // there are no section headers to click, so section state is simply not applied
+  // there — it is kept, not cleared, so expanding the rail restores it.
+  const { collapsed: collapsedSections, toggle: toggleSection } = useCollapsedSections();
 
   const groupsToRender = menuGroups || NAVIGATION_GROUPS;
   
@@ -104,73 +127,108 @@ export default function Sidebar({
 
       {/* Navigation Items */}
       <div className={`flex-1 ${collapsed ? "overflow-visible px-2 py-4 space-y-4" : "overflow-y-auto p-4 space-y-6"}`}>
-        {groupsToRender.map((group, gIdx) => (
-          <div key={gIdx} className="space-y-1">
-            {group.group && !collapsed && (
-              <p
-                className="text-[10px] font-extrabold px-3 py-1.5 uppercase tracking-wider"
-                style={{ color: "var(--color-text-tertiary)" }}
+        {groupsToRender.map((group, gIdx) => {
+          // A section is only collapsible when it has a header to click and to
+          // stay behind. The first navigation group has an empty label and renders
+          // no header, so it is always shown — there would be nothing left to
+          // re-expand it with.
+          const isCollapsible = Boolean(group.group) && !collapsed;
+
+          // The section holding the current page is always expanded, whatever was
+          // saved, so a user can never end up unable to see where they are.
+          const holdsActivePage = group.items.some((item) => isItemActive(item, pathname));
+          const isSectionCollapsed =
+            isCollapsible && Boolean(collapsedSections[group.group]) && !holdsActivePage;
+
+          const panelId = `sidebar-section-${gIdx}`;
+
+          const items = group.items.map((item) => {
+            const isActive = isItemActive(item, pathname);
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`group relative flex items-center rounded-md text-sm font-medium transition-all duration-200 ${collapsed ? "w-10 h-10 mx-auto justify-center" : "justify-between px-3 py-2"}`}
+                style={{
+                  background: isActive ? "var(--color-primary-50)" : "transparent",
+                  color: isActive ? "var(--color-primary-500)" : "var(--color-text-secondary)",
+                }}
               >
-                {group.group}
-              </p>
-            )}
-            {group.items.map((item) => {
-              const isActive = item.exact
-                ? pathname === item.href
-                : pathname === item.href || pathname?.startsWith(item.href + "/");
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`group relative flex items-center rounded-md text-sm font-medium transition-all duration-200 ${collapsed ? "w-10 h-10 mx-auto justify-center" : "justify-between px-3 py-2"}`}
-                  style={{
-                    background: isActive ? "var(--color-primary-50)" : "transparent",
-                    color: isActive ? "var(--color-primary-500)" : "var(--color-text-secondary)",
-                  }}
-                >
-                  <div className={`flex items-center ${collapsed ? "" : "gap-2.5"}`}>
-                    <span
-                      className="relative flex items-center justify-center transition-colors"
-                      style={{ color: isActive ? "var(--color-primary-500)" : "var(--color-text-tertiary)" }}
-                    >
-                      {item.icon}
-                      {collapsed && item.badge ? (
-                        <span
-                          className="absolute -top-1 -right-1 w-2 h-2 rounded-full ring-2 ring-[var(--color-card)]"
-                          style={{ background: "var(--color-primary-500)" }}
-                        />
-                      ) : null}
-                    </span>
-                    {!collapsed && (
+                <div className={`flex items-center ${collapsed ? "" : "gap-2.5"}`}>
+                  <span
+                    className="relative flex items-center justify-center transition-colors"
+                    style={{ color: isActive ? "var(--color-primary-500)" : "var(--color-text-tertiary)" }}
+                  >
+                    {item.icon}
+                    {collapsed && item.badge ? (
                       <span
-                        className={isActive ? "font-bold" : ""}
-                        style={{ color: isActive ? "var(--color-primary-500)" : "var(--color-text-secondary)" }}
-                      >
-                        {item.label}
-                      </span>
-                    )}
-                  </div>
-                  {!collapsed && item.badge && (
+                        className="absolute -top-1 -right-1 w-2 h-2 rounded-full ring-2 ring-[var(--color-card)]"
+                        style={{ background: "var(--color-primary-500)" }}
+                      />
+                    ) : null}
+                  </span>
+                  {!collapsed && (
                     <span
-                      className="text-[10px] px-1.5 py-0.5 rounded-full text-white font-bold"
-                      style={{ background: "var(--color-primary-500)" }}
-                    >
-                      {item.badge}
-                    </span>
-                  )}
-                  {collapsed && (
-                    <span
-                      className="pointer-events-none absolute left-full ml-2 z-50 whitespace-nowrap rounded-md px-2 py-1 text-xs font-semibold text-white opacity-0 shadow-md transition-opacity duration-150 group-hover:opacity-100"
-                      style={{ background: "var(--color-neutral-800)" }}
+                      className={isActive ? "font-bold" : ""}
+                      style={{ color: isActive ? "var(--color-primary-500)" : "var(--color-text-secondary)" }}
                     >
                       {item.label}
                     </span>
                   )}
-                </Link>
-              );
-            })}
-          </div>
-        ))}
+                </div>
+                {!collapsed && item.badge && (
+                  <span
+                    className="text-[10px] px-1.5 py-0.5 rounded-full text-white font-bold"
+                    style={{ background: "var(--color-primary-500)" }}
+                  >
+                    {item.badge}
+                  </span>
+                )}
+                {collapsed && (
+                  <span
+                    className="pointer-events-none absolute left-full ml-2 z-50 whitespace-nowrap rounded-md px-2 py-1 text-xs font-semibold text-white opacity-0 shadow-md transition-opacity duration-150 group-hover:opacity-100"
+                    style={{ background: "var(--color-neutral-800)" }}
+                  >
+                    {item.label}
+                  </span>
+                )}
+              </Link>
+            );
+          });
+
+          return (
+            <div key={gIdx} className="space-y-1">
+              {isCollapsible ? (
+                /* Same type scale, casing and padding as the static header it
+                   replaces — only the row layout and hover are added, so the
+                   sidebar's spacing is unchanged. */
+                <CollapsibleSection
+                  panelId={panelId}
+                  title={group.group}
+                  collapsed={isSectionCollapsed}
+                  onToggle={() => toggleSection(group.group)}
+                  headerClassName="rounded-md text-[10px] font-extrabold px-3 py-1.5 uppercase tracking-wider"
+                  headerStyle={{ color: "var(--color-text-tertiary)" }}
+                  contentClassName="space-y-1"
+                >
+                  {items}
+                </CollapsibleSection>
+              ) : (
+                <>
+                  {group.group && !collapsed && (
+                    <p
+                      className="text-[10px] font-extrabold px-3 py-1.5 uppercase tracking-wider"
+                      style={{ color: "var(--color-text-tertiary)" }}
+                    >
+                      {group.group}
+                    </p>
+                  )}
+                  {items}
+                </>
+              )}
+            </div>
+          );
+        })}
       </div>
 
       {/* User profile footer */}

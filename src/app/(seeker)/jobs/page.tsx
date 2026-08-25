@@ -6,6 +6,8 @@ import {
   SearchX, ArrowUpDown,
 } from "lucide-react";
 import { JobCard, JobSearchBar, JobFilters } from "@/features/job/components";
+import { useFilterPanelCollapse } from "@/features/job/components/filter-panel-shell";
+import { COLLAPSE_STORAGE_KEYS } from "@/shared/hooks/use-collapsed-sections";
 import { JobCompareBar } from "@/features/job/components/job-compare-bar";
 import { useJobs } from "@/features/job/hooks/use-job";
 import { useJobSearch, type JobSortKey } from "@/features/job/hooks/use-job-search";
@@ -62,7 +64,16 @@ export default function JobSearchPage() {
   const search = useJobSearch(jobs, 5);
   const { isComparing, toggleJobCompare, canAdd } = useJobCompare();
 
-  const filtersPanel = (
+  // Owned here, not inside the panel: collapsing it widens the results column,
+  // which is this component's grid to change. One instance also keeps the desktop
+  // panel and the mobile drawer in step.
+  const filterCollapse = useFilterPanelCollapse(COLLAPSE_STORAGE_KEYS.jobFilters);
+
+  /**
+   * `collapsible` differs by placement — the desktop aside offers the whole-panel
+   * collapse, the mobile drawer does not.
+   */
+  const renderFiltersPanel = (collapsible: boolean) => (
     <JobFilters
       jobs={jobs}
       filters={search.filters}
@@ -70,6 +81,8 @@ export default function JobSearchPage() {
       setFilter={search.setFilter}
       clearFilters={search.clearFilters}
       activeFilterCount={search.activeFilterCount}
+      collapse={filterCollapse}
+      collapsible={collapsible}
     />
   );
 
@@ -97,10 +110,16 @@ export default function JobSearchPage() {
       {applyMsg && <Alert variant={applyMsg.tone}>{applyMsg.text}</Alert>}
 
       {/* ── MAIN LAYOUT: FILTERS + RESULTS ────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-5 items-start">
+      <div
+        className={`grid grid-cols-1 gap-5 items-start ${
+          filterCollapse.panelCollapsed
+            ? "lg:grid-cols-[auto_minmax(0,1fr)]"
+            : "lg:grid-cols-4"
+        }`}
+      >
 
         {/* Filters — desktop sidebar */}
-        <aside className="hidden lg:block sticky top-4">{filtersPanel}</aside>
+        <aside className="hidden lg:block sticky top-4">{renderFiltersPanel(true)}</aside>
 
         {/* Filters — mobile drawer */}
         {drawerOpen && (
@@ -116,14 +135,18 @@ export default function JobSearchPage() {
                   <X size={18} />
                 </button>
               </div>
-              {filtersPanel}
+              {renderFiltersPanel(false)}
             </div>
             <div className="flex-1 bg-scrim" onClick={() => setDrawerOpen(false)} />
           </div>
         )}
 
         {/* Results column */}
-        <div className="lg:col-span-3 space-y-4">
+        <div
+          className={`space-y-4 min-w-0 ${
+            filterCollapse.panelCollapsed ? "" : "lg:col-span-3"
+          }`}
+        >
           {/* Results toolbar */}
           <Reveal variant="up" delay={80}>
           <div

@@ -7,6 +7,8 @@ import {
   JobRecommendationFilters,
   JobCard,
 } from "@/features/job/components";
+import { useFilterPanelCollapse } from "@/features/job/components/filter-panel-shell";
+import { COLLAPSE_STORAGE_KEYS } from "@/shared/hooks/use-collapsed-sections";
 import { SwipeDeck } from "@/features/matching/components/swipe-deck";
 import { useJobSearch } from "@/features/job/hooks/use-job-search";
 import { useRecommendations } from "@/features/matching/hooks/use-recommendations";
@@ -83,7 +85,17 @@ export default function RecommendationsPage() {
     refetch();
   };
 
-  const filterPanel = (
+  // Owned here, not inside the panel: collapsing it widens the matches column.
+  // One instance also keeps the desktop panel and the mobile drawer in step.
+  const filterCollapse = useFilterPanelCollapse(
+    COLLAPSE_STORAGE_KEYS.recommendationFilters,
+  );
+
+  /**
+   * `collapsible` differs by placement — the desktop aside offers the whole-panel
+   * collapse, the mobile drawer does not.
+   */
+  const renderFilterPanel = (collapsible: boolean) => (
     <JobRecommendationFilters
       jobs={recommendations}
       filters={filters}
@@ -91,6 +103,8 @@ export default function RecommendationsPage() {
       setFilter={setFilter}
       clearFilters={clearFilters}
       activeFilterCount={activeFilterCount}
+      collapse={filterCollapse}
+      collapsible={collapsible}
     />
   );
 
@@ -126,9 +140,13 @@ export default function RecommendationsPage() {
 
         <div className="flex gap-8">
           {/* SIDEBAR FILTERS (Desktop) */}
-          <aside className="hidden lg:block w-72 shrink-0">
+          <aside
+            className={`hidden lg:block shrink-0 ${
+              filterCollapse.panelCollapsed ? "w-auto" : "w-72"
+            }`}
+          >
             <div className="sticky top-24">
-              {filterPanel}
+              {renderFilterPanel(true)}
             </div>
           </aside>
 
@@ -363,7 +381,7 @@ export default function RecommendationsPage() {
                 <X size={20} />
               </button>
             </div>
-            {filterPanel}
+            {renderFilterPanel(false)}
             <div
               className="mt-4 sticky bottom-0 pb-4 pt-2"
               style={{ background: "var(--color-bg-secondary)" }}
