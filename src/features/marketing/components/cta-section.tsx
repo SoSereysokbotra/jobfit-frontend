@@ -11,7 +11,7 @@ export function CtaSection() {
   const { t } = useTranslation();
 
   return (
-    <section className="py-20 lg:py-28" style={{ background: "var(--color-bg-secondary)" }}>
+    <section className="py-10 lg:py-16" style={{ background: "var(--color-bg-secondary)" }}>
       <Reveal variant="scale" className="max-w-3xl mx-auto px-6 lg:px-8 text-center">
         <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight" style={{ color: "var(--color-text-primary)" }}>
           {t("marketing.ctaTitle")}

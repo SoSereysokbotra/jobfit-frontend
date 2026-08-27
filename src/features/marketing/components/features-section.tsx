@@ -1,379 +1,846 @@
+"use client";
+
 import React from "react";
 import Link from "next/link";
 import {
-  Target, FileText, Star, Briefcase, Check, CheckCircle2, Eye,
-  Calendar, Award, ArrowRight, type LucideIcon
+  FileText,
+  Star,
+  CheckCircle2,
+  Sparkles,
+  ArrowRight,
+  TrendingUp,
+  BrainCircuit,
+  Sliders,
+  DollarSign,
+  Award,
+  Zap,
 } from "lucide-react";
+import { Carousel, Card } from "@/components/ui/apple-cards-carousel";
 import MatchScoreBadge from "@/shared/components/data-display/match-score-badge";
-import { Reveal } from "@/shared/components/motion/reveal";
 
-/* ─── PER-FEATURE MOCKUP VISUALS ─────────────────────────────────
-   Branded, token-only "product screenshots". Swap any of these for a
-   real image later: <img src="/feature-x.png" ... /> inside the frame. */
+/* ─── EXPANDED CARD 1: AI MATCH SCORING ──────────────────────────── */
+function MatchScoringContent() {
+  const breakdown = [
+    {
+      label: "Technical Skills",
+      score: 96,
+      weight: "40%",
+      detail: "React, TypeScript, Next.js, GraphQL",
+    },
+    {
+      label: "Experience Level",
+      score: 90,
+      weight: "25%",
+      detail: "5 yrs experience vs 4+ yrs requested",
+    },
+    {
+      label: "Location & Work Mode",
+      score: 100,
+      weight: "20%",
+      detail: "Remote (Global) / Hybrid SF",
+    },
+    {
+      label: "Salary Alignment",
+      score: 92,
+      weight: "15%",
+      detail: "$165K–$210K aligns with your $175K target",
+    },
+  ];
 
-function MockCard({ children }: { children: React.ReactNode }) {
   return (
-    <div
-      className="rounded-xl border p-5 hover-lift"
-      style={{ background: "var(--color-card)", borderColor: "var(--color-border)", boxShadow: "var(--shadow-lg)" }}
-    >
-      {children}
+    <div className="space-y-6 max-w-3xl mx-auto">
+      {/* Top Banner */}
+      <div
+        className="p-6 rounded-2xl border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+        style={{
+          background: "var(--color-surface)",
+          borderColor: "var(--color-border)",
+        }}
+      >
+        <div className="flex items-center gap-4">
+          <MatchScoreBadge score={94} size="lg" />
+          <div>
+            <div className="flex items-center gap-2">
+              <span
+                className="text-base font-bold"
+                style={{ color: "var(--color-text-primary)" }}
+              >
+                Exceptional Match
+              </span>
+              <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-success-50 text-success-600">
+                Top 5% Candidate
+              </span>
+            </div>
+            <p
+              className="text-xs mt-1"
+              style={{ color: "var(--color-text-tertiary)" }}
+            >
+              Senior Frontend Architect · Stripe (Full-time / Remote)
+            </p>
+          </div>
+        </div>
+
+        <Link
+          href="/signup"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-white bg-primary-600 hover:bg-primary-700 transition-all shadow-sm"
+        >
+          Try Match Engine <ArrowRight size={13} />
+        </Link>
+      </div>
+
+      {/* Breakdown Dimensions */}
+      <div
+        className="p-6 rounded-2xl border space-y-4"
+        style={{
+          background: "var(--color-card)",
+          borderColor: "var(--color-border)",
+        }}
+      >
+        <div className="flex items-center justify-between">
+          <h4
+            className="text-sm font-bold flex items-center gap-2"
+            style={{ color: "var(--color-text-primary)" }}
+          >
+            <Sliders size={16} className="text-primary-600" /> Transparent Score
+            Composition
+          </h4>
+          <span
+            className="text-xs font-medium"
+            style={{ color: "var(--color-text-tertiary)" }}
+          >
+            Weighted Multi-factor Evaluation
+          </span>
+        </div>
+
+        <div className="space-y-3.5 pt-2">
+          {breakdown.map((item) => (
+            <div key={item.label} className="space-y-1.5">
+              <div className="flex justify-between items-center text-xs">
+                <span
+                  className="font-semibold"
+                  style={{ color: "var(--color-text-primary)" }}
+                >
+                  {item.label}{" "}
+                  <span style={{ color: "var(--color-text-tertiary)" }}>
+                    ({item.weight})
+                  </span>
+                </span>
+                <span className="font-extrabold text-primary-600">
+                  {item.score}%
+                </span>
+              </div>
+              <div
+                className="h-2 rounded-full overflow-hidden"
+                style={{ background: "var(--color-neutral-100)" }}
+              >
+                <div
+                  className="h-full rounded-full transition-all duration-500"
+                  style={{
+                    width: `${item.score}%`,
+                    background:
+                      item.score > 90
+                        ? "var(--color-primary-500)"
+                        : "var(--color-warning-500)",
+                  }}
+                />
+              </div>
+              <p
+                className="text-[11px]"
+                style={{ color: "var(--color-text-tertiary)" }}
+              >
+                {item.detail}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* AI Fit Rationale & Gap Analysis */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div
+          className="p-5 rounded-2xl border"
+          style={{
+            background: "var(--color-surface)",
+            borderColor: "var(--color-border)",
+          }}
+        >
+          <div className="flex items-center gap-2 mb-2 text-primary-600 font-bold text-xs">
+            <Sparkles size={15} /> AI Match Analysis
+          </div>
+          <p
+            className="text-xs leading-relaxed"
+            style={{ color: "var(--color-text-secondary)" }}
+          >
+            Your experience leading large-scale React component systems matches
+            96% of Stripe’s design system team requirements.
+          </p>
+        </div>
+
+        <div
+          className="p-5 rounded-2xl border"
+          style={{
+            background: "var(--color-surface)",
+            borderColor: "var(--color-border)",
+          }}
+        >
+          <div className="flex items-center gap-2 mb-2 text-warning-600 font-bold text-xs">
+            <Zap size={15} /> Opportunity Flag
+          </div>
+          <p
+            className="text-xs leading-relaxed"
+            style={{ color: "var(--color-text-secondary)" }}
+          >
+            Optional requirement:{" "}
+            <strong style={{ color: "var(--color-text-primary)" }}>
+              GraphQL federation
+            </strong>
+            . Estimated time to bridge:{" "}
+            <strong style={{ color: "var(--color-text-primary)" }}>
+              ~1 week
+            </strong>
+            .
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
 
-/** 1 — Transparent match scores: ring + breakdown bars. */
-function MatchVisual() {
-  const bars = [
-    { label: "Skills", score: 95 },
-    { label: "Experience", score: 88 },
-    { label: "Location", score: 95 },
-    { label: "Salary", score: 90 },
+/* ─── EXPANDED CARD 2: RESUME AI ─────────────────────────────────── */
+function ResumeAIContent() {
+  const skills = [
+    { name: "React 19", level: "Expert", tone: "primary" },
+    { name: "TypeScript", level: "Expert", tone: "primary" },
+    { name: "Next.js App Router", level: "Advanced", tone: "primary" },
+    { name: "Tailwind CSS", level: "Advanced", tone: "primary" },
+    { name: "Node.js", level: "Intermediate", tone: "neutral" },
+    { name: "AWS Cloud", level: "Intermediate", tone: "neutral" },
+    { name: "Docker", level: "Working Knowledge", tone: "neutral" },
   ];
-  return (
-    <MockCard>
-      <div className="flex items-center gap-4">
-        <MatchScoreBadge score={94} size="lg" />
-        <div>
-          <p className="text-base font-bold" style={{ color: "var(--color-text-primary)" }}>Excellent Match</p>
-          <p className="text-xs mt-0.5" style={{ color: "var(--color-text-tertiary)" }}>
-            Senior Frontend Engineer · Stripe
-          </p>
-        </div>
-      </div>
-      <div className="mt-5 space-y-3">
-        {bars.map((b) => (
-          <div key={b.label} className="flex items-center gap-3">
-            <span className="text-xs w-20 shrink-0" style={{ color: "var(--color-text-secondary)" }}>{b.label}</span>
-            <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ background: "var(--color-neutral-100)" }}>
-              <div
-                className="h-full rounded-full"
-                style={{ width: `${b.score}%`, background: b.score > 85 ? "var(--color-primary-500)" : "var(--color-warning-500)" }}
-              />
-            </div>
-            <span className="text-xs font-bold w-8 text-right shrink-0" style={{ color: "var(--color-primary-600)" }}>{b.score}%</span>
-          </div>
-        ))}
-      </div>
-    </MockCard>
-  );
-}
 
-/** 2 — AI resume analysis: parsed file + extracted skill chips. */
-function ResumeVisual() {
-  const skills = ["React", "TypeScript", "Node.js", "AWS", "Python", "GraphQL", "Figma"];
   return (
-    <MockCard>
+    <div className="space-y-6 max-w-3xl mx-auto">
+      {/* File Scanner Widget */}
       <div
-        className="flex items-center gap-3 p-3 rounded-lg border"
-        style={{ background: "var(--color-bg-secondary)", borderColor: "var(--color-border)" }}
+        className="p-5 rounded-2xl border flex items-center justify-between gap-4"
+        style={{
+          background: "var(--color-surface)",
+          borderColor: "var(--color-border)",
+        }}
       >
-        <div className="w-9 h-9 rounded-md flex items-center justify-center shrink-0" style={{ background: "var(--color-primary-50)", color: "var(--color-primary-600)" }}>
-          <FileText size={16} />
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold truncate" style={{ color: "var(--color-text-primary)" }}>Alex_Rivera_Resume.pdf</p>
-          <p className="text-xs" style={{ color: "var(--color-text-tertiary)" }}>Parsed in 1.4s</p>
-        </div>
-        <CheckCircle2 size={18} style={{ color: "var(--color-success-500)" }} />
-      </div>
-
-      <p className="text-xs font-bold uppercase tracking-wider mt-5 mb-2.5" style={{ color: "var(--color-text-tertiary)" }}>
-        Skills detected
-      </p>
-      <div className="flex flex-wrap gap-2">
-        {skills.map((s) => (
-          <span
-            key={s}
-            className="text-xs font-semibold px-2.5 py-1 rounded-full"
-            style={{ background: "var(--color-primary-50)", color: "var(--color-primary-700)" }}
+        <div className="flex items-center gap-3">
+          <div
+            className="w-11 h-11 rounded-xl flex items-center justify-center text-primary-600 shrink-0"
+            style={{ background: "var(--color-primary-50)" }}
           >
-            {s}
-          </span>
-        ))}
-      </div>
-
-      <div className="mt-5 pt-4 border-t" style={{ borderColor: "var(--color-neutral-100)" }}>
-        <div className="flex justify-between text-xs mb-1.5">
-          <span style={{ color: "var(--color-text-secondary)" }}>Profile strength</span>
-          <span className="font-bold" style={{ color: "var(--color-primary-600)" }}>92%</span>
+            <FileText size={20} />
+          </div>
+          <div>
+            <p
+              className="text-sm font-bold truncate"
+              style={{ color: "var(--color-text-primary)" }}
+            >
+              Alex_Rivera_Senior_Resume.pdf
+            </p>
+            <p
+              className="text-xs"
+              style={{ color: "var(--color-text-tertiary)" }}
+            >
+              Parsed in 1.1s · 18 skills extracted · ATS Grade: 96/100
+            </p>
+          </div>
         </div>
-        <div className="h-2 rounded-full overflow-hidden" style={{ background: "var(--color-neutral-100)" }}>
-          <div className="h-full rounded-full" style={{ width: "92%", background: "var(--color-primary-500)" }} />
-        </div>
-      </div>
-    </MockCard>
-  );
-}
-
-/** 3 — Smart recommendations: a mini feed of scored roles. */
-function RecommendationsVisual() {
-  const rows = [
-    { logo: "S", bg: "var(--color-primary-700)", title: "Senior Frontend Engineer", company: "Stripe", match: 94 },
-    { logo: "N", bg: "var(--color-primary-800)", title: "Machine Learning Engineer", company: "Nexus AI", match: 88 },
-    { logo: "A", bg: "var(--color-info-600)", title: "React Specialist", company: "Airbnb", match: 89 },
-  ];
-  return (
-    <MockCard>
-      <div className="flex items-center justify-between mb-3">
-        <p className="text-sm font-bold" style={{ color: "var(--color-text-primary)" }}>Recommended for you</p>
-        <span className="flex items-center gap-1 text-xs font-semibold" style={{ color: "var(--color-primary-600)" }}>
-          <Star size={12} className="fill-current" /> 20 new
+        <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-success-50 text-success-600">
+          <CheckCircle2 size={13} /> ATS Verified
         </span>
       </div>
-      <div className="space-y-2">
-        {rows.map((r) => (
-          <div
-            key={r.title}
-            className="flex items-center gap-3 p-2.5 rounded-lg border"
-            style={{ borderColor: "var(--color-border)", background: "var(--color-bg-secondary)" }}
+
+      {/* Auto-extracted Skill Tags */}
+      <div
+        className="p-6 rounded-2xl border space-y-3"
+        style={{
+          background: "var(--color-card)",
+          borderColor: "var(--color-border)",
+        }}
+      >
+        <div className="flex justify-between items-center">
+          <h4
+            className="text-xs font-bold uppercase tracking-wider"
+            style={{ color: "var(--color-text-tertiary)" }}
           >
-            <div className="w-9 h-9 rounded-md flex items-center justify-center text-white font-extrabold text-sm shrink-0" style={{ background: r.bg }}>
-              {r.logo}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-bold truncate" style={{ color: "var(--color-text-primary)" }}>{r.title}</p>
-              <p className="text-xs truncate" style={{ color: "var(--color-text-tertiary)" }}>{r.company}</p>
-            </div>
-            <span className="text-sm font-extrabold shrink-0" style={{ color: "var(--color-primary-600)" }}>{r.match}%</span>
-          </div>
-        ))}
+            Automatically Extracted Skills & Seniority
+          </h4>
+          <span className="text-xs font-bold text-primary-600">
+            7 Core Competencies
+          </span>
+        </div>
+
+        <div className="flex flex-wrap gap-2 pt-1">
+          {skills.map((s) => (
+            <span
+              key={s.name}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all hover:scale-105"
+              style={{
+                background:
+                  s.tone === "primary"
+                    ? "var(--color-primary-50)"
+                    : "var(--color-surface)",
+                borderColor:
+                  s.tone === "primary"
+                    ? "var(--color-primary-200)"
+                    : "var(--color-border)",
+                color:
+                  s.tone === "primary"
+                    ? "var(--color-primary-700)"
+                    : "var(--color-text-primary)",
+              }}
+            >
+              <span>{s.name}</span>
+              <span className="text-[10px] opacity-70 font-normal">
+                ({s.level})
+              </span>
+            </span>
+          ))}
+        </div>
       </div>
-    </MockCard>
+
+      {/* AI Bullet Enhancer Before & After */}
+      <div
+        className="p-6 rounded-2xl border space-y-3"
+        style={{
+          background: "var(--color-surface)",
+          borderColor: "var(--color-border)",
+        }}
+      >
+        <h4
+          className="text-xs font-bold uppercase tracking-wider flex items-center gap-2"
+          style={{ color: "var(--color-text-tertiary)" }}
+        >
+          <BrainCircuit size={15} className="text-primary-600" /> AI Bullet
+          Point Optimizer
+        </h4>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+          <div className="p-3.5 rounded-xl border bg-neutral-50 dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800">
+            <span className="text-[11px] font-bold text-error-600 uppercase">
+              Original Bullet
+            </span>
+            <p className="text-xs mt-1 text-neutral-600 dark:text-neutral-400">
+              &ldquo;Helped build and maintain the web dashboard and fixed bugs
+              for user login.&rdquo;
+            </p>
+          </div>
+          <div className="p-3.5 rounded-xl border bg-primary-50 dark:bg-primary-950/40 border-primary-200 dark:border-primary-800">
+            <span className="text-[11px] font-bold text-primary-600 uppercase flex items-center gap-1">
+              <Sparkles size={11} /> AI Enhanced (Impact-Driven)
+            </span>
+            <p className="text-xs mt-1 font-medium text-neutral-800 dark:text-neutral-100">
+              &ldquo;Architected secure auth flow &amp; responsive dashboard in
+              Next.js 15, slashing page load times by 42% for 250K MAUs.&rdquo;
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
-/** 4 — Application tracking: a status pipeline + application rows. */
-function TrackingVisual() {
-  const stages = [
-    { label: "Applied", icon: <Check size={13} />, done: true },
-    { label: "Viewed", icon: <Eye size={13} />, done: true },
-    { label: "Interview", icon: <Calendar size={13} />, active: true },
-    { label: "Offer", icon: <Award size={13} />, done: false },
+/* ─── EXPANDED CARD 3: CURATED DISCOVERY FEED ────────────────────── */
+function DiscoveryFeedContent() {
+  const jobs = [
+    {
+      title: "Staff Frontend Architect",
+      company: "Stripe",
+      loc: "San Francisco / Remote",
+      pay: "$180K – $240K",
+      match: 96,
+      logo: "S",
+      bg: "var(--color-primary-700)",
+    },
+    {
+      title: "Senior Design Systems Engineer",
+      company: "Figma",
+      loc: "New York / Hybrid",
+      pay: "$165K – $210K",
+      match: 93,
+      logo: "F",
+      bg: "var(--color-neutral-800)",
+    },
+    {
+      title: "Lead Full-Stack Developer",
+      company: "Airbnb",
+      loc: "Remote (Global)",
+      pay: "$170K – $220K",
+      match: 90,
+      logo: "A",
+      bg: "var(--color-info-600)",
+    },
   ];
+
   return (
-    <MockCard>
-      <p className="text-sm font-bold mb-4" style={{ color: "var(--color-text-primary)" }}>Application pipeline</p>
-      <div className="flex items-center">
-        {stages.map((s, i) => (
-          <React.Fragment key={s.label}>
-            <div className="flex flex-col items-center gap-1.5">
-              <div
-                className="w-8 h-8 rounded-full flex items-center justify-center"
-                style={{
-                  background: s.done ? "var(--color-primary-600)" : s.active ? "var(--color-primary-100)" : "var(--color-neutral-100)",
-                  color: s.done ? "var(--color-text-on-primary)" : s.active ? "var(--color-primary-700)" : "var(--color-text-tertiary)",
-                  border: s.active ? "2px solid var(--color-primary-500)" : "none"
-                }}
-              >
-                {s.icon}
-              </div>
-              <span className="text-xs font-medium whitespace-nowrap" style={{ color: s.done || s.active ? "var(--color-primary-600)" : "var(--color-text-tertiary)" }}>
-                {s.label}
-              </span>
-            </div>
-            {i < stages.length - 1 && (
-              <div className="flex-1 h-0.5 -mt-5" style={{ background: s.done ? "var(--color-primary-500)" : "var(--color-neutral-200)" }} />
-            )}
-          </React.Fragment>
-        ))}
+    <div className="space-y-6 max-w-3xl mx-auto">
+      <div
+        className="p-5 rounded-2xl border flex items-center justify-between"
+        style={{
+          background: "var(--color-surface)",
+          borderColor: "var(--color-border)",
+        }}
+      >
+        <div>
+          <h4
+            className="text-sm font-bold"
+            style={{ color: "var(--color-text-primary)" }}
+          >
+            Daily Curated Feed (24 New Matches Today)
+          </h4>
+          <p
+            className="text-xs"
+            style={{ color: "var(--color-text-tertiary)" }}
+          >
+            Filtered from 12,000+ postings across LinkedIn, Indeed, and direct
+            company boards.
+          </p>
+        </div>
+        <span className="text-xs font-bold text-primary-600 flex items-center gap-1">
+          <Star size={13} className="fill-current" /> High Confidence
+        </span>
       </div>
 
-      <div className="mt-5 space-y-2">
-        {[
-          { role: "Senior Frontend Engineer", company: "Stripe", status: "Interview", tone: "primary" },
-          { role: "Data Scientist", company: "Nexus AI", status: "Offer", tone: "success" },
-        ].map((a) => (
+      <div className="space-y-3">
+        {jobs.map((job) => (
           <div
-            key={a.role}
-            className="flex items-center justify-between gap-3 p-2.5 rounded-lg border"
-            style={{ borderColor: "var(--color-border)", background: "var(--color-bg-secondary)" }}
+            key={job.title}
+            className="p-4 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-all hover:scale-[1.01]"
+            style={{
+              background: "var(--color-card)",
+              borderColor: "var(--color-border)",
+            }}
           >
-            <div className="min-w-0">
-              <p className="text-xs font-bold truncate" style={{ color: "var(--color-text-primary)" }}>{a.role}</p>
-              <p className="text-xs truncate" style={{ color: "var(--color-text-tertiary)" }}>{a.company}</p>
+            <div className="flex items-center gap-3.5">
+              <div
+                className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-extrabold text-sm shrink-0 shadow-sm"
+                style={{ background: job.bg }}
+              >
+                {job.logo}
+              </div>
+              <div>
+                <p
+                  className="text-sm font-bold"
+                  style={{ color: "var(--color-text-primary)" }}
+                >
+                  {job.title}
+                </p>
+                <div
+                  className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs"
+                  style={{ color: "var(--color-text-tertiary)" }}
+                >
+                  <span>{job.company}</span>
+                  <span>·</span>
+                  <span>{job.loc}</span>
+                  <span>·</span>
+                  <span className="font-semibold text-success-600">
+                    {job.pay}
+                  </span>
+                </div>
+              </div>
             </div>
-            <span
-              className="text-xs font-bold px-2.5 py-0.5 rounded-full shrink-0"
-              style={
-                a.tone === "success"
-                  ? { background: "var(--color-success-100)", color: "var(--color-success-600)" }
-                  : { background: "var(--color-primary-100)", color: "var(--color-primary-700)" }
-              }
+
+            <div className="flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-neutral-100 dark:border-neutral-800">
+              <MatchScoreBadge score={job.match} size="sm" />
+              <Link
+                href="/jobs"
+                className="px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-primary-600 hover:bg-primary-700 transition-colors"
+              >
+                View Role
+              </Link>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ─── EXPANDED CARD 4: PIPELINE & OFFER TRACKER ──────────────────── */
+function PipelineTrackingContent() {
+  const stages = [
+    { label: "Applied", count: 12, active: false, done: true },
+    { label: "Screening", count: 5, active: false, done: true },
+    { label: "Technical Round", count: 2, active: true, done: false },
+    { label: "Final Offer", count: 1, active: false, done: false },
+  ];
+
+  return (
+    <div className="space-y-6 max-w-3xl mx-auto">
+      {/* Pipeline Status Ribbon */}
+      <div
+        className="p-6 rounded-2xl border"
+        style={{
+          background: "var(--color-card)",
+          borderColor: "var(--color-border)",
+        }}
+      >
+        <h4
+          className="text-xs font-bold uppercase tracking-wider mb-5"
+          style={{ color: "var(--color-text-tertiary)" }}
+        >
+          Active Application Progress
+        </h4>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {stages.map((st, i) => (
+            <div
+              key={st.label}
+              className="p-3.5 rounded-xl border flex flex-col justify-between"
+              style={{
+                background: st.active
+                  ? "var(--color-primary-50)"
+                  : "var(--color-surface)",
+                borderColor: st.active
+                  ? "var(--color-primary-300)"
+                  : "var(--color-border)",
+              }}
             >
-              {a.status}
+              <div className="flex items-center justify-between">
+                <span
+                  className="text-[11px] font-semibold"
+                  style={{ color: "var(--color-text-tertiary)" }}
+                >
+                  Step 0{i + 1}
+                </span>
+                {st.done && (
+                  <CheckCircle2 size={14} className="text-success-500" />
+                )}
+                {st.active && (
+                  <Sparkles size={14} className="text-primary-600" />
+                )}
+              </div>
+              <div className="mt-3">
+                <p className="text-lg font-extrabold text-primary-600">
+                  {st.count}
+                </p>
+                <p
+                  className="text-xs font-bold"
+                  style={{ color: "var(--color-text-primary)" }}
+                >
+                  {st.label}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Active Offer Card */}
+      <div
+        className="p-5 rounded-2xl border"
+        style={{
+          background: "var(--color-surface)",
+          borderColor: "var(--color-border)",
+        }}
+      >
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <Award size={18} className="text-success-600" />
+            <span
+              className="text-sm font-bold"
+              style={{ color: "var(--color-text-primary)" }}
+            >
+              Active Offer Received: Senior Engineer @ Stripe
             </span>
           </div>
-        ))}
+          <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-success-50 text-success-600">
+            Decision in 4 Days
+          </span>
+        </div>
+
+        <div className="grid grid-cols-3 gap-2 text-center p-3 rounded-xl bg-neutral-50 dark:bg-neutral-900">
+          <div>
+            <p
+              className="text-[11px]"
+              style={{ color: "var(--color-text-tertiary)" }}
+            >
+              Base Salary
+            </p>
+            <p
+              className="text-sm font-bold"
+              style={{ color: "var(--color-text-primary)" }}
+            >
+              $185,000
+            </p>
+          </div>
+          <div>
+            <p
+              className="text-[11px]"
+              style={{ color: "var(--color-text-tertiary)" }}
+            >
+              Annual Equity
+            </p>
+            <p className="text-sm font-bold text-primary-600">$60,000 / yr</p>
+          </div>
+          <div>
+            <p
+              className="text-[11px]"
+              style={{ color: "var(--color-text-tertiary)" }}
+            >
+              Signing Bonus
+            </p>
+            <p className="text-sm font-bold text-success-600">$25,000</p>
+          </div>
+        </div>
       </div>
-    </MockCard>
+    </div>
   );
 }
 
-/* ─── FEATURE DATA ───────────────────────────────────────────── */
-interface Feature {
-  num: string;
-  eyebrow: string;
-  icon: LucideIcon;
-  title: string;
-  description: string;
-  points: string[];
-  cta: { label: string; href: string };
-  Visual: React.ComponentType;
+/* ─── EXPANDED CARD 5: AI INTERVIEW PREPARATION ──────────────────── */
+function InterviewPrepContent() {
+  return (
+    <div className="space-y-6 max-w-3xl mx-auto">
+      <div
+        className="p-5 rounded-2xl border"
+        style={{
+          background: "var(--color-surface)",
+          borderColor: "var(--color-border)",
+        }}
+      >
+        <div className="flex items-center gap-2.5 mb-1.5 text-primary-600 font-bold text-sm">
+          <BrainCircuit size={18} /> Role-Specific AI Mock Simulation
+        </div>
+        <p className="text-xs" style={{ color: "var(--color-text-tertiary)" }}>
+          Simulated questions generated based on Stripe&apos;s React
+          architectural stack &amp; design system engineering expectations.
+        </p>
+      </div>
+
+      <div
+        className="p-5 rounded-2xl border space-y-3"
+        style={{
+          background: "var(--color-card)",
+          borderColor: "var(--color-border)",
+        }}
+      >
+        <div className="flex justify-between items-center">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-primary-600">
+            System Design Question
+          </span>
+          <span
+            className="text-xs font-semibold"
+            style={{ color: "var(--color-text-tertiary)" }}
+          >
+            High Frequency · Difficulty: Hard
+          </span>
+        </div>
+
+        <p
+          className="text-sm font-bold"
+          style={{ color: "var(--color-text-primary)" }}
+        >
+          &ldquo;How would you architect a resilient, offline-capable dashboard
+          that handles real-time payment webhook streaming and state
+          synchronization?&rdquo;
+        </p>
+
+        <div className="p-4 rounded-xl border bg-primary-50 dark:bg-primary-950/40 border-primary-200 dark:border-primary-800 space-y-2">
+          <p className="text-xs font-bold text-primary-700 dark:text-primary-300 flex items-center gap-1.5">
+            <Sparkles size={13} /> Recommended Key Talking Points (STAR Method):
+          </p>
+          <ul className="text-xs space-y-1.5 list-disc list-inside text-neutral-700 dark:text-neutral-200">
+            <li>
+              Highlight optimistic UI updates with TanStack Query mutation
+              rollbacks.
+            </li>
+            <li>
+              Explain IndexedDB caching with Service Worker background
+              synchronization.
+            </li>
+            <li>
+              Discuss WebSockets fallback with exponential backoff heartbeat
+              reconnection.
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  );
 }
 
-const FEATURES: Feature[] = [
+/* ─── EXPANDED CARD 6: COMPENSATION INTELLIGENCE ─────────────────── */
+function CompensationContent() {
+  const percentiles = [
+    { label: "25th (Entry/Junior)", val: "$140,000" },
+    { label: "50th (Market Median)", val: "$172,000", highlight: true },
+    { label: "75th (Top Quartile)", val: "$198,000" },
+    { label: "90th (Top Tier Tech)", val: "$235,000" },
+  ];
+
+  return (
+    <div className="space-y-6 max-w-3xl mx-auto">
+      <div
+        className="p-5 rounded-2xl border flex items-center justify-between"
+        style={{
+          background: "var(--color-surface)",
+          borderColor: "var(--color-border)",
+        }}
+      >
+        <div>
+          <h4
+            className="text-sm font-bold flex items-center gap-2"
+            style={{ color: "var(--color-text-primary)" }}
+          >
+            <TrendingUp size={16} className="text-success-600" /> Senior
+            Frontend Engineer Benchmark
+          </h4>
+          <p
+            className="text-xs"
+            style={{ color: "var(--color-text-tertiary)" }}
+          >
+            Based on 3,400+ verified offers in San Francisco, New York, and US
+            Remote.
+          </p>
+        </div>
+        <DollarSign size={24} className="text-success-600 hidden sm:block" />
+      </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {percentiles.map((p) => (
+          <div
+            key={p.label}
+            className="p-4 rounded-xl border text-center"
+            style={{
+              background: p.highlight
+                ? "var(--color-primary-50)"
+                : "var(--color-card)",
+              borderColor: p.highlight
+                ? "var(--color-primary-300)"
+                : "var(--color-border)",
+            }}
+          >
+            <p
+              className="text-[11px]"
+              style={{ color: "var(--color-text-tertiary)" }}
+            >
+              {p.label}
+            </p>
+            <p
+              className="text-base font-extrabold mt-1.5"
+              style={{
+                color: p.highlight
+                  ? "var(--color-primary-600)"
+                  : "var(--color-text-primary)",
+              }}
+            >
+              {p.val}
+            </p>
+          </div>
+        ))}
+      </div>
+
+      <div
+        className="p-5 rounded-2xl border flex items-center justify-between gap-4"
+        style={{
+          background: "var(--color-surface)",
+          borderColor: "var(--color-border)",
+        }}
+      >
+        <div>
+          <p
+            className="text-xs font-bold"
+            style={{ color: "var(--color-text-primary)" }}
+          >
+            Ready to negotiate your highest offer?
+          </p>
+          <p
+            className="text-xs"
+            style={{ color: "var(--color-text-tertiary)" }}
+          >
+            Get AI-generated counter-offer emails and leverage scenarios.
+          </p>
+        </div>
+        <Link
+          href="/signup"
+          className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-primary-600 hover:bg-primary-700 transition-all shrink-0"
+        >
+          Unlock Scripts
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+/* ─── CAROUSEL CARDS DATA ────────────────────────────────────────── */
+const CAROUSEL_CARDS = [
   {
-    num: "01",
-    eyebrow: "Matching",
-    icon: Target,
-    title: "See a transparent score on every job",
-    description:
-      "No more guessing whether a role is worth your time. JobFits scores every listing from 0–100 across skills, experience, salary, and location — and shows you exactly why it fits before you apply.",
-    points: [
-      "Weighted breakdown for skills, experience, location & pay",
-      "Honest skill-gap flags with time-to-learn estimates",
-      "Only shown once your profile is complete — no noise",
-    ],
-    cta: { label: "See how matching works", href: "/signup" },
-    Visual: MatchVisual
+    category: "AI Matching",
+    title: "Transparent match score on every job.",
+    src: "/section2/Transparentmatchscoreoneveryjob.jpg",
+    content: <MatchScoringContent />,
   },
   {
-    num: "02",
-    eyebrow: "Resume AI",
-    icon: FileText,
-    title: "Upload once, get understood instantly",
-    description:
-      "Drop in a PDF or DOCX and our AI reads it in seconds — extracting your skills, seniority, and experience to build a living profile that keeps every match accurate.",
-    points: [
-      "Automatic skill & experience extraction",
-      "Profile-strength meter with improvement tips",
-      "Re-parses on every update so matches stay fresh",
-    ],
-    cta: { label: "Analyze my resume", href: "/signup" },
-    Visual: ResumeVisual
+    category: "Resume AI",
+    title: "Upload once, get understood instantly.",
+    src: "/section2/A%20daily%20feed%20built%20around%20you.jpg",
+    content: <ResumeAIContent />,
   },
   {
-    num: "03",
-    eyebrow: "Discovery",
-    icon: Star,
-    title: "A daily feed built around you",
-    description:
-      "Stop scrolling through hundreds of irrelevant listings. JobFits surfaces a curated set of roles matched to your profile every day, ranked by how well they actually fit.",
-    points: [
-      "Fresh recommendations refreshed daily",
-      "Ranked by real match score, not keywords",
-      "Save roles and get alerts when new matches land",
-    ],
-    cta: { label: "Browse recommendations", href: "/jobs" },
-    Visual: RecommendationsVisual
+    category: "Smart Discovery",
+    title: "A daily feed built around you.",
+    src: "/section2/A%20daily%20feed%20built%20around%20you.jpg",
+    content: <DiscoveryFeedContent />,
   },
   {
-    num: "04",
-    eyebrow: "Pipeline",
-    icon: Briefcase,
-    title: "Track every application to the offer",
-    description:
-      "One clear pipeline for your whole search: submitted, viewed, interview, offer. Never lose the thread again — and get AI interview prep for every role you land.",
-    points: [
-      "Visual status pipeline for each application",
-      "Role-specific interview prep, generated for you",
-      "Offer tracking with deadlines you won't miss",
-    ],
-    cta: { label: "Start tracking", href: "/signup" },
-    Visual: TrackingVisual
+    category: "Career Pipeline",
+    title: "Track every application to the offer.",
+    src: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=2600&auto=format&fit=crop",
+    content: <PipelineTrackingContent />,
+  },
+  {
+    category: "Interview Prep",
+    title: "Ace interviews with role-tailored AI prep.",
+    src: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=2600&auto=format&fit=crop",
+    content: <InterviewPrepContent />,
+  },
+  {
+    category: "Market Intel",
+    title: "Know your true compensation value.",
+    src: "https://images.unsplash.com/photo-1559526324-4b87b5e36e44?q=80&w=2600&auto=format&fit=crop",
+    content: <CompensationContent />,
   },
 ];
 
-/* ─── FEATURE PANEL (one full-height "page") ─────────────────── */
-function FeaturePanel({ feature, index }: { feature: Feature; index: number }) {
-  const { num, eyebrow, icon: Icon, title, description, points, cta, Visual } = feature;
-  const reverse = index % 2 === 1;
-  const bg = index % 2 === 0 ? "var(--color-bg)" : "var(--color-bg-secondary)";
+/* ─── EXPORTED SECTION ───────────────────────────────────────────── */
+export function FeaturesSection() {
+  const cards = CAROUSEL_CARDS.map((card, index) => (
+    <Card key={card.title} card={card} index={index} layout={true} />
+  ));
 
   return (
-    <div className="py-16 lg:py-24" style={{ background: bg }}>
-      <div className="max-w-7xl mx-auto w-full px-6 lg:px-8">
-        <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+    <section
+      id="features"
+      className="py-8 md:py-12 overflow-hidden"
+      style={{ background: "var(--color-bg)" }}
+    >
+      <div className="max-w-7xl mx-auto px-6 lg:px-8 mb-2">
+        <div className="flex flex-col items-start">
+          <h2
+            className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight"
+            style={{ color: "var(--color-text-primary)" }}
+          >
+            Get to know your JobFits.
+          </h2>
 
-          {/* TEXT */}
-          <Reveal variant={reverse ? "right" : "left"} className={reverse ? "lg:order-2" : ""}>
-            <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-lg flex items-center justify-center" style={{ background: "var(--color-primary-50)", color: "var(--color-primary-600)" }}>
-                <Icon size={20} />
-              </div>
-              <span className="text-xs font-bold uppercase tracking-wider" style={{ color: "var(--color-primary-600)" }}>
-                {num} · {eyebrow}
-              </span>
-            </div>
-
-            <h3 className="mt-5 text-3xl sm:text-4xl font-extrabold tracking-tight leading-tight" style={{ color: "var(--color-text-primary)" }}>
-              {title}
-            </h3>
-            <p className="mt-4 text-lg leading-relaxed" style={{ color: "var(--color-text-secondary)" }}>
-              {description}
-            </p>
-
-            <ul className="mt-6 space-y-3">
-              {points.map((p) => (
-                <li key={p} className="flex items-start gap-2.5">
-                  <CheckCircle2 size={18} className="shrink-0 mt-0.5" style={{ color: "var(--color-success-500)" }} />
-                  <span className="text-sm" style={{ color: "var(--color-text-primary)" }}>{p}</span>
-                </li>
-              ))}
-            </ul>
-
-            <Link
-              href={cta.href}
-              className="mt-7 inline-flex items-center gap-1.5 text-sm font-bold transition-colors hover:gap-2.5"
-              style={{ color: "var(--color-primary-600)" }}
-            >
-              {cta.label} <ArrowRight size={15} />
-            </Link>
-          </Reveal>
-
-          {/* VISUAL */}
-          <Reveal variant={reverse ? "left" : "right"} delay={120} className={reverse ? "lg:order-1" : ""}>
-            <div className="relative rounded-2xl p-6 sm:p-10" style={{ background: "var(--color-primary-50)" }}>
-              {/* Decorative accents */}
-              <div className="absolute top-4 right-4 w-24 h-24 rounded-full opacity-60 pointer-events-none" style={{ background: "var(--color-primary-100)" }} />
-              <div className="relative">
-                <Visual />
-              </div>
-            </div>
-          </Reveal>
-
+          <p
+            className="mt-2 text-base sm:text-lg max-w-2xl leading-relaxed"
+            style={{ color: "var(--color-text-secondary)" }}
+          >
+            Tap any card to explore how our intelligent matching, resume AI,
+            interview prep, and pipeline tracking give you an unfair advantage.
+          </p>
         </div>
       </div>
-    </div>
-  );
-}
 
-/* ─── SECTION ROOT ───────────────────────────────────────────── */
-export function FeaturesSection() {
-  return (
-    <section id="features" className="scroll-mt-16">
-      {/* Intro */}
-      <div className="pt-5 pb-8 lg:pt-24 lg:pb-10 text-center" style={{ background: "var(--color-bg)" }}>
-        <Reveal className="max-w-3xl mx-auto px-6 lg:px-8">
-          <h2 className="mt-4 text-3xl sm:text-4xl font-extrabold tracking-tight" style={{ color: "var(--color-text-primary)" }}>
-            Everything you need to land the right role
-          </h2>
-          <p className="mt-4 text-base leading-relaxed" style={{ color: "var(--color-text-secondary)" }}>
-            Four ways JobFits takes you from resume to offer — scroll through to see each one in action.
-          </p>
-          <div className="mt-2 flex justify-center gap-2">
-            {FEATURES.map((f) => (
-              <span key={f.num} className="w-2 h-2 rounded-full" style={{ background: "var(--color-primary-200)" }} />
-            ))}
-          </div>
-        </Reveal>
-      </div>
-
-      {/* One full-height panel per feature */}
-      {FEATURES.map((feature, i) => (
-        <FeaturePanel key={feature.num} feature={feature} index={i} />
-      ))}
+      {/* Aceternity Apple Cards Carousel */}
+      <Carousel items={cards} />
     </section>
   );
 }

@@ -443,6 +443,35 @@
     animation-play-state: paused;
   }
 
+  /* ─── 3D Marquee (decorative section backdrop) ──────────── */
+  .marquee-3d-stage {
+    width: 1600px;
+    height: 1600px;
+  }
+
+  .marquee-3d-plane {
+    transform: rotateX(55deg) rotateY(0deg) rotateZ(-45deg);
+    transform-style: preserve-3d;
+  }
+
+  .marquee-3d-scrim {
+    background: radial-gradient(
+      ellipse at 50% 50%,
+      transparent 0%,
+      transparent 25%,
+      color-mix(in srgb, var(--color-card) 35%, transparent) 55%,
+      var(--color-card) 95%
+    );
+  }
+
+  .layer-sticky-backdrop {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    margin-bottom: -100vh;
+    contain: paint;
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .animate-float,
     .animate-float-delayed,

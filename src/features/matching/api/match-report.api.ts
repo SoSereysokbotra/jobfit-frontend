@@ -24,12 +24,29 @@ export interface SearchabilityCheck {
   hint?: string;
 }
 
+/**
+ * Pay as the POSTING advertises it — shown, never scored.
+ *
+ * The candidate's expected salary is stored without a period, so comparing a monthly
+ * advert against it would mean inventing a unit. The advert's own words are shown
+ * instead, period included.
+ */
+export interface PostedSalary {
+  min: number | null;
+  max: number | null;
+  currency: string | null;
+  /** "MONTH" | "YEAR" | "HOUR" … Null when the posting doesn't say. */
+  period: string | null;
+}
+
 export interface ReportJob {
   externalId: string;
   source: string;
   title: string;
   company: string | null;
   location: string | null;
+  /** What the posting advertises, when it publishes it as structured data. */
+  salary: PostedSalary | null;
 }
 
 export interface ReportMatchRate {
@@ -69,6 +86,15 @@ export interface ReportExperience {
   candidateYears: number | null;
   /** Null when either side is unknown — not the same as "doesn't meet it". */
   met: boolean | null;
+  /**
+   * Where the bar came from, or null when none was found.
+   *
+   * `posting-data` — the site published it as a NUMBER (schema.org
+   *   `monthsOfExperience`): language-proof and exact, so it works on a Khmer advert.
+   * `posting-text` — read out of the prose, which is guarded against age ranges and
+   *   negations but is still a reading, not a fact.
+   */
+  statedIn: "posting-data" | "posting-text" | null;
 }
 
 export interface ReportSearchability {
@@ -86,6 +112,11 @@ export interface ReportSkill {
   /** Which résumé skills carried the match — lets the reader overrule a weak one. */
   matchedSkills?: string[];
   matchQuality?: "EXACT" | "PARTIAL";
+  /**
+   * The posting hedged this one — "an advantage", "a plus", "preferred". Shown, but
+   * excluded from the matched/missing counts: it isn't something the employer requires.
+   */
+  optional?: boolean;
 }
 
 export interface ReportSkills {
@@ -109,8 +140,26 @@ export interface ReportResume {
   summaryPresent: boolean;
 }
 
+/**
+ * A requirement a candidate either has or hasn't: a qualification or a language.
+ *
+ * These WARN and never penalise — they do not move the match rate. Employers hire under
+ * their stated bar routinely, and a score that silently absorbs a penalty stops being
+ * interpretable.
+ */
+export interface HardRequirement {
+  kind: "DEGREE" | "LANGUAGE";
+  label: string;
+  /** Null = couldn't check (no parsed CV). NEVER render null as "you lack this". */
+  met: boolean | null;
+  /** The posting's own words, so the reader can overrule our reading. */
+  quote: string;
+}
+
 export interface MatchReportPayload {
   job: ReportJob;
+  /** Degree/language bars stated by the posting. Empty for most postings. */
+  hardRequirements: HardRequirement[];
   matchRate: ReportMatchRate | null;
   searchability: ReportSearchability | null;
   skills: ReportSkills;

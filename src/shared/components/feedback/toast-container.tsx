@@ -4,73 +4,94 @@ import React from "react";
 import { CheckCircle2, AlertCircle, AlertTriangle, Info, X } from "lucide-react";
 import { useToastStore, toast, type ToastType, type ToastMessage } from "@/stores/toast-store";
 import { cn } from "@/shared/utils/cn";
+import { motion, AnimatePresence } from "framer-motion";
 
-const ICONS: Record<ToastType, React.ReactNode> = {
-  success: <CheckCircle2 size={18} className="text-success-600 shrink-0" />,
-  error: <AlertCircle size={18} className="text-error-600 shrink-0" />,
-  warning: <AlertTriangle size={18} className="text-warning-600 shrink-0" />,
-  info: <Info size={18} className="text-info-600 shrink-0" />,
+const ICONS: Record<ToastType, React.ElementType> = {
+  success: CheckCircle2,
+  error: AlertCircle,
+  warning: AlertTriangle,
+  info: Info,
 };
 
 const BORDER_COLORS: Record<ToastType, string> = {
-  success: "var(--color-success-500)",
-  error: "var(--color-error-500)",
-  warning: "var(--color-warning-500)",
-  info: "var(--color-info-500)",
+  success: "border-green-500/20",
+  error: "border-red-500/20",
+  warning: "border-amber-500/20",
+  info: "border-blue-500/20",
+};
+
+const BG_COLORS: Record<ToastType, string> = {
+  success: "bg-green-50",
+  error: "bg-red-50",
+  warning: "bg-amber-50",
+  info: "bg-blue-50",
+};
+
+const ICON_COLORS: Record<ToastType, string> = {
+  success: "text-green-500",
+  error: "text-red-500",
+  warning: "text-amber-500",
+  info: "text-blue-500",
 };
 
 function ToastItem({ item }: { item: ToastMessage }) {
+  const Icon = ICONS[item.type];
+
   return (
-    <div
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: 50, scale: 0.9 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
+      transition={{ type: "spring", stiffness: 400, damping: 30 }}
       role="status"
       aria-live="polite"
       className={cn(
-        "flex items-start gap-3 p-4 rounded-xl border shadow-lg transition-all duration-300 animate-slide-up min-w-[300px] max-w-md pointer-events-auto"
+        "pointer-events-auto flex w-full min-w-[300px] max-w-sm items-start gap-3 rounded-xl border p-4",
+        "bg-white", // Solid light base
+        BORDER_COLORS[item.type],
+        BG_COLORS[item.type]
       )}
-      style={{
-        background: "var(--color-card)",
-        borderColor: "var(--color-border)",
-        borderLeftWidth: "4px",
-        borderLeftColor: BORDER_COLORS[item.type],
-        boxShadow: "var(--shadow-xl)",
-      }}
     >
-      {ICONS[item.type]}
-      <div className="flex-1 min-w-0">
+      <div className={cn("mt-0.5 shrink-0", ICON_COLORS[item.type])}>
+        <Icon size={20} className="animate-in zoom-in duration-300" />
+      </div>
+      
+      <div className="flex-1 min-w-0 space-y-1">
         {item.title && (
-          <h4 className="text-sm font-bold leading-none mb-1" style={{ color: "var(--color-text-primary)" }}>
+          <h4 className="text-sm font-semibold text-neutral-900">
             {item.title}
           </h4>
         )}
-        <p className="text-xs leading-relaxed" style={{ color: "var(--color-text-secondary)" }}>
+        <p className="text-sm text-neutral-600 leading-relaxed">
           {item.message}
         </p>
       </div>
+
       <button
         onClick={() => toast.dismiss(item.id)}
         aria-label="Dismiss notification"
-        className="p-1 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors shrink-0"
-        style={{ color: "var(--color-text-tertiary)" }}
+        className="shrink-0 rounded-md p-1.5 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-900 transition-colors"
       >
-        <X size={14} />
+        <X size={16} />
       </button>
-    </div>
+    </motion.div>
   );
 }
 
 export function ToastContainer() {
   const toasts = useToastStore();
 
-  if (toasts.length === 0) return null;
-
   return (
     <div
-      className="fixed bottom-5 right-5 flex flex-col gap-2.5 pointer-events-none p-4 max-w-full"
+      className="fixed bottom-4 right-4 md:bottom-8 md:right-8 z-50 flex max-h-screen w-full max-w-md flex-col justify-end gap-2 p-4 pointer-events-none"
       style={{ zIndex: "var(--z-toast, 400)" as unknown as number }}
     >
-      {toasts.map((t) => (
-        <ToastItem key={t.id} item={t} />
-      ))}
+      <AnimatePresence mode="popLayout">
+        {toasts.map((t) => (
+          <ToastItem key={t.id} item={t} />
+        ))}
+      </AnimatePresence>
     </div>
   );
 }

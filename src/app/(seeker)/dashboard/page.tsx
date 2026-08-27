@@ -1,10 +1,11 @@
 "use client";
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import Link from "next/link";
 import { Briefcase, Calendar, Award, Target, CheckCircle2, Star, ArrowRight, Search, Upload, BarChart3, ChevronRight } from "lucide-react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { JobCard } from "@/features/job/components";
 import { useSession, displayName } from "@/features/auth/hooks/use-session";
+import { toast } from "@/stores/toast-store";
 import { useMyStats } from "@/features/insights/hooks/use-insights";
 import { useJobs } from "@/features/job/hooks/use-job";
 import { useSavedJobIds, useToggleSavedJob } from "@/features/saved-jobs/hooks/use-saved-jobs";
@@ -90,12 +91,26 @@ export default function DashboardPage() {
   const { user } = useSession();
   const firstName = displayName(user).firstName || "there";
 
+  const hasToasted = useRef(false);
+
+  useEffect(() => {
+    if (!hasToasted.current) {
+      toast.success(`Welcome back, ${firstName}!`, {
+        title: "Login Successful",
+      });
+      hasToasted.current = true;
+    }
+  }, [firstName]);
+
   // Real seeker funnel stats (GET /analytics/my-stats) drive the stat tiles.
   const { data: stats } = useMyStats();
   // Saved jobs are now backend-backed; the count feeds the "Saved Jobs" tile.
   const { ids: savedIds } = useSavedJobIds();
   const toggleSaved = useToggleSavedJob();
-  const toggleSave = (id: string) => toggleSaved.mutate(id);
+  const toggleSave = (id: string) => {
+    toast.success(savedIds.has(id) ? "Job removed from saved list" : "Job saved successfully!");
+    toggleSaved.mutate(id);
+  };
   // Real published jobs — shown as "Recent openings" (match scores await the AI service).
   const { data: jobs = [] } = useJobs();
   const topJobs = jobs.slice(0, 3);
@@ -155,12 +170,14 @@ export default function DashboardPage() {
             <div className="flex flex-wrap gap-2 mt-4">
               <Link
                 href="/recommendations"
+                onClick={() => toast.info("Opening your job matches...")}
                 className="px-4 py-2 rounded-md text-xs font-bold bg-on-primary text-primary-800 hover:bg-primary-50 transition-all duration-200 active:scale-[0.98] inline-flex items-center gap-1.5"
               >
                 <Star size={13} /> View New Matches
               </Link>
               <Link
                 href="/applications"
+                onClick={() => toast.info("Viewing your applications...")}
                 className="px-4 py-2 rounded-md text-xs font-bold text-on-primary border border-on-primary-border hover:bg-on-primary-surface transition-all duration-200 active:scale-[0.98] inline-flex items-center gap-1.5"
               >
                 <Briefcase size={13} /> Track Applications
@@ -188,6 +205,7 @@ export default function DashboardPage() {
               </p>
               <Link
                 href="/profile"
+                onClick={() => toast.info("Opening profile editor...")}
                 className="text-xs font-bold text-on-primary-muted hover:text-on-primary mt-1 inline-flex items-center gap-1 transition-colors"
               >
                 Complete profile <ChevronRight size={12} />
@@ -208,6 +226,7 @@ export default function DashboardPage() {
           accentColor="var(--color-primary-600)"
           accentBg="var(--color-primary-50)"
           href="/applications"
+          onClick={() => toast.info("Viewing your applications...")}
         />
         <StatCard
           label="Interviews"
@@ -216,6 +235,7 @@ export default function DashboardPage() {
           accentColor="var(--color-info-600)"
           accentBg="var(--color-info-50)"
           href="/applications"
+          onClick={() => toast.info("Viewing your interviews...")}
         />
         <StatCard
           label="Offers"
@@ -224,6 +244,7 @@ export default function DashboardPage() {
           accentColor="var(--color-success-600)"
           accentBg="var(--color-success-50)"
           href="/offers"
+          onClick={() => toast.info("Viewing your offers...")}
         />
         <StatCard
           label="Saved Jobs"
@@ -232,6 +253,7 @@ export default function DashboardPage() {
           accentColor="var(--color-warning-600)"
           accentBg="var(--color-warning-50)"
           href="/saved-jobs"
+          onClick={() => toast.info("Viewing saved jobs...")}
         />
       </div>
       </Reveal>
@@ -292,6 +314,7 @@ export default function DashboardPage() {
             action={
               <Link
                 href="/jobs"
+                onClick={() => toast.info("Opening job board...")}
                 className="text-xs font-bold flex items-center gap-1 transition-colors hover:opacity-80"
                 style={{ color: "var(--color-primary-600)" }}
               >
@@ -332,6 +355,7 @@ export default function DashboardPage() {
                 <Link
                   key={action.label}
                   href={action.href}
+                  onClick={() => toast.info(`Navigating to ${action.label}...`)}
                   className="flex flex-col items-center gap-2.5 p-4 rounded-lg border transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 group"
                   style={{ borderColor: "var(--color-border)", background: "var(--color-bg-secondary)" }}
                 >
@@ -403,6 +427,7 @@ export default function DashboardPage() {
 
             <Link
               href="/profile"
+              onClick={() => toast.info("Opening profile editor...")}
               className="mt-5 w-full flex items-center justify-center gap-2 py-2.5 rounded-md text-xs font-bold text-white bg-primary-600 hover:bg-primary-700 transition-all duration-200 active:scale-95"
             >
               Complete Profile <ArrowRight size={13} />

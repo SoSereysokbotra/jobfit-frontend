@@ -15,6 +15,7 @@ import {
   isAcknowledged,
   ago,
 } from "@/features/admin/api/admin.mappers";
+import { toast } from "@/stores/toast-store";
 
 function AlertIcon({ severity }: { severity: string }) {
   const tone = severityTone(severity);
@@ -45,9 +46,9 @@ export default function AdminDashboardPage() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">{[1, 2, 3].map((i) => <Skeleton key={i} className="h-28 rounded-lg" />)}</div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <StatCard label="Uptime" value={uptimeLabel(health.uptimeSeconds)} icon={<Activity size={18} />} accentColor="var(--color-success-600)" accentBg="var(--color-success-50)" href="/admin/system" />
-          <StatCard label="DB Latency" value={`${health.databaseLatencyMs}ms`} icon={<Gauge size={18} />} accentColor="var(--color-info-600)" accentBg="var(--color-info-50)" href="/admin/system" />
-          <StatCard label="Active Users" value={`${health.activeUsers}`} icon={<Users size={18} />} accentColor="var(--color-primary-600)" accentBg="var(--color-primary-50)" href="/admin/users" />
+          <StatCard label="Uptime" value={uptimeLabel(health.uptimeSeconds)} icon={<Activity size={18} />} accentColor="var(--color-success-600)" accentBg="var(--color-success-50)" href="/admin/system" onClick={() => toast.info("Opening system health...")} />
+          <StatCard label="DB Latency" value={`${health.databaseLatencyMs}ms`} icon={<Gauge size={18} />} accentColor="var(--color-info-600)" accentBg="var(--color-info-50)" href="/admin/system" onClick={() => toast.info("Opening system health...")} />
+          <StatCard label="Active Users" value={`${health.activeUsers}`} icon={<Users size={18} />} accentColor="var(--color-primary-600)" accentBg="var(--color-primary-50)" href="/admin/users" onClick={() => toast.info("Opening users management...")} />
         </div>
       )}
 
@@ -63,7 +64,7 @@ export default function AdminDashboardPage() {
               </p>
             </div>
           </div>
-          <Link href="/admin/system" className="text-xs font-bold flex items-center gap-1 text-primary-600 hover:opacity-80">
+          <Link href="/admin/system" onClick={() => toast.info("Viewing all alerts...")} className="text-xs font-bold flex items-center gap-1 text-primary-600 hover:opacity-80">
             View all <ArrowRight size={13} />
           </Link>
         </div>
@@ -82,7 +83,10 @@ export default function AdminDashboardPage() {
                   <Badge tone="neutral">Acknowledged</Badge>
                 ) : (
                   <button
-                    onClick={() => acknowledge.mutate(alert.id)}
+                    onClick={() => {
+                      toast.success("Alert acknowledged.");
+                      acknowledge.mutate(alert.id);
+                    }}
                     disabled={acknowledge.isPending}
                     className="text-xs font-bold px-3 py-1.5 rounded-md border border-border text-content-secondary transition-colors hover:bg-neutral-50 disabled:opacity-50"
                   >
@@ -104,7 +108,7 @@ export default function AdminDashboardPage() {
             { href: "/admin/system", label: "System Health", icon: <Activity size={18} />, accent: "bg-success-50 text-success-600" },
             { href: "/admin/email", label: "Email Tracking", icon: <Mail size={18} />, accent: "bg-info-50 text-info-600" },
           ].map((a) => (
-            <Link key={a.href} href={a.href} className="flex items-center gap-3 p-4 rounded-lg border border-border bg-card shadow-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 group">
+            <Link key={a.href} href={a.href} onClick={() => toast.info(`Navigating to ${a.label}...`)} className="flex items-center gap-3 p-4 rounded-lg border border-border bg-card shadow-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 group">
               <div className={`w-10 h-10 rounded-md flex items-center justify-center transition-transform group-hover:scale-110 ${a.accent}`}>{a.icon}</div>
               <span className="text-sm font-semibold text-content">{a.label}</span>
               <ArrowRight size={15} className="ml-auto text-content-tertiary" />

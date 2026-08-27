@@ -12,6 +12,7 @@ import { Skeleton } from "@/shared/components/feedback/skeleton";
 import { useEmployerJobs, useEmployerApplications, useIngestJobs } from "@/features/employer/hooks/use-employer";
 import { EMPLOYER_TREND_PLACEHOLDER } from "@/features/employer/api/employer.mappers";
 import { ApiError } from "@/lib/api/client";
+import { toast } from "@/stores/toast-store";
 
 /**
  * Job ingestion control (FR-JOBS-001). Pulls external jobs from TheMuse into the
@@ -139,10 +140,10 @@ export default function EmployerAnalyticsPage() {
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Active Jobs" value={`${activeJobs}`} icon={<Briefcase size={18} />} accentColor="var(--color-primary-600)" accentBg="var(--color-primary-50)" href="/employer/jobs" />
-        <StatCard label="Applicants" value={`${totalApps}`} icon={<Users size={18} />} accentColor="var(--color-info-600)" accentBg="var(--color-info-50)" href="/employer/applications" />
-        <StatCard label="Total Jobs" value={`${jobs.length}`} icon={<Target size={18} />} accentColor="var(--color-success-600)" accentBg="var(--color-success-50)" href="/employer/jobs" />
-        <StatCard label="Avg Match" value={avgMatch !== null ? `${avgMatch}%` : "—"} icon={<TrendingUp size={18} />} accentColor="var(--color-warning-600)" accentBg="var(--color-warning-50)" />
+        <StatCard label="Active Jobs" value={`${activeJobs}`} icon={<Briefcase size={18} />} accentColor="var(--color-primary-600)" accentBg="var(--color-primary-50)" href="/employer/jobs" onClick={() => toast.info("Opening active jobs...")} />
+        <StatCard label="Applicants" value={`${totalApps}`} icon={<Users size={18} />} accentColor="var(--color-info-600)" accentBg="var(--color-info-50)" href="/employer/applications" onClick={() => toast.info("Viewing all applicants...")} />
+        <StatCard label="Total Jobs" value={`${jobs.length}`} icon={<Target size={18} />} accentColor="var(--color-success-600)" accentBg="var(--color-success-50)" href="/employer/jobs" onClick={() => toast.info("Opening all jobs...")} />
+        <StatCard label="Avg Match" value={avgMatch !== null ? `${avgMatch}%` : "—"} icon={<TrendingUp size={18} />} accentColor="var(--color-warning-600)" accentBg="var(--color-warning-50)" onClick={() => toast.info("Average match score calculated.")} />
       </div>
 
       <JobIngestionPanel />
@@ -178,7 +179,7 @@ export default function EmployerAnalyticsPage() {
         <div className="rounded-lg border border-border bg-card shadow-sm overflow-hidden">
           <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-100">
             <h2 className="text-base font-bold text-content">Recent Applicants</h2>
-            <Link href="/employer/applications" className="text-xs font-bold flex items-center gap-1 text-primary-600 hover:opacity-80">All <ArrowRight size={12} /></Link>
+            <Link href="/employer/applications" onClick={() => toast.info("Viewing all applicants...")} className="text-xs font-bold flex items-center gap-1 text-primary-600 hover:opacity-80">All <ArrowRight size={12} /></Link>
           </div>
           {recent.length === 0 ? (
             <p className="text-sm text-center py-10 text-content-tertiary">No applicants yet.</p>
@@ -220,7 +221,7 @@ export default function EmployerAnalyticsPage() {
                 {jobs.map((j) => (
                   <tr key={j.id} className="border-t border-neutral-100">
                     <td className="px-5 py-3">
-                      <Link href={`/employer/jobs/${j.id}`} className="font-semibold text-content hover:text-primary-700 transition-colors">{j.title}</Link>
+                      <Link href={`/employer/jobs/${j.id}`} onClick={() => toast.info(`Viewing details for ${j.title}...`)} className="font-semibold text-content hover:text-primary-700 transition-colors">{j.title}</Link>
                     </td>
                     <td className="px-5 py-3"><Badge tone={j.statusTone}>{j.status}</Badge></td>
                     <td className="px-5 py-3 font-bold text-content">{countByJob.get(j.id) ?? 0}</td>

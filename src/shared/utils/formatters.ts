@@ -10,11 +10,27 @@
 import { getStoredLocale } from "@/stores/locale-store";
 
 /**
+ * `getStoredLocale` lives in a "use client" module, and Next.js throws if a
+ * Server Component invokes one of its exports — these formatters are called
+ * from both sides. Resolve the stored locale only in the browser and fall back
+ * to the default during SSR; the client re-renders with the real one after
+ * hydration. (`readStoredLocale` already returned the default on the server, so
+ * this preserves the previous output.)
+ */
+const SSR_FALLBACK_LOCALE = "en";
+
+function resolveLocale(explicit?: string): string {
+  if (explicit) return explicit;
+  if (typeof window === "undefined") return SSR_FALLBACK_LOCALE;
+  return getStoredLocale();
+}
+
+/**
  * Formats relative time from a number of days ago or date.
  * E.g. daysAgo = 0 -> "today", daysAgo = 1 -> "yesterday", daysAgo = 3 -> "3 days ago"
  */
 export function formatPostedDate(daysAgo: number, locale?: string): string {
-  const currentLocale = locale || getStoredLocale();
+  const currentLocale = resolveLocale(locale);
 
   try {
     const rtf = new Intl.RelativeTimeFormat(currentLocale, { numeric: "auto" });
@@ -96,7 +112,7 @@ export function formatSalaryRange(
   if (!Number.isFinite(min) || !Number.isFinite(max)) return null;
   if (max <= 0) return null;
 
-  const currentLocale = locale || getStoredLocale();
+  const currentLocale = resolveLocale(locale);
   const currency = currencyOverride ?? job.salaryCurrency ?? "USD";
   const suffix = job.salaryPeriod ? PERIOD_SUFFIX[job.salaryPeriod] : "";
 
@@ -135,7 +151,7 @@ export function formatCurrency(
   currency: string = "USD",
   locale?: string
 ): string {
-  const currentLocale = locale || getStoredLocale();
+  const currentLocale = resolveLocale(locale);
   try {
     return new Intl.NumberFormat(currentLocale, {
       style: "currency",
@@ -155,7 +171,7 @@ export function formatDate(
   options?: Intl.DateTimeFormatOptions,
   locale?: string
 ): string {
-  const currentLocale = locale || getStoredLocale();
+  const currentLocale = resolveLocale(locale);
   const d = date instanceof Date ? date : new Date(date);
 
   const defaultOptions: Intl.DateTimeFormatOptions = {
@@ -179,7 +195,7 @@ export function formatNumber(
   options?: Intl.NumberFormatOptions,
   locale?: string
 ): string {
-  const currentLocale = locale || getStoredLocale();
+  const currentLocale = resolveLocale(locale);
   try {
     return new Intl.NumberFormat(currentLocale, options).format(value);
   } catch {
@@ -196,7 +212,7 @@ export function formatDateRange(
   isCurrent?: boolean,
   locale?: string
 ): string {
-  const currentLocale = locale || getStoredLocale();
+  const currentLocale = resolveLocale(locale);
   const fmt = (iso: string | Date) => {
     const d = iso instanceof Date ? iso : new Date(iso);
     return Number.isNaN(d.getTime())

@@ -90,7 +90,7 @@ export default function RootLayout({
           />
         )}
       </head>
-      <body style={{ fontFamily: "var(--font-family)" }}>
+      <body style={{ fontFamily: "var(--font-family)" }} suppressHydrationWarning>
         {/* Dev-only: clears a service worker left behind by a production build,
             which would otherwise serve stale chunks over every dev session. */}
         <DevServiceWorkerGuard />

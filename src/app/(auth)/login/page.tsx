@@ -11,6 +11,7 @@ import { ApiError } from "@/lib/api/client";
 import { Alert } from "@/shared/components/feedback/alert";
 import { Button } from "@/shared/components/ui/button";
 import { useTranslation } from "@/providers/locale-provider";
+import { toast } from "@/stores/toast-store";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -37,6 +38,8 @@ export default function LoginPage() {
     try {
       const user = await login(email.trim(), password);
 
+      toast.success(t("auth.welcomeBack") || "Welcome back!");
+
       // Role-based routing
       router.push(homeForRole(user.role));
     } catch (err: unknown) {
@@ -48,10 +51,14 @@ export default function LoginPage() {
           setNeedsVerification(true);
           setErrorMessage(err.messages.join(" ") || "Please verify your email address before logging in.");
         } else {
-          setErrorMessage(err.messages.join(" ") || "Invalid email or password.");
+          const msg = err.messages.join(" ") || "Invalid email or password.";
+          setErrorMessage(msg);
+          toast.error(msg);
         }
       } else {
-        setErrorMessage("An unexpected error occurred. Please try again.");
+        const msg = "An unexpected error occurred. Please try again.";
+        setErrorMessage(msg);
+        toast.error(msg);
       }
     } finally {
       setIsLoading(false);

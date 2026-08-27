@@ -24,7 +24,11 @@ import {
   FileText,
   Lock,
   MapPin,
+  Wallet,
+  GraduationCap,
+  Languages,
   Minus,
+  Circle,
   ScanSearch,
   Target,
   XCircle,
@@ -32,6 +36,8 @@ import {
 import { useMatchReport } from "@/features/matching/hooks/use-match-report";
 import type {
   CheckStatus,
+  HardRequirement,
+  PostedSalary,
   MatchReportPayload,
   ReportExperience,
   ReportSkill,
@@ -238,7 +244,10 @@ function SkillRow({ skill }: { skill: ReportSkill }) {
       style={{ borderColor: "var(--color-border)" }}
     >
       <span className="shrink-0 mt-0.5">
-        {skill.inResume ? (
+        {skill.optional ? (
+          // Neither met nor missing: the employer said "nice to have".
+          <Circle size={15} style={{ color: "var(--color-text-disabled)" }} />
+        ) : skill.inResume ? (
           partial ? (
             <AlertTriangle size={15} style={{ color: "var(--color-warning-600)" }} />
           ) : (
@@ -252,6 +261,17 @@ function SkillRow({ skill }: { skill: ReportSkill }) {
       <div className="min-w-0 flex-1">
         <p className="text-sm leading-snug" style={{ color: "var(--color-text-primary)" }}>
           {skill.skill}
+          {/* A real space, not just the tag's margin: copied text otherwise reads
+              "…is an advantagepreferred, not required". */}
+          {skill.optional && " "}
+          {skill.optional && (
+            <span
+              className="ml-2 text-xs font-semibold px-1.5 py-0.5 rounded-full align-middle"
+              style={{ background: "var(--color-bg-secondary)", color: "var(--color-text-tertiary)" }}
+            >
+              preferred, not required
+            </span>
+          )}
         </p>
         {partial && skill.matchedSkills?.length ? (
           <p className="text-xs mt-0.5" style={{ color: "var(--color-warning-700)" }}>
@@ -276,10 +296,17 @@ function SkillRow({ skill }: { skill: ReportSkill }) {
 /** Missing rows first: the list exists to be acted on, not admired. */
 function SkillTable({ title, skills }: { title: string; skills: ReportSkill[] }) {
   if (skills.length === 0) return null;
+  // Required-and-missing first (the list exists to be acted on), then required-and-met,
+  // then the merely preferred — which are last because they are not asks.
   const ordered = [...skills].sort(
-    (a, b) => Number(a.inResume) - Number(b.inResume) || b.count - a.count,
+    (a, b) =>
+      Number(!!a.optional) - Number(!!b.optional) ||
+      Number(a.inResume) - Number(b.inResume) ||
+      b.count - a.count,
   );
-  const missing = skills.filter((s) => !s.inResume).length;
+  // "Missing" counts only what the posting actually requires.
+  const required = skills.filter((s) => !s.optional);
+  const missing = required.filter((s) => !s.inResume).length;
 
   return (
     <div
@@ -295,8 +322,8 @@ function SkillTable({ title, skills }: { title: string; skills: ReportSkill[] })
         </h3>
         <span className="text-xs" style={{ color: "var(--color-text-secondary)" }}>
           {missing === 0
-            ? `Your CV shows all ${skills.length}`
-            : `${missing} of ${skills.length} not shown on your CV`}
+            ? `Your CV shows all ${required.length}`
+            : `${missing} of ${required.length} not shown on your CV`}
         </span>
       </header>
       <ul>
@@ -346,6 +373,98 @@ function ExperienceNote({ experience }: { experience: ReportExperience }) {
         </>
       )}
     </Alert>
+  );
+}
+
+/**
+ * The advertised pay, in the posting's own terms — "$700 / month", "USD 60,000–90,000 / year".
+ *
+ * The period is ALWAYS shown when the posting states one, and NEVER invented when it does
+ * not: "$700" with an assumed period would be a different (and possibly twelvefold wrong)
+ * claim. Returns null when there is nothing to show, so the caller renders nothing rather
+ * than an empty chip.
+ */
+function formatPostedSalary(salary: PostedSalary | null): string | null {
+  if (!salary) return null;
+  const { min, max, currency, period } = salary;
+  if (min === null && max === null) return null;
+
+  const number = (n: number) => n.toLocaleString();
+  const amount =
+    min !== null && max !== null && min !== max
+      ? `${number(min)}–${number(max)}`
+      : number((min ?? max) as number);
+
+  const money = currency ? `${currency} ${amount}` : amount;
+  // Lower-cased for reading ("MONTH" is how schema.org writes it, not how people do).
+  return period ? `${money} / ${period.toLowerCase()}` : money;
+}
+
+/**
+ * Degree and language bars the posting states.
+ *
+ * Rendered ABOVE the match rate on purpose: if a posting requires native Indonesian and
+ * you don't speak it, that matters more than any percentage — and burying it under four
+ * score cards would be the same mistake as folding it into the score.
+ *
+ * A `met: null` row says "couldn't check", never "you don't have it": the difference
+ * between an unmet requirement and an unread CV is the whole point.
+ */
+function HardRequirementsSection({ requirements }: { requirements: HardRequirement[] }) {
+  // Most postings state none, and an empty card is worse than no card.
+  if (requirements.length === 0) return null;
+
+  const unmet = requirements.filter((r) => r.met === false).length;
+
+  return (
+    <SectionCard
+      title="Stated requirements"
+      subtitle={
+        unmet > 0
+          ? `${unmet} you don't appear to meet — worth checking before you apply`
+          : "Qualifications and languages this posting asks for"
+      }
+      headerIcon={<GraduationCap size={18} />}
+    >
+      <ul className="space-y-3">
+        {requirements.map((requirement) => (
+          <li key={`${requirement.kind}-${requirement.label}`} className="flex gap-3">
+            <span className="shrink-0 mt-0.5">
+              {requirement.met === true ? (
+                <CheckCircle2 size={16} style={{ color: "var(--color-success-600)" }} />
+              ) : requirement.met === false ? (
+                <XCircle size={16} style={{ color: "var(--color-error-600)" }} />
+              ) : (
+                <AlertTriangle size={16} style={{ color: "var(--color-text-tertiary)" }} />
+              )}
+            </span>
+            <div className="min-w-0">
+              <p
+                className="text-sm font-medium inline-flex items-center gap-1.5"
+                style={{ color: "var(--color-text-primary)" }}
+              >
+                {requirement.kind === "LANGUAGE" && <Languages size={13} />}
+                {requirement.label}
+                {requirement.met === null && (
+                  <span className="text-xs font-normal" style={{ color: "var(--color-text-tertiary)" }}>
+                    — couldn&apos;t check without a parsed résumé
+                  </span>
+                )}
+              </p>
+              {/* The posting's own sentence: our reading of it is a reading, and the
+                  reader is better placed than we are to judge it. */}
+              <p className="text-xs mt-0.5 italic" style={{ color: "var(--color-text-tertiary)" }}>
+                “{requirement.quote}”
+              </p>
+            </div>
+          </li>
+        ))}
+      </ul>
+      <p className="text-xs mt-4" style={{ color: "var(--color-text-tertiary)" }}>
+        These don&apos;t change your match rate. Employers hire below their stated bar
+        often enough that a penalty would mislead more than it helps.
+      </p>
+    </SectionCard>
   );
 }
 
@@ -610,6 +729,15 @@ export default function MatchReportPage() {
               <MapPin size={14} /> {job.location}
             </span>
           )}
+          {formatPostedSalary(job.salary) && (
+            <span
+              className="inline-flex items-center gap-1.5 font-semibold"
+              style={{ color: "var(--color-text-primary)" }}
+              title="As advertised on the posting"
+            >
+              <Wallet size={14} /> {formatPostedSalary(job.salary)}
+            </span>
+          )}
           <span style={{ color: "var(--color-text-tertiary)" }}>
             Scanned {formatDate(generated)} from {job.source}
           </span>
@@ -638,6 +766,7 @@ export default function MatchReportPage() {
         </div>
       )}
 
+      <HardRequirementsSection requirements={data.hardRequirements ?? []} />
       <MatchRateSection report={data} />
       <SearchabilitySection report={data} />
       <SkillsSection report={data} />

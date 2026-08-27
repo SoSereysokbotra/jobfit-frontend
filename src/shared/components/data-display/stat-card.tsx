@@ -15,11 +15,12 @@ interface StatCardProps {
   accentBg: string;
   /** When set, the tile is a link. */
   href?: string;
+  onClick?: () => void;
 }
 
 /** KPI tile (ui-reference §12 dashboard components). Shared by dashboard & trackers. */
 export function StatCard({
-  label, value, change, changeUp, icon, accentColor, accentBg, href,
+  label, value, change, changeUp, icon, accentColor, accentBg, href, onClick
 }: StatCardProps) {
   const body = (
     <>
@@ -51,13 +52,13 @@ export function StatCard({
 
   if (href) {
     return (
-      <Link href={href} className={baseClass} style={baseStyle}>
+      <Link href={href} className={baseClass} style={baseStyle} onClick={onClick}>
         {body}
       </Link>
     );
   }
   return (
-    <div className={baseClass} style={baseStyle}>
+    <div className={baseClass} style={baseStyle} onClick={onClick}>
       {body}
     </div>
   );
