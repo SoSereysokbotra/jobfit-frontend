@@ -145,53 +145,117 @@ function unwrap<T>(body: unknown): T {
 }
 
 /**
+ * Why a refresh has three outcomes rather than two.
+ *
+ * "Could not refresh" is not the same as "you are logged out", and collapsing them is
+ * how a dropped wifi packet turns into a login screen. Only `invalid` means the session
+ * itself is gone; `unavailable` means we could not find out, and the right response to
+ * not knowing is to leave the session alone and let the call fail normally.
+ */
+export type RefreshOutcome =
+  | { status: "refreshed"; token: string }
+  /** The server says this session is over: no cookie, expired, revoked, or replayed. */
+  | { status: "invalid" }
+  /** Transient — offline, 5xx, throttled, or a race we could not win. Do NOT log out. */
+  | { status: "unavailable" };
+
+/**
  * Single-flight refresh: concurrent 401s share one POST /auth/refresh-token
  * rather than each firing their own. The backend's refresh tokens are
  * single-use, so parallel refreshes would look like token reuse — which it
  * treats as theft and answers by revoking every session.
+ *
+ * EVERY refresh in the app must go through here — including the auth provider's
+ * bootstrap and its exposed `refresh()`. A second code path issuing its own
+ * POST /auth/refresh-token re-creates exactly the concurrent-rotation collision this
+ * exists to prevent.
  */
-let refreshInFlight: Promise<string | null> | null = null;
+let refreshInFlight: Promise<RefreshOutcome> | null = null;
 
 /**
- * Latched once a refresh fails, so a burst of in-flight requests hitting 401
- * after the session dies produces ONE refresh attempt rather than one each
- * (which would trip the backend's refreshToken throttler). Cleared by
+ * Latched only once the server has actually said the session is dead, so a burst of
+ * in-flight requests hitting 401 produces ONE refresh attempt rather than one each
+ * (which would trip the backend's refreshToken throttler). Deliberately NOT set for
+ * transient failures — latching on those would strand a recoverable session. Cleared by
  * `resetRefreshLatch` as soon as a real token exists again.
  */
-let refreshFailed = false;
+let sessionInvalid = false;
 
 /** Call when a fresh token is obtained by any means (login, admin login). */
 export function resetRefreshLatch(): void {
-  refreshFailed = false;
+  sessionInvalid = false;
 }
 
-function refreshAccessToken(): Promise<string | null> {
-  if (refreshFailed) return Promise.resolve(null);
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-  refreshInFlight ??= (async () => {
+/**
+ * Backoff for a lost rotation race (409). Another tab refreshed the shared cookie a
+ * moment before we did; by the time we retry, its replacement cookie is in the jar and
+ * the retry succeeds. Two short attempts is plenty — a real race resolves in
+ * milliseconds — and bounding it matters, because a stolen token produces a 409 that
+ * will never resolve until the backend's grace window closes.
+ */
+const RACE_RETRY_DELAYS_MS = [150, 400];
+
+async function postRefresh(): Promise<RefreshOutcome> {
+  for (let attempt = 0; ; attempt += 1) {
+    let response: Response;
     try {
-      const response = await fetch(buildUrl("/auth/refresh-token"), {
+      response = await fetch(buildUrl("/auth/refresh-token"), {
         method: "POST",
         credentials: "include",
       });
-      if (!response.ok) {
-        refreshFailed = true;
-        return null;
-      }
-      const body = unwrap<{ accessToken?: string }>(await response.json());
-      if (!body?.accessToken) {
-        refreshFailed = true;
-        return null;
-      }
-      refreshFailed = false;
-      return body.accessToken;
     } catch {
-      refreshFailed = true;
-      return null;
-    } finally {
-      refreshInFlight = null;
+      // Network-level failure: offline, DNS, CORS. We learned nothing about the session.
+      return { status: "unavailable" };
     }
-  })();
+
+    if (response.ok) {
+      let token: string | undefined;
+      try {
+        token = unwrap<{ accessToken?: string }>(await response.json())?.accessToken;
+      } catch {
+        token = undefined;
+      }
+      return token ? { status: "refreshed", token } : { status: "unavailable" };
+    }
+
+    // 409 — a concurrent refresh rotated the cookie first. The session is fine; the
+    // backend explicitly did not revoke it. Retry against the cookie we now hold.
+    if (response.status === 409 && attempt < RACE_RETRY_DELAYS_MS.length) {
+      await sleep(RACE_RETRY_DELAYS_MS[attempt]);
+      continue;
+    }
+
+    // 401/403 is the server's verdict that this session is over. Everything else
+    // (500, 429, 502, an unresolved race) is a failure to reach that verdict.
+    if (response.status === 401 || response.status === 403) return { status: "invalid" };
+    return { status: "unavailable" };
+  }
+}
+
+/**
+ * Refresh the session, coalescing concurrent callers onto one request. On success the
+ * new token is handed to the auth bridge here, so every caller — request retries,
+ * uploads, the provider — stays in sync without repeating that step.
+ */
+export function refreshSession(): Promise<RefreshOutcome> {
+  if (sessionInvalid) return Promise.resolve({ status: "invalid" });
+
+  refreshInFlight ??= postRefresh()
+    .then((outcome) => {
+      if (outcome.status === "refreshed") {
+        sessionInvalid = false;
+        authBridge?.setAccessToken(outcome.token);
+      } else if (outcome.status === "invalid") {
+        sessionInvalid = true;
+      }
+      return outcome;
+    })
+    .finally(() => {
+      refreshInFlight = null;
+    });
+
   return refreshInFlight;
 }
 
@@ -210,9 +274,12 @@ async function send(
 
   if (options.idempotencyKey) headers["Idempotency-Key"] = options.idempotencyKey;
 
+  // Remembered so a 401 can tell "my token expired" from "my token was already
+  // replaced while this request was in flight" — see the retry below.
+  let sentToken: string | null = null;
   if (!options.skipAuth) {
-    const token = authBridge?.getAccessToken();
-    if (token) headers.Authorization = `Bearer ${token}`;
+    sentToken = authBridge?.getAccessToken() ?? null;
+    if (sentToken) headers.Authorization = `Bearer ${sentToken}`;
   }
 
   const response = await fetch(buildUrl(path, options.query), {
@@ -225,15 +292,30 @@ async function send(
 
   if (response.status !== 401 || options.skipRefresh || isRetry) return response;
 
-  // Exactly one silent refresh attempt, then one retry — or hand off to the provider.
-  const token = await refreshAccessToken();
-  if (!token) {
+  // A burst of requests sent with the same expiring token all 401 at slightly different
+  // times. The first triggers the refresh; the stragglers land after it finished, and
+  // their 401 is stale news — the bridge already holds a newer token. Retrying with it
+  // costs nothing, whereas refreshing again would rotate a perfectly good token for no
+  // reason (and, staggered past the single-flight window, one rotation per straggler).
+  const currentToken = authBridge?.getAccessToken() ?? null;
+  if (sentToken && currentToken && currentToken !== sentToken) {
+    return send(method, path, body, options, true);
+  }
+
+  // Otherwise: one silent refresh (shared with every other 401 in flight), then one retry.
+  const outcome = await refreshSession();
+  if (outcome.status === "refreshed") {
+    // refreshSession has already handed the token to the bridge.
+    return send(method, path, body, options, true);
+  }
+  if (outcome.status === "invalid") {
+    // The session is genuinely over — this is the ONLY path that logs the user out.
     authBridge?.setAccessToken(null);
     authBridge?.onAuthFailure();
-    return response;
   }
-  authBridge?.setAccessToken(token);
-  return send(method, path, body, options, true);
+  // 'unavailable': we could not reach a verdict (offline, 5xx, throttled). Leave the
+  // session intact and surface the original 401 so the caller can retry later.
+  return response;
 }
 
 async function request<T>(
@@ -299,14 +381,20 @@ export function uploadWithProgress<T>(
         }
 
         if (xhr.status === 401 && !isRetry) {
-          const refreshed = await refreshAccessToken();
-          if (refreshed) {
-            authBridge?.setAccessToken(refreshed);
-            resolve(await attempt(true));
+          const outcome = await refreshSession();
+          if (outcome.status === "refreshed") {
+            // Chain with then/catch, not `resolve(await ...)`: awaiting a rejection
+            // inside this async handler throws into the event handler, where nothing
+            // catches it — the outer promise would never settle and the upload would
+            // hang forever instead of reporting the error.
+            attempt(true).then(resolve, reject);
             return;
           }
-          authBridge?.setAccessToken(null);
-          authBridge?.onAuthFailure();
+          if (outcome.status === "invalid") {
+            authBridge?.setAccessToken(null);
+            authBridge?.onAuthFailure();
+          }
+          // 'unavailable': keep the session; fall through and report the 401.
         }
 
         let body: ApiErrorBody = {};

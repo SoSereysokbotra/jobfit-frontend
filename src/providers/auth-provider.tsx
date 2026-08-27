@@ -11,7 +11,12 @@ import React, {
 } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { apiClient, registerAuthBridge, resetRefreshLatch } from "@/lib/api/client";
+import {
+  apiClient,
+  refreshSession,
+  registerAuthBridge,
+  resetRefreshLatch,
+} from "@/lib/api/client";
 import { qk } from "@/lib/api/query-keys";
 
 /** Backend roles (SafeUser.role). */
@@ -99,19 +104,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const refresh = useCallback(async (): Promise<boolean> => {
-    try {
-      const { accessToken } = await apiClient.post<{ accessToken: string }>(
-        "/auth/refresh-token",
-        undefined,
-        // This IS the refresh call — a 401 here means no session, not "go refresh".
-        { skipAuth: true, skipRefresh: true },
-      );
-      setAccessToken(accessToken);
-      return true;
-    } catch {
-      setAccessToken(null);
-      return false;
-    }
+    // Deliberately NOT its own POST /auth/refresh-token. This used to issue one
+    // directly, which meant the bootstrap refresh below could run at the same instant
+    // as a 401-triggered refresh from the api client — two rotations of one single-use
+    // cookie. The backend can only honour one; the loser looked like a replayed token,
+    // and the theft response revoked EVERY session. Going through refreshSession puts
+    // both on the same single-flight request, so there is only ever one rotation.
+    const outcome = await refreshSession();
+    // On success refreshSession has already pushed the token through the bridge, which
+    // is the same `setAccessToken` below — nothing more to do here.
+    if (outcome.status === "refreshed") return true;
+    // Only a definitive verdict clears the session. 'unavailable' means the server was
+    // unreachable, which is not evidence that the user is logged out.
+    if (outcome.status === "invalid") setAccessToken(null);
+    return false;
   }, [setAccessToken]);
 
   // On mount (and on hard refresh) try once to trade the httpOnly refresh cookie
