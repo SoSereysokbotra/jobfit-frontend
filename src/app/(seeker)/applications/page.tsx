@@ -69,7 +69,7 @@ export default function ApplicationsPage() {
 
       {/* Status filter (list view only) */}
       {view === "list" && !isLoading && applications.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex items-center gap-2 overflow-x-auto pb-1.5 -mx-4 px-4 sm:mx-0 sm:px-0 no-scrollbar">
           {(["ALL", "SUBMITTED", "SCREENING", "INTERVIEW", "OFFER", "ACCEPTED", "REJECTED"] as StatusFilter[]).map(
             (s) => {
               const active = statusFilter === s;

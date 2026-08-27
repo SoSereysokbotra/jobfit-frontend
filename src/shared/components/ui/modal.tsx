@@ -104,14 +104,14 @@ export function Modal({ open, onClose, title, subtitle, children, footer }: Moda
         tabIndex={-1}
         aria-modal="true"
         aria-label={title}
-        className="relative w-full max-w-md rounded-lg border animate-slide-up outline-none"
+        className="relative w-full max-w-md max-h-[calc(100dvh-2rem)] flex flex-col rounded-xl border animate-slide-up outline-none overflow-hidden"
         style={{
           background: "var(--color-card)",
           borderColor: "var(--color-border)",
           boxShadow: "var(--shadow-xl)",
         }}
       >
-        <div className="flex items-start justify-between px-5 py-4 border-b" style={{ borderColor: "var(--color-neutral-100)" }}>
+        <div className="flex items-start justify-between px-5 py-4 border-b shrink-0" style={{ borderColor: "var(--color-border)" }}>
           <div>
             <h2 className="text-base font-bold" style={{ color: "var(--color-text-primary)" }}>{title}</h2>
             {subtitle && (
@@ -121,19 +121,19 @@ export function Modal({ open, onClose, title, subtitle, children, footer }: Moda
           <button
             onClick={onClose}
             aria-label="Close modal"
-            className="p-1.5 rounded-md transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800"
+            className="p-1.5 rounded-md transition-colors hover:bg-[var(--color-surface-hover)]"
             style={{ color: "var(--color-text-tertiary)" }}
           >
             <X size={16} />
           </button>
         </div>
 
-        <div className="px-5 py-4">{children}</div>
+        <div className="px-5 py-4 overflow-y-auto flex-1">{children}</div>
 
         {footer && (
           <div
-            className="flex justify-end gap-2 px-5 py-4 border-t"
-            style={{ borderColor: "var(--color-neutral-100)", background: "var(--color-bg-secondary)" }}
+            className="flex justify-end gap-2 px-5 py-3.5 border-t shrink-0 flex-wrap"
+            style={{ borderColor: "var(--color-border)", background: "var(--color-bg-secondary)" }}
           >
             {footer}
           </div>

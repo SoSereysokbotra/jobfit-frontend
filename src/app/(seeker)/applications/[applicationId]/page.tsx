@@ -77,7 +77,7 @@ export default function ApplicationDetailPage() {
         className="p-6 rounded-lg border"
         style={{ background: "var(--color-card)", borderColor: "var(--color-border)", boxShadow: "var(--shadow-sm)" }}
       >
-        <div className="flex items-start gap-4">
+        <div className="flex flex-col sm:flex-row items-start gap-4">
           <div
             className="w-14 h-14 rounded-xl flex items-center justify-center text-white text-lg font-bold shrink-0"
             style={{ background: application.logoBg }}

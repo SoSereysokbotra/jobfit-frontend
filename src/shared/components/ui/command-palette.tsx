@@ -220,7 +220,7 @@ export function CommandPalette() {
 
   return (
     <div
-      className="fixed inset-0 flex items-start justify-center pt-16 sm:pt-24 px-4"
+      className="fixed inset-0 flex items-start justify-center pt-8 sm:pt-20 px-3 sm:px-4"
       style={{ zIndex: "var(--z-modal)" as React.CSSProperties["zIndex"] }}
       onKeyDown={handleKeyDown}
     >
@@ -232,7 +232,7 @@ export function CommandPalette() {
         role="dialog"
         aria-modal="true"
         aria-label="Command Palette"
-        className="relative w-full max-w-xl rounded-xl border animate-slide-up flex flex-col max-h-[75vh] overflow-hidden"
+        className="relative w-full max-w-xl rounded-xl border animate-slide-up flex flex-col max-h-[85vh] sm:max-h-[75vh] overflow-hidden"
         style={{
           background: "var(--color-card)",
           borderColor: "var(--color-border)",
@@ -241,8 +241,8 @@ export function CommandPalette() {
       >
         {/* Search Bar Input Header */}
         <div
-          className="flex items-center gap-3 px-4 py-3 border-b"
-          style={{ borderColor: "var(--color-neutral-100)" }}
+          className="flex items-center gap-3 px-4 py-3 border-b shrink-0"
+          style={{ borderColor: "var(--color-border)" }}
         >
           <Search size={18} className="shrink-0" style={{ color: "var(--color-text-tertiary)" }} />
           <input
@@ -381,7 +381,7 @@ export function CommandPalette() {
         {/* Footer shortcuts hint */}
         <div
           className="flex items-center justify-between px-4 py-2.5 border-t text-[11px]"
-          style={{ borderColor: "var(--color-neutral-100)", background: "var(--color-bg-secondary)", color: "var(--color-text-tertiary)" }}
+          style={{ borderColor: "var(--color-border)", background: "var(--color-bg-secondary)", color: "var(--color-text-tertiary)" }}
         >
           <div className="flex items-center gap-3">
             <span>

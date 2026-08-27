@@ -17,9 +17,14 @@ export default function BottomTabBar() {
   ];
 
   return (
-    <div
-      className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-white border-t flex items-center justify-around z-50 px-2"
-      style={{ borderColor: "var(--color-border)", boxShadow: "0 -2px 10px rgba(0,0,0,0.05)" }}
+    <nav
+      aria-label="Mobile Navigation"
+      className="md:hidden fixed bottom-0 left-0 right-0 h-16 border-t flex items-center justify-around z-50 px-2 pb-[env(safe-area-inset-bottom)]"
+      style={{
+        background: "var(--color-card)",
+        borderColor: "var(--color-border)",
+        boxShadow: "0 -2px 10px rgba(0,0,0,0.05)",
+      }}
     >
       {tabs.map((tab) => {
         const isActive = pathname === tab.href || pathname?.startsWith(tab.href + "/");
@@ -53,6 +58,6 @@ export default function BottomTabBar() {
           </Link>
         );
       })}
-    </div>
+    </nav>
   );
 }

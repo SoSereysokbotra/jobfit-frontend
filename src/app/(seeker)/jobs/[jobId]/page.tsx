@@ -79,30 +79,22 @@ export default async function JobDetailPage({
           </aside>
         </div>
         
-        {/* Mobile Action Area (Sticky Bottom) */}
+        {/* Mobile Action Area (Sticky Bottom) - placed above BottomTabBar */}
         <div 
-          className="lg:hidden fixed bottom-0 left-0 right-0 p-4 border-t shadow-lg z-10 flex gap-3 bg-white"
-          style={{ borderColor: "var(--color-border)" }}
+          className="lg:hidden fixed bottom-16 left-0 right-0 p-3 sm:p-4 border-t shadow-lg z-30 flex gap-3 backdrop-blur-md"
+          style={{
+            background: "var(--color-card)",
+            borderColor: "var(--color-border)",
+            boxShadow: "0 -4px 16px rgba(0,0,0,0.08)",
+          }}
         >
           <div className="flex-1">
             <ApplyButton
-                  jobId={job.id}
-                  sourceType={job.sourceType}
-                  externalUrl={job.externalUrl}
-                />
+              jobId={job.id}
+              sourceType={job.sourceType}
+              externalUrl={job.externalUrl}
+            />
           </div>
-          <button
-            className="w-14 h-12 flex items-center justify-center rounded-md border-2 transition-all duration-200 hover:opacity-90 active:scale-[0.97]"
-            style={{
-              borderColor: "var(--color-border)",
-              color: "var(--color-text-secondary)",
-              background: "transparent",
-            }}
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-            </svg>
-          </button>
         </div>
       </main>
     </div>

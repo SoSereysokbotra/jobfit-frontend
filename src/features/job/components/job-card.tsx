@@ -183,42 +183,50 @@ export function JobCard({
   /* LIST variant */
   return (
     <div
-      className="flex items-start gap-3 px-5 py-4 transition-colors group hover:bg-[var(--color-surface-hover)]"
+      className="flex flex-col sm:flex-row sm:items-start gap-4 sm:gap-3 px-4 sm:px-5 py-4 transition-colors group hover:bg-[var(--color-surface-hover)]"
       style={comparing ? { background: "var(--color-primary-50)" } : {}}
     >
-      {/* Compare checkbox — only in list view when enabled */}
-      {compareBtn && <div className="flex items-center pt-1">{compareBtn}</div>}
-      <div
-        className="w-11 h-11 rounded-lg flex items-center justify-center text-white font-extrabold text-base shrink-0"
-        style={{ background: job.logoBg, boxShadow: "var(--shadow-sm)" }}
-      >
-        {job.logo}
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0">
-            <Link href={`/jobs/${job.id}`} className="block">
-              <h3 className="text-sm font-bold truncate transition-colors hover:underline" style={{ color: "var(--color-text-primary)" }}>
-                {job.title}
-              </h3>
-            </Link>
-            <p className="text-xs mt-0.5" style={{ color: "var(--color-text-secondary)" }}>{job.company}</p>
-          </div>
-          <MatchScoreBadge score={job.match} size="sm" className="shrink-0 mt-0.5" />
+      <div className="flex items-start gap-3 w-full flex-1 min-w-0">
+        {/* Compare checkbox — only in list view when enabled */}
+        {compareBtn && <div className="flex items-center pt-1 shrink-0">{compareBtn}</div>}
+        <div
+          className="w-11 h-11 rounded-lg flex items-center justify-center text-white font-extrabold text-base shrink-0"
+          style={{ background: job.logoBg, boxShadow: "var(--shadow-sm)" }}
+        >
+          {job.logo}
         </div>
-        {meta}
-        {!compact && (
-          <>
-            <p className="text-xs mt-2 line-clamp-1" style={{ color: "var(--color-text-tertiary)" }}>
-              {job.description}
-            </p>
-            <span className="flex items-center gap-1 text-xs mt-1.5" style={{ color: "var(--color-text-tertiary)" }}>
-              <Clock size={11} /> {formatPostedDate(job.postedDaysAgo)}
-            </span>
-          </>
-        )}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0">
+              <Link href={`/jobs/${job.id}`} className="block">
+                <h3 className="text-sm font-bold truncate transition-colors hover:underline" style={{ color: "var(--color-text-primary)" }}>
+                  {job.title}
+                </h3>
+              </Link>
+              <p className="text-xs mt-0.5" style={{ color: "var(--color-text-secondary)" }}>{job.company}</p>
+            </div>
+            <MatchScoreBadge score={job.match} size="sm" className="shrink-0 mt-0.5 sm:hidden" />
+          </div>
+          {meta}
+          {!compact && (
+            <>
+              <p className="text-xs mt-2 line-clamp-1" style={{ color: "var(--color-text-tertiary)" }}>
+                {job.description}
+              </p>
+              <span className="flex items-center gap-1 text-xs mt-1.5" style={{ color: "var(--color-text-tertiary)" }}>
+                <Clock size={11} /> {formatPostedDate(job.postedDaysAgo)}
+              </span>
+            </>
+          )}
+        </div>
+        <MatchScoreBadge score={job.match} size="sm" className="shrink-0 mt-0.5 hidden sm:flex" />
       </div>
-      <div className="flex flex-col gap-1.5 shrink-0">{actions}</div>
+      <div
+        className="flex flex-row sm:flex-col items-center sm:items-end justify-end sm:justify-start gap-2 shrink-0 w-full sm:w-auto pt-2.5 sm:pt-0 border-t sm:border-t-0"
+        style={{ borderColor: "var(--color-border)" }}
+      >
+        {actions}
+      </div>
     </div>
   );
 }

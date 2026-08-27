@@ -21,14 +21,14 @@ export function JobCompareBar() {
 
   return (
     <div
-      className="fixed bottom-0 left-0 right-0 z-[400] border-t backdrop-blur-xl"
+      className="fixed bottom-16 md:bottom-0 left-0 right-0 z-40 border-t backdrop-blur-xl"
       style={{
-        background: "rgba(255,255,255,0.95)",
+        background: "var(--color-card)",
         borderColor: "var(--color-border)",
-        boxShadow: "0 -4px 24px rgba(91,24,154,0.10)",
+        boxShadow: "0 -4px 24px rgba(0,0,0,0.12)",
       }}
     >
-      <div className="max-w-6xl mx-auto px-4 py-3 flex items-center gap-3 flex-wrap">
+      <div className="max-w-6xl mx-auto px-4 py-2.5 sm:py-3 flex items-center gap-2 sm:gap-3 flex-wrap">
         {/* Icon */}
         <div
           className="w-8 h-8 rounded-md flex items-center justify-center shrink-0"

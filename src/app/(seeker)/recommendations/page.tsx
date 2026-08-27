@@ -122,7 +122,7 @@ export default function RecommendationsPage() {
                   Your Personalized Matches
                 </h1>
               </div>
-              <p className="text-sm ml-10" style={{ color: "var(--color-text-tertiary)" }}>
+              <p className="text-sm mt-1" style={{ color: "var(--color-text-tertiary)" }}>
                 Last updated: Generated 2 hours ago
               </p>
             </div>

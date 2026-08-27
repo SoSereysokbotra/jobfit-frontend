@@ -93,11 +93,37 @@ export default function SettingsPage() {
         </div>
       )}
 
-      {/* ── TWO COLUMN LAYOUT ── */}
+      {/* ── TWO COLUMN / MOBILE TABBED LAYOUT ── */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
 
-        {/* ── SIDE BAR MENU ── */}
-        <div className="md:col-span-1 space-y-2">
+        {/* ── MOBILE SUB-TABS (<md) ── */}
+        <div className="md:hidden flex items-center gap-2 overflow-x-auto pb-2 -mx-4 px-4 no-scrollbar">
+          {menuItems.map(item => {
+            const Icon = item.icon;
+            const active = activeSection === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => setActiveSection(item.id)}
+                className={cn(
+                  "flex items-center gap-2 px-3.5 py-2 rounded-lg border text-xs font-bold whitespace-nowrap shrink-0 transition-all duration-200 active:scale-95",
+                  active ? "shadow-sm" : ""
+                )}
+                style={{
+                  background: active ? "var(--color-primary-50)" : "var(--color-card)",
+                  borderColor: active ? "var(--color-primary-300)" : "var(--color-border)",
+                  color: active ? "var(--color-primary-700)" : "var(--color-text-secondary)",
+                }}
+              >
+                <Icon className="w-3.5 h-3.5" style={{ color: active ? "var(--color-primary-600)" : "var(--color-text-tertiary)" }} />
+                <span>{item.label}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* ── DESKTOP SIDEBAR MENU (>=md) ── */}
+        <div className="hidden md:block md:col-span-1 space-y-2">
           {menuItems.map(item => {
             const Icon = item.icon;
             const active = activeSection === item.id;
@@ -107,7 +133,7 @@ export default function SettingsPage() {
                 onClick={() => setActiveSection(item.id)}
                 className={cn(
                   "w-full text-left p-3.5 rounded-xl border flex items-start gap-3 transition-all duration-200",
-                  active ? "shadow-sm" : "hover:bg-neutral-50"
+                  active ? "shadow-sm" : "hover:bg-[var(--color-surface-hover)]"
                 )}
                 style={{
                   background: active ? "var(--color-card)" : "transparent",

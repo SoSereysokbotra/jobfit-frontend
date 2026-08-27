@@ -67,9 +67,9 @@ export function JobRecommendationCard({
         <X size={16} />
       </button>
 
-      <div className="flex flex-col md:flex-row gap-6">
+      <div className="flex flex-col sm:flex-row gap-5 sm:gap-6">
         {/* Left Side: Match Score (Very Prominent) */}
-        <div className="flex flex-col items-center justify-center shrink-0 w-32 border-b md:border-b-0 md:border-r pb-4 md:pb-0 md:pr-6" style={{ borderColor: "var(--color-border)" }}>
+        <div className="flex flex-col items-center justify-center shrink-0 w-full sm:w-32 border-b sm:border-b-0 sm:border-r pb-4 sm:pb-0 sm:pr-6" style={{ borderColor: "var(--color-border)" }}>
           <div className="relative w-24 h-24 mb-2">
             <svg viewBox="0 0 36 36" className="w-full h-full transform -rotate-90">
               <path
@@ -106,7 +106,7 @@ export function JobRecommendationCard({
         </div>
 
         {/* Right Side: Job Details */}
-        <div className="flex-1 min-w-0 pr-6">
+        <div className="flex-1 min-w-0 pr-0 sm:pr-4">
           <div className="flex items-center gap-3 mb-2">
             <div
               className="w-8 h-8 rounded-md flex items-center justify-center text-white text-xs font-bold shrink-0"
@@ -182,7 +182,7 @@ export function JobRecommendationCard({
             <p className="text-xs" style={{ color: "var(--color-text-tertiary)" }}>No breakdown available for this recommendation.</p>
           ) : (
             <>
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mb-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 mb-4">
                 {breakdownEntries.map(([key, value]) => (
                   <div
                     key={key}
@@ -194,7 +194,7 @@ export function JobRecommendationCard({
                   </div>
                 ))}
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div
                   className="p-3 rounded-lg border"
                   style={{ background: "var(--color-bg-secondary)", borderColor: "var(--color-border)" }}

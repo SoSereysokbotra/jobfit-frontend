@@ -31,6 +31,11 @@ export default function SeekerLayout({ children }: { children: React.ReactNode }
     if (needsOnboarding) router.replace("/onboarding/resume");
   }, [needsOnboarding, router]);
 
+  // Auto-close mobile drawer when route changes
+  useEffect(() => {
+    setMobileSidebarOpen(false);
+  }, [pathname]);
+
   // Hold the overlay until we know both the role AND whether onboarding is due,
   // so a user with no profile never sees the dashboard flash by first.
   const authChecked = isAllowed && isResolved && !needsOnboarding;
@@ -66,12 +71,17 @@ export default function SeekerLayout({ children }: { children: React.ReactNode }
 
       {/* Mobile Sidebar Overlay */}
       {mobileSidebarOpen && (
-        <div className="md:hidden fixed inset-0 z-50 flex">
-          <div className="flex-shrink-0">
-            <Sidebar />
+        <div
+          className="md:hidden fixed inset-0 z-50 flex"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Navigation Menu"
+        >
+          <div className="flex-shrink-0 animate-slide-up z-10 shadow-2xl">
+            <Sidebar onNavigate={() => setMobileSidebarOpen(false)} />
           </div>
           <div
-            className="flex-1 bg-black/40"
+            className="flex-1 bg-black/50 backdrop-blur-xs transition-opacity"
             onClick={() => setMobileSidebarOpen(false)}
           />
         </div>
@@ -80,7 +90,7 @@ export default function SeekerLayout({ children }: { children: React.ReactNode }
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <TopNav onMenuToggle={() => setMobileSidebarOpen((v) => !v)} />
-        <main className="flex-1 overflow-y-auto pb-20 md:pb-0">
+        <main className="flex-1 overflow-y-auto pb-24 md:pb-0">
           {children}
         </main>
       </div>

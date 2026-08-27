@@ -202,7 +202,7 @@ export function TrackerCardModal({
             would be four more fields between the user and the thing they came to do. */}
         {editing && (
           <>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label="Salary from (yearly)">
                 <input
                   value={minSalary}

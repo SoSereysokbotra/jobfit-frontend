@@ -171,7 +171,7 @@ export default function ProfilePage() {
           </div>
 
           {/* Completeness meter — derived client-side; the backend has no such field. */}
-          <div className="sm:w-40 shrink-0">
+          <div className="w-full sm:w-40 shrink-0 pt-3 sm:pt-0 border-t sm:border-t-0" style={{ borderColor: "var(--color-border)" }}>
             <div className="flex items-center justify-between mb-1.5">
               <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--color-text-tertiary)" }}>
                 Complete
@@ -195,7 +195,7 @@ export default function ProfilePage() {
 
       {/* ── TABS ───────────────────────────────────────────── */}
       <div
-        className="flex gap-1 overflow-x-auto border-b"
+        className="flex gap-1 overflow-x-auto border-b -mx-4 px-4 sm:mx-0 sm:px-0 no-scrollbar"
         style={{ borderColor: "var(--color-border)" }}
         role="tablist"
       >

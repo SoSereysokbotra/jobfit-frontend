@@ -33,7 +33,7 @@ export function StatCard({
           {icon}
         </div>
       </div>
-      <p className="text-3xl font-extrabold tracking-tight" style={{ color: "var(--color-text-primary)" }}>{value}</p>
+      <p className="text-2xl sm:text-3xl font-extrabold tracking-tight" style={{ color: "var(--color-text-primary)" }}>{value}</p>
       {change && (
         <p className="text-xs mt-1.5 flex items-center gap-1" style={{ color: "var(--color-text-tertiary)" }}>
           {changeUp && <TrendingUp size={11} style={{ color: "var(--color-success-500)" }} />}
@@ -43,7 +43,7 @@ export function StatCard({
     </>
   );
 
-  const baseClass = "rounded-lg border p-5 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 group block";
+  const baseClass = "rounded-lg border p-4 sm:p-5 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 group block";
   const baseStyle: React.CSSProperties = {
     background: "var(--color-card)",
     borderColor: "var(--color-border)",

@@ -157,7 +157,7 @@ export default function DashboardPage() {
           className="absolute -bottom-8 -left-8 w-40 h-40 rounded-full opacity-10"
           style={{ background: "var(--color-primary-200)", filter: "blur(50px)" }}
         />
-        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
             <p className="text-xs font-semibold text-on-primary-muted uppercase tracking-wider mb-1">{today}</p>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-on-primary tracking-tight">
@@ -186,7 +186,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Profile completeness */}
-          <div className="sm:shrink-0 flex items-center gap-4 rounded-xl px-5 py-4 bg-on-primary-surface border border-on-primary-border backdrop-blur-sm">
+          <div className="sm:shrink-0 flex flex-row w-full sm:w-auto items-center text-left gap-4 rounded-xl px-4 sm:px-5 py-3.5 sm:py-4 bg-on-primary-surface border border-on-primary-border backdrop-blur-sm">
             <div className="relative w-14 h-14">
               <svg width={56} height={56} className="-rotate-90" viewBox="0 0 56 56">
                 <circle cx={28} cy={28} r={22} fill="none" stroke="var(--color-border-on-primary)" strokeWidth={6} />
@@ -378,9 +378,9 @@ export default function DashboardPage() {
           <Reveal variant="up" delay={260}>
           <SectionCard
             title="Profile Checklist"
-            action={<span className="text-xs font-bold" style={{ color: "var(--color-primary-600)" }}>{checklistDone} / {profileChecklist.length} done</span>}
+            action={<span className="text-xs font-bold shrink-0" style={{ color: "var(--color-primary-600)" }}>{checklistDone} / {profileChecklist.length} done</span>}
           >
-            <div className="flex items-center gap-4 mb-5">
+            <div className="flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-4 mb-5">
               <div className="relative w-16 h-16 shrink-0">
                 <svg width={64} height={64} className="-rotate-90" viewBox="0 0 64 64">
                   <circle cx={32} cy={32} r={26} fill="none" stroke="var(--color-neutral-100)" strokeWidth={7} />

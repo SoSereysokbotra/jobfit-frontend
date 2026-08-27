@@ -22,26 +22,27 @@ export default function TopNav({ onMenuToggle, className = "", user }: TopNavPro
   return (
     <>
       <header
-        className={`sticky top-0 z-40 h-14 border-b flex items-center px-4 gap-3 ${className}`}
+        className={`sticky top-0 z-40 h-14 border-b flex items-center px-3 sm:px-4 gap-1.5 sm:gap-3 ${className}`}
         style={{ borderColor: "var(--color-border)", background: "var(--color-card)" }}
       >
         {/* Mobile hamburger */}
         <button
           onClick={onMenuToggle}
-          className="md:hidden p-2 rounded-lg hover:bg-neutral-100 transition-colors"
+          className="md:hidden p-1.5 rounded-lg hover:bg-[var(--color-surface-hover)] transition-colors shrink-0"
           style={{ color: "var(--color-text-secondary)" }}
+          aria-label="Toggle navigation menu"
         >
           <Menu size={20} />
         </button>
 
         {/* Brand (mobile only) */}
-        <Link href="/dashboard" className="md:hidden flex items-center gap-2">
+        <Link href="/dashboard" className="md:hidden flex items-center gap-1.5 shrink-0">
           <img
             src="/logo.png"
             alt="JobFits Logo"
             className="w-7 h-7 rounded-full object-contain flex-shrink-0"
           />
-          <span className="font-extrabold text-sm" style={{ color: "var(--color-text-primary)" }}>JobFits</span>
+          <span className="font-extrabold text-sm hidden xs:inline" style={{ color: "var(--color-text-primary)" }}>JobFits</span>
         </Link>
 
         {/* Search Bar Button Trigger (desktop) */}
@@ -75,38 +76,42 @@ export default function TopNav({ onMenuToggle, className = "", user }: TopNavPro
 
         {/* Mobile search trigger button */}
         <button
-          className="md:hidden p-2 rounded-lg hover:bg-neutral-100 transition-colors ml-auto"
+          className="md:hidden p-1.5 rounded-lg hover:bg-[var(--color-surface-hover)] transition-colors ml-auto shrink-0"
           onClick={() => setCommandPaletteOpen(true)}
           style={{ color: "var(--color-text-secondary)" }}
           title="Search"
+          aria-label="Search"
         >
-          <Search size={20} />
+          <Search size={19} />
         </button>
 
         {/* Spacer for desktop */}
         <div className="hidden md:block flex-1" />
 
-        {/* Renders nothing while online and synced. */}
-        <OfflineIndicator />
+        {/* Right tools container */}
+        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+          {/* Renders nothing while online and synced. */}
+          <OfflineIndicator />
 
-        {/* Language Switcher */}
-        <LanguageSwitcher />
+          {/* Language Switcher */}
+          <LanguageSwitcher />
 
-        {/* Theme Toggle */}
-        <ThemeToggle />
+          {/* Theme Toggle */}
+          <ThemeToggle />
 
-        {/* Notifications */}
-        <NotificationBell />
+          {/* Notifications */}
+          <NotificationBell />
 
-        {/* User Avatar */}
-        <Link href="/profile">
-          <div
-            className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold cursor-pointer hover:opacity-90 transition-opacity"
-            style={{ background: "linear-gradient(135deg, var(--color-primary-700), var(--color-primary-500))" }}
-          >
-            {user?.initials || "JD"}
-          </div>
-        </Link>
+          {/* User Avatar */}
+          <Link href="/profile" aria-label="View profile">
+            <div
+              className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold cursor-pointer hover:opacity-90 transition-opacity shrink-0"
+              style={{ background: "linear-gradient(135deg, var(--color-primary-700), var(--color-primary-500))" }}
+            >
+              {user?.initials || "JD"}
+            </div>
+          </Link>
+        </div>
       </header>
 
       {/* Global Command Palette Dialog */}

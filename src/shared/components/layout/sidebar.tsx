@@ -40,6 +40,7 @@ export interface SidebarMenuGroup {
 
 interface SidebarProps {
   onLogout?: () => void;
+  onNavigate?: () => void;
   className?: string;
   workspaceName?: string;
   menuGroups?: SidebarMenuGroup[];
@@ -53,6 +54,7 @@ interface SidebarProps {
 
 export default function Sidebar({
   onLogout,
+  onNavigate,
   className = "",
   workspaceName = "Seeker Workspace",
   menuGroups,
@@ -93,7 +95,7 @@ export default function Sidebar({
         style={{ borderColor: "var(--color-border)" }}
       >
         <div className={`flex items-center ${collapsed ? "flex-col gap-2.5 w-full" : "justify-between w-full"}`}>
-          <Link href="/dashboard" className="flex items-center gap-3">
+          <Link href="/dashboard" onClick={onNavigate} className="flex items-center gap-3">
             <img
               src="/logo.png"
               alt="JobFits Logo"
@@ -148,6 +150,7 @@ export default function Sidebar({
               <Link
                 key={item.href}
                 href={item.href}
+                onClick={onNavigate}
                 className={`group relative flex items-center rounded-md text-sm font-medium transition-all duration-200 ${collapsed ? "w-10 h-10 mx-auto justify-center" : "justify-between px-3 py-2"}`}
                 style={{
                   background: isActive ? "var(--color-primary-50)" : "transparent",
