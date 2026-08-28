@@ -1,313 +1,258 @@
-# JobFit — Employer Flow & Business Logic
+# JobFit — Employer Flow & Business Logic (v2.1)
 
-> **Document Type:** Product Logic Specification
-> **Scope:** Employer Registration, Authentication, and Recruitment Posting
-> **Last Updated:** 2026-08-27
+> **Document Type:** Product Logic & Architecture Specification
+> **Scope:** Employer Registration, Authentication, Account Lifecycle, and Recruitment Posting
+> **Last Updated:** 2026-08-28
+> **Status:** Approved for Implementation — see `docs/EMPLOYER_ONBOARDING_PLAN.md`
+
+> **What changed from v2.0.** Three decisions were taken after an audit of the existing
+> code, and three details in v2.0 disagreed with what is already built. Both sets are
+> applied throughout and summarised in §1.1. Where this document and v2.0 differ, **this
+> one wins**.
 
 ---
 
 ## 1. Overview
 
-JobFit is a resume-matching platform designed to connect job seekers with opportunities that best fit their skills and experience. The platform serves two distinct types of users:
+JobFit is a resume-matching platform connecting job seekers with opportunities. The
+platform serves two strictly separated user types, plus the platform operator.
 
 | User Type | Primary Goal |
 |-----------|-------------|
-| **Job Seeker (Normal User)** | Upload resume and get matched to the most suitable job listings |
-| **Employer** | Post job recruitment listings so qualified candidates can be matched to them |
+| **Job Seeker** (`JOB_SEEKER`) | Upload resume and get matched to suitable job listings |
+| **Employer** (`EMPLOYER`) | Post job recruitment listings to attract matched candidates |
+| **Admin** (`ADMIN`) | Operate the platform; gate employer access |
 
-These two user types are **completely separate** — they have different registration processes, different dashboards, and different account rules.
+The employer is **a customer, not staff** — a recruiter at an outside company (say
+TechCorp) who uses JobFit to fill TechCorp's roles. The admin is the JobFit side.
+
+### 1.1 Changes applied in v2.1
+
+| # | v2.0 said | v2.1 says | Why |
+|---|---|---|---|
+| 1 | Silent on company claim/verify | **Compose** — admin approval first, then the existing claim + domain verification at first login (§6) | The automated flow already exists and works; discarding it would leave a PDF review as the only trust signal |
+| 2 | Hard limit of 1 active session | **Cancelled** — multi-session stays platform-wide | `RefreshToken` is a deliberate multi-session design with rotation-based theft detection. Better for HR teams on several devices, and stronger than a session cap |
+| 3 | One-time secure **link** carrying a temporary password | **6-digit activation code** (§4.3) | No password is ever transmitted, and it reuses the platform's existing 6-digit code machinery |
+| 4 | `force_password_reset = true` | **Removed** | Follows from #3 — the employer sets their own password at activation, so there is no temporary one to force a change from |
+| 5 | Role enum `SEEKER` | **`JOB_SEEKER`** | Matches the existing Prisma enum |
+| 6 | Lockout 15 minutes | **30 minutes**, plus an IP tier | Matches the existing Redis implementation (§5.3) |
+| 7 | Telegram as a delivery channel | **Conversation only, no integration built** | No Telegram service exists; system mail goes through `EmailService`, alerts through Slack |
 
 ---
 
-## 2. Employer Account Rules
+## 2. Core Architecture & Data Model
 
-### 2.1 Core Principles
+1. **Unified user table.** All credentials live in `users`, with a `UNIQUE` constraint on
+   `email` and a `role` enum (`JOB_SEEKER`, `EMPLOYER`, `ADMIN`). Email conflict checking is
+   therefore an atomic database operation, not an app-level check-then-write race.
+2. **Profile separation.** Role-specific data lives in 1-to-1 tables (`profiles`,
+   `employer_profiles`) linked by `userId`.
+3. **Two separate state machines**, and they must not be conflated:
+   * `employer_requests` — the onboarding ticket:
+     `SUBMITTED → REVIEWING → PENDING_INFO / APPROVED / REJECTED`
+   * `users.status` — the account: `ACTIVE → SUSPENDED → DEACTIVATED`
 
-- **One company, one account.** Each employer (company or organization) may only hold **one registered account** on the platform.
-- **Email exclusivity.** The email address used to register an employer account **cannot be used** to create a normal job-seeker account, and vice versa. The system must enforce this at all levels (registration, login, and admin credential creation).
-- **No self-registration.** Unlike normal users, employers **cannot register themselves** through the website's standard sign-up form. The registration process is entirely admin-controlled.
-- **Credentials are non-transferable.** Login credentials issued to an employer are bound to that specific employer. They may not be shared with, lent to, or reused by any other employer or individual outside of that company.
+   **No account exists until a request is `APPROVED`.** The ticket outlives rejection; an
+   account row must never be created for one.
 
 ---
 
-## 3. Employer Registration Flow
+## 3. Employer Account Rules
 
-The employer registration process is a **manual, admin-reviewed flow** involving three parties: the **Employer**, the **Admin**, and the **System**.
+- **One company, one account.** Enforced by `EmployerProfile` — one profile per user, one
+  claim per company.
+- **Email exclusivity.** Enforced by the database. One address cannot be both a seeker and
+  an employer.
+- **No self-registration.** Already true today: the public signup DTO has no role field, so
+  it can only ever produce a `JOB_SEEKER`.
+- **Credentials are non-transferable**, bound to the verified company.
+- **Channel security.** Email and Telegram may be used for *conversation*. Activation codes
+  and any account link are sent **only** to the verified official company email address.
 
-### Step-by-Step Flow
+---
 
-```
-[Employer] ──► Contact Admin via Email or Telegram
-                    │
-                    ▼
-             [Admin] Reviews the Registration Request
-                    │
-          ┌─────────┴──────────┐
-          │                    │
-       Approved             Rejected
-          │                    │
-          ▼                    ▼
-  Admin creates           Admin notifies
-  Employer account        Employer of rejection
-  in the system           (with reason, if applicable)
-          │
-          ▼
-  System generates unique
-  login credentials
-  (Username / Password)
-          │
-          ▼
-  Admin securely delivers
-  credentials to Employer
-  (via email or Telegram)
-          │
-          ▼
-  [Employer] Logs in with
-  provided credentials
-          │
-          ▼
-  Employer is prompted to
-  change their password
-  on first login
-```
+## 4. Employer Registration Flow
 
-### 3.1 Employer Contact (Registration Request)
+### 4.1 Employer Contact (Registration Request)
 
-The employer must **contact the JobFit admin** through one of the official channels:
+The employer submits a request — through the public intake form, or by contacting the admin
+by email or Telegram, in which case the admin directs them to the form so the details are
+captured in one place.
 
-- 📧 **Email** — Send a formal registration request to the designated admin email address
-- 💬 **Telegram** — Message the official JobFit admin Telegram account
-
-**Required information the employer must provide:**
-- Company/Organization name
-- Official company email address (this will become the account email)
-- Company website or social media page (for verification)
+**Required information:**
+- Company / organisation name
+- Official company email address (this becomes the login address)
+- Company website or social media page
 - Contact person's name and role
-- Brief description of the type of jobs they intend to post
-- Any supporting documents (e.g., business registration certificate, if required)
+- Brief description of intended job postings
+- Supporting documents (business registration, etc.)
 
-### 3.2 Admin Review
+### 4.2 Admin Review & SLA
 
-Upon receiving the request, the admin will:
+The admin reviews in the Admin Panel. Requests sitting in `SUBMITTED` or `REVIEWING` for
+more than **48 hours** are highlighted so they cannot be quietly forgotten. The SLA is
+computed from `createdAt` — nothing is stored or has to be kept in sync.
 
-1. **Verify the company** — Check that the company is legitimate (using provided website, documents, or other verification methods)
-2. **Check for duplicates** — Ensure no existing account is registered under the same company name or email address
-3. **Check email conflicts** — Confirm the requested email does not already exist as a normal user account in the system
-4. **Make a decision** — Approve or reject the request
+| Scenario | Behaviour |
+|----------|-----------|
+| **No conflict** | Admin approves. The system creates the account (§4.3). |
+| **Email conflict** | Creation is refused by the unique constraint, surfaced as a typed conflict. The admin UI offers **Request different email** (→ `PENDING_INFO`) or **Reject**. |
+| **Public domain** (e.g. `@gmail.com`) | Allowed, with a warning badge: *"Public domain detected — verify business documents thoroughly."* Computed at read time, never stored. |
+| **Missing information** | **Request Info** → `PENDING_INFO`. |
+| **Rejected** | A reason is required, and is shown to the employer. |
 
-**Possible outcomes:**
+The conflict check happens **inside the same transaction as the account creation**, not
+before it. A check-then-create pair is a race; the unique index is the only thing that can
+answer atomically.
 
-| Outcome | Action Taken |
-|---------|-------------|
-| ✅ Approved | Admin proceeds to create the employer account in the system |
-| ❌ Rejected | Admin notifies the employer with the reason (e.g., duplicate company, invalid documents, suspicious request) |
-| 🔄 Pending Info | Admin requests additional information from the employer before making a final decision |
+### 4.3 Approval, Account Creation and Activation
 
-> [!IMPORTANT]
-> The admin is the **sole authority** responsible for creating employer accounts. There is no automated pathway for employers to bypass this review process.
+On approval the system, in one transaction:
 
-### 3.3 Credential Creation (By Admin)
+1. Creates the `users` row — `role = EMPLOYER`, `status = ACTIVE`,
+   **`emailVerified = false`**, empty password hash.
+2. Generates a **6-digit activation code** with an expiry.
+3. Marks the request `APPROVED` and records the reviewing admin and the approved company.
 
-Once approved, the admin creates the employer account in the system with the following information:
+It then emails the code to the verified company address, including the clause:
+*"By activating this account you agree to the JobFit Employer Terms of Service [link]."*
 
-- **Company Name**
-- **Official Company Email** (provided by the employer during request)
-- **Account Type** — Tagged as `EMPLOYER` (distinct from `SEEKER`)
-- **Generated Password** — A strong, temporary password generated by the system or admin
-- **Account Status** — Set to `ACTIVE`
-- **First Login Flag** — Set to `true` so the employer is forced to change their password on first login
+**Activation.** The employer enters their email, the code, and **a password of their own
+choosing**. On success the system sets the password, sets `emailVerified = true`, clears the
+code, and signs them in.
 
-> [!NOTE]
-> The system must enforce that the employer's email address **cannot be registered** in the normal user (job seeker) table. If a conflict is found, the admin must resolve it before proceeding.
+> ⚠️ **`emailVerified` stays false until the code is used.** Login refuses unverified
+> accounts, and that refusal is the only thing standing between an approved-but-unactivated
+> row — which has an empty password hash — and a login. Activation flips it; approval never
+> does.
 
-### 3.4 Credential Delivery
-
-The admin delivers the credentials to the employer through the **same channel** used for the initial contact (email or Telegram):
-
-- Username (typically the company email)
-- Temporary password
-- Link to the employer login page
-- Instructions to change the password on first login
-
-> [!CAUTION]
-> Credentials must be delivered securely. Admins should avoid sending plain-text passwords through insecure channels. It is recommended to use encrypted email or a secure messaging method where possible.
+**Expired or lost code.** The admin opens the request and clicks **Resend**, which issues a
+fresh code and invalidates the previous one.
 
 ---
 
-## 4. Employer Login Flow
+## 5. Employer Login Flow
 
-### 4.1 Accessing the Login Page
+### 5.1 Routing & Portal Separation
 
-Employers access a **dedicated login page**, separate from the normal user login. This can be:
-- A separate URL (e.g., `/employer/login`)
-- Or a shared login page that distinguishes account types after credential validation
+- **Seeker portal:** `/login`
+- **Employer portal:** `/employer/login`
+- **Admin portal:** already separate, and the pattern the employer portal follows.
 
-### 4.2 Login Process
+Each page cross-links to the other: *"Are you an employer? Log in here."*
 
-```
-[Employer] ──► Opens Employer Login Page
-                    │
-                    ▼
-             Enters Email + Password
-             (credentials provided by Admin)
-                    │
-                    ▼
-             System verifies credentials
-                    │
-          ┌─────────┴──────────┐
-          │                    │
-      Valid                 Invalid
-          │                    │
-          ▼                    ▼
-  Check Account Type       Show error message
-  = EMPLOYER?              "Invalid credentials"
-          │
-      Yes │       No
-          │       │
-          ▼       ▼
-  Check First    Redirect to
-  Login Flag?    correct portal or
-          │      show error
-      Yes │       No
-          │       │
-          ▼       ▼
-  Force Password  Redirect to
-  Change Screen   Employer Dashboard
-          │
-          ▼
-  Employer sets
-  new password
-          │
-          ▼
-  Redirect to
-  Employer Dashboard
-```
+### 5.2 Login Process & Role Enforcement
 
-### 4.3 Account Type Enforcement
+1. Employer submits email + password at `/employer/login`.
+2. Credentials are validated against `users`.
+3. **Role check:** a non-`EMPLOYER` account is refused with **403**, and the UI says
+   *"This is a Job Seeker account. Please use the standard login portal,"* with a link —
+   not a generic failure.
+4. **Status check:** anything other than `ACTIVE` is refused, and suspended is distinguished
+   from closed.
 
-When an employer attempts to log in:
+Role enforcement is **server-side**. The client-side layout guard stays, but it is no longer
+the only check.
 
-- The system **must verify** that the account type is `EMPLOYER`
-- If a normal user (`SEEKER`) accidentally enters their credentials on the employer login page, they must be denied access and redirected appropriately
-- The same applies in reverse — employers cannot log in via the normal user portal
+### 5.3 Security & Session Rules
 
-### 4.4 Credential Security Rules
-
-| Rule | Description |
-|------|-------------|
-| **Non-transferable** | Credentials are bound to the employer company only |
-| **No sharing** | The credentials must not be used by another company or individual |
-| **Password change on first login** | Employer must set a new password upon first login |
-| **Session binding** | Sessions should ideally be monitored for suspicious activity (multiple simultaneous logins from different locations, etc.) |
-| **Failed login lockout** | After a set number of failed attempts (e.g., 5), the account should be temporarily locked and the admin notified |
+| Rule | Implementation |
+|------|----------------|
+| **Sessions** | **Multi-session, no cap.** `RefreshToken` is one row per session with rotation; a replayed rotated token is detected as theft. This is deliberate and platform-wide. |
+| **Account lockout** | 5 failures in a 15-minute window → **30-minute** lockout. Redis-backed, automatic time-based unlock. An admin can unlock early. |
+| **IP lockout** | 20 failures in a 15-minute window → 30-minute lockout. A second tier v2.0 did not describe. |
+| **Audit logging** | Login attempts, password changes and status changes are recorded with actor, action, IP and timestamp. |
 
 ---
 
-## 5. Employer Dashboard & Core Features
+## 6. Company Profile Setup — how approval and verification compose
 
-Once logged in, the employer accesses the **Employer Dashboard**, which contains the following key features:
+Admin approval is the **trust anchor**; the automated domain check is a second, narrower
+signal. Both are kept, and they must never be able to contradict each other.
 
-### 5.1 Post a Job Recruitment
+At first login the employer claims their company and the domain check runs, but:
 
-Employers can create new job postings by providing:
+- The claimed company is checked against the company the admin approved. A mismatch is a
+  **403** — they were approved for a different company.
+- On a match, the company is marked verified **on the strength of the approval**, recording
+  which signal did it (`ADMIN_REVIEW` vs `EMAIL_DOMAIN`) so an audit never has to guess.
+- The domain check still runs as a **soft signal**. A mismatch is recorded and flagged to
+  the admin. **It does not block the employer.**
 
-- **Job Title** — The name of the position being recruited
-- **Job Description** — Detailed description of the role, responsibilities, and expectations
-- **Required Skills** — Key skills and qualifications (used by the system for resume matching)
-- **Experience Level** — e.g., Entry Level, Mid Level, Senior Level
-- **Employment Type** — Full-time, Part-time, Contract, Internship, etc.
-- **Location** — On-site, Remote, Hybrid; with specific location if applicable
-- **Salary Range** — Optional, but recommended for better candidate matching
-- **Application Deadline** — The closing date for the job posting
-- **Number of Openings** — How many candidates they are looking to hire
+> ⚠️ Why the check cannot be authoritative here: it answers **400 "Domain mismatch or no
+> website"** when the company row has no website — which is true of many seeded and ingested
+> companies — and when a recruiter's address sits on a subsidiary or regional domain. Either
+> would block an employer a human has already verified against a business registration.
 
-### 5.2 Manage Job Postings
-
-Employers can:
-
-- **View** all their current and past job postings
-- **Edit** active job postings (before deadline or before a certain number of matches)
-- **Close** a job posting early if the position has been filled
-- **Repost** an expired job posting with updated details
-
-### 5.3 View Matched Candidates
-
-Once a job is posted, the system's matching algorithm will surface job seekers whose resumes best align with the job requirements. Employers can:
-
-- View a list of **matched candidates** ranked by match score
-- View **match details** (which skills or experiences contributed to the match)
-- **Express interest** in a candidate (notify or unlock contact details, depending on platform rules)
-
-> [!NOTE]
-> The matching is driven by the system — employers do not search for candidates manually. The platform proactively surfaces the best-fit candidates based on job requirements vs. resume content.
-
-### 5.4 Account Settings
-
-Employers can manage their account profile:
-
-- Update company information (name, description, logo, website)
-- Change their password
-- View login activity history
-
-> [!WARNING]
-> Employers **cannot** change their registered email address without going through the admin. Changing the email is treated as a sensitive operation to prevent account misuse.
+Self-service claim by an employer with **no** approved request keeps the current strict
+behaviour: the domain check is authoritative and a mismatch is a 400.
 
 ---
 
-## 6. Account Lifecycle
+## 7. Employer Dashboard & Core Features
 
-| Stage | Description |
-|-------|-------------|
-| **Pending** | Employer has contacted admin but account has not yet been created |
-| **Active** | Account is live and employer can log in and post jobs |
-| **Suspended** | Admin has temporarily disabled the account (e.g., policy violation, suspicious activity) |
-| **Deactivated** | Account has been permanently closed (e.g., company closed, repeated violations) |
+### 7.1 Post a job
+Title, description, required skills, experience level, employment type, location, salary
+range, application deadline, number of openings. Jobs are drafted and then explicitly
+published, so a half-written posting never reaches candidates.
 
-> [!IMPORTANT]
-> Only the **admin** can change an employer's account status. Employers cannot self-deactivate or self-suspend.
+### 7.2 Manage postings
+View, edit, close, repost. **Reposting an expired job clears its previous matches and
+triggers a fresh matching run**, so candidates are scored against the updated description.
+
+### 7.3 Matched candidates
+The system surfaces candidates ranked by match score; employers do not search the candidate
+database. An employer can open a candidate's match detail and download **the CV that
+candidate applied with** via a signed, time-limited URL scoped to their own company.
+
+> Access is a **checked relationship** — an application linking the employer's job to the
+> candidate. `role === 'EMPLOYER'` alone must never grant candidate access, or the whole
+> candidate table is open to anyone who registers as an employer.
+
+### 7.4 Account settings
+Company name, logo, website, description; password change.
+
+> **Email changes are not self-service.** Changing the login address requires a new request
+> ticket and admin approval, to prevent account hijacking.
 
 ---
 
-## 7. Email & Account Conflict Rules Summary
+## 8. Account Lifecycle
 
-| Scenario | System Behavior |
-|----------|----------------|
-| Employer email already exists as a Seeker account | Admin is blocked from creating the employer account; must resolve conflict first |
-| Seeker tries to register with an existing employer email | System rejects registration and shows an error |
-| Employer tries to log in via Seeker portal | Access denied; redirected to correct portal |
-| Seeker tries to log in via Employer portal | Access denied; redirected to correct portal |
-| Another employer tries to use the same credentials | Not possible — credentials are system-generated and unique per company |
-| Employer shares credentials with another person | System may detect anomalies (e.g., concurrent sessions); admin can investigate |
+| Stage | Description | Who can change it |
+|-------|-------------|-------------------|
+| **Active** | Live; can log in and post. | Admin, on approval |
+| **Suspended** | Temporarily disabled — policy violation, suspicious activity. Reversible. | Admin only |
+| **Deactivated** | Permanently closed. | Admin only |
+
+Employers cannot self-suspend or self-deactivate. Every transition is audit-logged.
 
 ---
 
-## 8. Admin Responsibilities Summary
-
-The admin plays a central role in the employer lifecycle:
+## 9. Admin Responsibilities
 
 | Responsibility | Description |
 |---------------|-------------|
-| **Review registration requests** | Evaluate and approve or reject employer requests |
-| **Create employer accounts** | Manually create accounts in the system post-approval |
-| **Issue credentials** | Securely deliver login credentials to approved employers |
-| **Manage account status** | Suspend or deactivate employer accounts when necessary |
-| **Resolve email conflicts** | Handle cases where the same email exists in both user types |
-| **Monitor activity** | Watch for suspicious login patterns or policy violations |
+| **Review requests** | Decide within the 48-hour SLA |
+| **Resolve conflicts** | Handle email collisions via the conflict dialog |
+| **Approve & issue** | Trigger account creation and the activation email |
+| **Resend codes** | Reissue for employers whose code expired |
+| **Manage lifecycle** | Suspend / deactivate on evidence |
+| **Monitor security** | Review audit logs for suspicious patterns |
 
 ---
 
-## 9. Key Differentiators: Employer vs. Seeker
+## 10. Key Differentiators: Employer vs Seeker
 
-| Feature | Job Seeker (Normal User) | Employer |
-|---------|--------------------------|----------|
-| Registration | Self-service via website | Manual — through admin only |
-| Login Portal | Seeker portal | Employer portal |
-| Account Creation | Instant upon sign-up | After admin review and approval |
-| Primary Action | Upload resume, get matched | Post jobs, view matched candidates |
-| Email Conflict | Cannot use employer email | Cannot use seeker email |
-| Password on First Login | Self-set during registration | Must change on first login |
-| Account Management | Self-managed | Admin-controlled for sensitive actions |
+| Feature | Job Seeker | Employer |
+|---------|-----------|----------|
+| **Registration** | Self-service | Admin-gated via a request ticket |
+| **Login portal** | `/login` | `/employer/login` |
+| **Account creation** | Instant on signup | After admin approval |
+| **First credential** | Self-set via email verification | Self-set at activation, using a 6-digit code sent to the verified company email |
+| **Sessions** | Multi-device | Multi-device (same policy) |
+| **Email changes** | Self-managed | Requires a new request and admin approval |
 
 ---
 
-*End of Document*
+*End of Document v2.1*
