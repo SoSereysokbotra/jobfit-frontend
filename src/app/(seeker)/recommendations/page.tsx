@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
+import Link from "next/link";
 import { RefreshCw, LayoutGrid, List, SlidersHorizontal, X, Star, Layers } from "lucide-react";
 import {
   JobRecommendationCard,
@@ -12,6 +13,7 @@ import { COLLAPSE_STORAGE_KEYS } from "@/shared/hooks/use-collapsed-sections";
 import { SwipeDeck } from "@/features/matching/components/swipe-deck";
 import { useJobSearch } from "@/features/job/hooks/use-job-search";
 import { useRecommendations } from "@/features/matching/hooks/use-recommendations";
+import { useMatchReadiness } from "@/features/matching/hooks/use-match-readiness";
 import { useDismissRecommendation } from "@/features/matching/hooks/use-dismiss-recommendation";
 import { useSavedJobIds, useToggleSavedJob } from "@/features/saved-jobs/hooks/use-saved-jobs";
 import { useSubmitApplication } from "@/features/application/hooks/use-applications";
@@ -29,6 +31,9 @@ export default function RecommendationsPage() {
 
   // Live-shaped recommendations (mock behind interface until the AI service lands).
   const { data: recommendations = [], isFetching, refetch } = useRecommendations();
+  // Only consulted when the list is empty, but fetched unconditionally so the empty
+  // state never flashes the wrong reason while a second request is in flight.
+  const { data: readiness } = useMatchReadiness();
   const { ids: savedJobs } = useSavedJobIds();
   const toggleSaved = useToggleSavedJob();
   const dismissRecommendation = useDismissRecommendation();
@@ -272,22 +277,50 @@ export default function RecommendationsPage() {
               >
                 <Star size={48} className="mx-auto mb-4 opacity-20" />
                 {recommendations.length === 0 ? (
+                  /* An empty list has four causes and only one is about the user, so the
+                     readiness endpoint decides the words. Guessing "add a headline and
+                     upload a resume" was wrong for three of the four: it told a candidate
+                     whose embedding was still building, or had failed, to go do work that
+                     would not help. */
                   <>
                     <p className="text-lg font-bold mb-2" style={{ color: "var(--color-text-primary)" }}>
-                      No recommendations yet
+                      {readiness?.state === "READY"
+                        ? "No exact matches found yet"
+                        : readiness?.state === "EMBEDDING_PENDING"
+                          ? "Setting up your matches"
+                          : readiness?.state === "EMBEDDING_FAILED"
+                            ? "We hit a snag"
+                            : "No recommendations yet"}
                     </p>
                     <p className="text-sm mb-4" style={{ color: "var(--color-text-tertiary)" }}>
-                      We build these from your profile and résumé. Add a headline and
-                      upload a résumé, then refresh — matching needs something to compare
-                      jobs against.
+                      {readiness?.state === "READY"
+                        ? "Try broadening your location or adjusting your salary range to see more opportunities."
+                        : readiness?.message ??
+                          "We build these from your profile and resume - matching needs something to compare jobs against."}
                     </p>
-                    <button
-                      onClick={() => refetch()}
-                      className="px-4 py-2 rounded-md text-sm font-semibold text-white"
-                      style={{ background: "var(--color-primary-600)" }}
-                    >
-                      Refresh recommendations
-                    </button>
+                    {readiness?.state === "READY" ? (
+                      <Link
+                        href="/profile"
+                        className="inline-block px-4 py-2 rounded-md text-sm font-semibold text-white"
+                        style={{ background: "var(--color-primary-600)" }}
+                      >
+                        Edit preferences
+                      </Link>
+                    ) : readiness?.state === "EMBEDDING_PENDING" ? (
+                      /* Nothing to click: useMatchReadiness polls while `transient` is
+                         true and this re-renders on its own. */
+                      <p className="text-xs" style={{ color: "var(--color-text-tertiary)" }}>
+                        This updates on its own - no need to refresh.
+                      </p>
+                    ) : (
+                      <Link
+                        href="/profile"
+                        className="inline-block px-4 py-2 rounded-md text-sm font-semibold text-white"
+                        style={{ background: "var(--color-primary-600)" }}
+                      >
+                        {readiness?.state === "EMBEDDING_FAILED" ? "Update profile & retry" : "Complete my profile"}
+                      </Link>
+                    )}
                   </>
                 ) : (
                   <>
@@ -349,7 +382,8 @@ export default function RecommendationsPage() {
             {/* Bottom summary */}
             {visibleResults.length > 0 && viewMode !== "deck" && (
               <p className="text-center text-sm mt-8" style={{ color: "var(--color-text-tertiary)" }}>
-                Top {visibleResults.length} recommendations shown • Updated nightly
+                Top {visibleResults.length} recommendations shown • Matches update automatically when you
+                change your profile or when new jobs are posted
               </p>
             )}
           </main>

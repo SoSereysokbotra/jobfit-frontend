@@ -10,6 +10,8 @@ import { useSession, displayName } from "@/features/auth/hooks/use-session";
 import { NAVIGATION_GROUPS } from "@/shared/config/navigation";
 import { useCollapsedSections } from "@/shared/hooks/use-collapsed-sections";
 import { CollapsibleSection } from "@/shared/components/ui/collapsible-section";
+import { useProfile } from "@/features/user-profile/hooks/use-profile";
+import { ProfileAvatar } from "@/features/user-profile/components/profile-avatar";
 
 /**
  * Whether a nav item matches the current route.
@@ -74,8 +76,9 @@ export default function Sidebar({
   const groupsToRender = menuGroups || NAVIGATION_GROUPS;
   
   const { user: authUser } = useSession();
+  const { profile } = useProfile();
   const fallbackUser = authUser 
-    ? { name: displayName(authUser).fullName || "User", email: authUser.email, initials: displayName(authUser).initials }
+    ? { name: profile?.fullName || displayName(authUser).fullName || "User", email: authUser.email, initials: displayName(authUser).initials }
     : { name: "John Doe", email: "john@example.com", initials: "JD" };
 
   const displayUser = user || fallbackUser;
@@ -239,12 +242,14 @@ export default function Sidebar({
         <div
           className={`flex items-center rounded-lg transition-colors hover:bg-[var(--color-surface-hover)] ${collapsed ? "flex-col gap-2 p-2" : "gap-3 p-2"}`}
         >
-          <div
-            className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0"
-            style={{ background: "var(--color-primary-100)", color: "var(--color-primary-600)" }}
-          >
-            {displayUser.initials}
-          </div>
+          <Link href="/profile" onClick={onNavigate} className="flex-shrink-0">
+            <ProfileAvatar
+              photoUrl={profile?.photoUrl}
+              name={displayUser.name}
+              initials={displayUser.initials}
+              size="sm"
+            />
+          </Link>
           {!collapsed && (
             <div className="flex-1 min-w-0">
               <p className="text-xs font-bold truncate" style={{ color: "var(--color-text-primary)" }}>{displayUser.name}</p>

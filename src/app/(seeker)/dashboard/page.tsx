@@ -16,6 +16,7 @@ import { SectionCard } from "@/shared/components/layout/section-card";
 import { formatDate } from "@/shared/utils/formatters";
 import { Reveal } from "@/shared/components/motion/reveal";
 import { useCountUp } from "@/shared/hooks/use-count-up";
+import { ProfileAvatar } from "@/features/user-profile/components";
 
 /** Small "Sample" pill for sections with no backend endpoint yet. */
 function SamplePill() {
@@ -157,31 +158,42 @@ export default function DashboardPage() {
           className="absolute -bottom-8 -left-8 w-40 h-40 rounded-full opacity-10"
           style={{ background: "var(--color-primary-200)", filter: "blur(50px)" }}
         />
-        <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div>
-            <p className="text-xs font-semibold text-on-primary-muted uppercase tracking-wider mb-1">{today}</p>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-on-primary tracking-tight">
-              Welcome back, {firstName}!
-            </h1>
-            <p className="text-sm text-on-primary-muted mt-1.5">
-              You have <span className="text-on-primary font-bold">{num(stats?.totalInterviews)} interviews</span> in progress and{" "}
-              <span className="text-on-primary font-bold">{num(stats?.totalApplications)} applications</span> submitted.
-            </p>
-            <div className="flex flex-wrap gap-2 mt-4">
-              <Link
-                href="/recommendations"
-                onClick={() => toast.info("Opening your job matches...")}
-                className="px-4 py-2 rounded-md text-xs font-bold bg-on-primary text-primary-800 hover:bg-primary-50 transition-all duration-200 active:scale-[0.98] inline-flex items-center gap-1.5"
-              >
-                <Star size={13} /> View New Matches
-              </Link>
-              <Link
-                href="/applications"
-                onClick={() => toast.info("Viewing your applications...")}
-                className="px-4 py-2 rounded-md text-xs font-bold text-on-primary border border-on-primary-border hover:bg-on-primary-surface transition-all duration-200 active:scale-[0.98] inline-flex items-center gap-1.5"
-              >
-                <Briefcase size={13} /> Track Applications
-              </Link>
+        <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+          <div className="flex items-start sm:items-center gap-4">
+            <ProfileAvatar
+              photoUrl={profile?.photoUrl}
+              name={profile?.fullName || firstName}
+              initials={displayName(user).initials}
+              size="xl"
+              editable={true}
+              showBorder={true}
+              className="shrink-0"
+            />
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-semibold text-on-primary-muted uppercase tracking-wider mb-1">{today}</p>
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-on-primary tracking-tight">
+                Welcome back, {firstName}!
+              </h1>
+              <p className="text-sm text-on-primary-muted mt-1.5">
+                You have <span className="text-on-primary font-bold">{num(stats?.totalInterviews)} interviews</span> in progress and{" "}
+                <span className="text-on-primary font-bold">{num(stats?.totalApplications)} applications</span> submitted.
+              </p>
+              <div className="flex flex-wrap gap-2 mt-4">
+                <Link
+                  href="/recommendations"
+                  onClick={() => toast.info("Opening your job matches...")}
+                  className="px-4 py-2 rounded-md text-xs font-bold bg-on-primary text-primary-800 hover:bg-primary-50 transition-all duration-200 active:scale-[0.98] inline-flex items-center gap-1.5"
+                >
+                  <Star size={13} /> View New Matches
+                </Link>
+                <Link
+                  href="/applications"
+                  onClick={() => toast.info("Viewing your applications...")}
+                  className="px-4 py-2 rounded-md text-xs font-bold text-on-primary border border-on-primary-border hover:bg-on-primary-surface transition-all duration-200 active:scale-[0.98] inline-flex items-center gap-1.5"
+                >
+                  <Briefcase size={13} /> Track Applications
+                </Link>
+              </div>
             </div>
           </div>
 

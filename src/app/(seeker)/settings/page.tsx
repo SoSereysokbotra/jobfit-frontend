@@ -6,12 +6,17 @@ import { Badge } from "@/shared/components/ui/badge";
 import { cn } from "@/shared/utils/cn";
 import { useTheme } from "@/providers/theme-provider";
 import { toast } from "@/stores/toast-store";
+import { useProfile } from "@/features/user-profile/hooks/use-profile";
+import { useSession, displayName } from "@/features/auth/hooks/use-session";
+import { ProfileAvatar } from "@/features/user-profile/components/profile-avatar";
 
 /* ─────────────────────────── MOCK DATA ─────────────────────── */
 /* ─────────────────────────── COMPONENT ─────────────────────── */
 
 export default function SettingsPage() {
   const { theme, setTheme, resolvedTheme } = useTheme();
+  const { user } = useSession();
+  const { profile } = useProfile();
   const [activeSection, setActiveSection] = useState<"account" | "security" | "integrations" | "appearance">("account");
 
   // Profile Form State
@@ -168,8 +173,26 @@ export default function SettingsPage() {
               <div>
                 <h2 className="text-base font-bold" style={{ color: "var(--color-text-primary)" }}>Account Settings</h2>
                 <p className="text-xs mt-0.5" style={{ color: "var(--color-text-tertiary)" }}>
-                  Update your contact email and registered phone number
+                  Update your profile picture, contact email, and registered phone number
                 </p>
+              </div>
+
+              {/* Profile Photo Section */}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 pb-6 border-b" style={{ borderColor: "var(--color-border)" }}>
+                <ProfileAvatar
+                  photoUrl={profile?.photoUrl}
+                  name={profile?.fullName || displayName(user).fullName || "User"}
+                  initials={displayName(user).initials}
+                  size="xl"
+                  editable={true}
+                  showBorder={true}
+                />
+                <div>
+                  <h3 className="text-sm font-bold" style={{ color: "var(--color-text-primary)" }}>Profile Picture</h3>
+                  <p className="text-xs mt-0.5" style={{ color: "var(--color-text-tertiary)" }}>
+                    Click your avatar or the camera icon to upload a custom profile image.
+                  </p>
+                </div>
               </div>
 
               <form onSubmit={handleSaveAccount} className="space-y-4 max-w-md">

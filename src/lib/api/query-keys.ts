@@ -148,6 +148,8 @@ export const qk = {
     recommendations: (filters: Record<string, unknown> = {}) =>
       [...qk.matching.all, "recommendations", filters] as const,
     breakdown: (jobId: string) => [...qk.matching.all, "breakdown", jobId] as const,
+    /** Why the recommendations list is empty — drives the onboarding bridge screen. */
+    readiness: () => [...qk.matching.all, "readiness"] as const,
     skillGap: (jobId: string) => [...qk.matching.all, "skill-gap", jobId] as const,
     /** A stored full-page match report, generated from the browser extension. */
     report: (reportId: string) => [...qk.matching.all, "report", reportId] as const,

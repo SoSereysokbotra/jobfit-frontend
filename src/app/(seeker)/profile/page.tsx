@@ -9,6 +9,7 @@ import {
   SkillsEditor,
   ExperienceList,
   EducationList,
+  ProfileAvatar,
   formValuesToInput
 } from "@/features/user-profile/components";
 import {
@@ -118,12 +119,14 @@ export default function ProfilePage() {
       {/* ── HEADER ─────────────────────────────────────────── */}
       <SectionCard>
         <div className="flex flex-col sm:flex-row sm:items-start gap-5">
-          <div
-            className="w-20 h-20 rounded-full shrink-0 flex items-center justify-center text-2xl font-bold"
-            style={{ background: "var(--color-primary-100)", color: "var(--color-primary-700)" }}
-          >
-            {initials}
-          </div>
+          <ProfileAvatar
+            photoUrl={profile!.photoUrl}
+            name={profile!.fullName}
+            initials={initials}
+            size="xl"
+            editable={true}
+            showBorder={true}
+          />
 
           <div className="flex-1 min-w-0">
             <h1 className="text-2xl font-bold truncate" style={{ color: "var(--color-text-primary)" }}>

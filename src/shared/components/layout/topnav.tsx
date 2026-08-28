@@ -9,15 +9,27 @@ import { ThemeToggle } from "@/shared/components/ui/theme-toggle";
 import { OfflineIndicator } from "./offline-indicator";
 import { useCommandPaletteOpen } from "@/stores/command-palette-store";
 import { CommandPalette } from "@/shared/components/ui/command-palette";
+import { useProfile } from "@/features/user-profile/hooks/use-profile";
+import { useSession, displayName } from "@/features/auth/hooks/use-session";
+import { ProfileAvatar } from "@/features/user-profile/components/profile-avatar";
 
 interface TopNavProps {
   onMenuToggle?: () => void;
   className?: string;
-  user?: { initials: string; name?: string; email?: string };
+  user?: { initials: string; name?: string; email?: string; photoUrl?: string };
 }
 
 export default function TopNav({ onMenuToggle, className = "", user }: TopNavProps) {
   const [, setCommandPaletteOpen] = useCommandPaletteOpen();
+  const { user: authUser } = useSession();
+  const { profile } = useProfile();
+
+  const activeUser = user || (authUser ? {
+    initials: displayName(authUser).initials,
+    name: profile?.fullName || displayName(authUser).fullName || "User",
+    email: authUser.email,
+    photoUrl: profile?.photoUrl,
+  } : { initials: "JD", name: "User" });
 
   return (
     <>
@@ -103,13 +115,13 @@ export default function TopNav({ onMenuToggle, className = "", user }: TopNavPro
           <NotificationBell />
 
           {/* User Avatar */}
-          <Link href="/profile" aria-label="View profile">
-            <div
-              className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold cursor-pointer hover:opacity-90 transition-opacity shrink-0"
-              style={{ background: "linear-gradient(135deg, var(--color-primary-700), var(--color-primary-500))" }}
-            >
-              {user?.initials || "JD"}
-            </div>
+          <Link href="/profile" aria-label="View profile" className="shrink-0">
+            <ProfileAvatar
+              photoUrl={profile?.photoUrl || activeUser?.photoUrl}
+              name={activeUser?.name || "User"}
+              initials={activeUser?.initials || "JD"}
+              size="sm"
+            />
           </Link>
         </div>
       </header>

@@ -43,6 +43,32 @@ export interface SkillGapDto {
   skillsConsidered: string[];
 }
 
+/**
+ * Why `GET /recommendations` came back empty — or READY when it genuinely did.
+ *
+ * An empty array has four causes and only the last is about the user, so the list alone
+ * cannot be rendered as "no jobs match you". `message` is written by the backend for
+ * display and is safe to show verbatim; `detail` carries internal error codes and is NOT.
+ */
+export type MatchReadinessState =
+  | "READY"
+  | "NO_PROFILE"
+  | "EMBEDDING_PENDING"
+  | "EMBEDDING_FAILED";
+
+export interface MatchReadinessDto {
+  state: MatchReadinessState;
+  /** A sentence written for the candidate. Safe to render as-is. */
+  message: string;
+  /** True when this resolves on its own — the only honest reason to show a spinner. */
+  transient: boolean;
+  /** What the user can do, when the next move is theirs. */
+  action?: "CREATE_PROFILE" | "UPDATE_PROFILE";
+  embeddedAt?: string;
+  /** Support/debug only — carries internal error codes. Never render. */
+  detail?: string;
+}
+
 export interface JobMatchDto {
   /** 0-100 weighted total from the DETERMINISTIC scorer (not the LLM fitScore). */
   score: number;
@@ -98,4 +124,12 @@ export const matchingApi = {
       matchReason: dto.reason,
     }));
   },
+
+  /**
+   * Why the recommendations list is empty. Call it alongside the list, not only when the
+   * list comes back empty — the onboarding bridge screen needs the state before it has
+   * any list at all.
+   */
+  readiness: (): Promise<MatchReadinessDto> =>
+    apiClient.get<MatchReadinessDto>("/recommendations/readiness"),
 };

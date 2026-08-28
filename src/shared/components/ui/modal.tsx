@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 
 interface ModalProps {
@@ -16,8 +17,13 @@ interface ModalProps {
 
 /** Centered confirmation/form modal (ui-reference §16): scrim + rounded-lg panel. */
 export function Modal({ open, onClose, title, subtitle, children, footer }: ModalProps) {
+  const [mounted, setMounted] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
   const previousActiveElement = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Escape key listener + Body scroll lock + Focus management
   useEffect(() => {
@@ -87,12 +93,12 @@ export function Modal({ open, onClose, title, subtitle, children, footer }: Moda
     };
   }, [open, onClose]);
 
-  if (!open) return null;
+  if (!open || !mounted) return null;
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 flex items-center justify-center p-4"
-      style={{ zIndex: "var(--z-modal)" as unknown as number }}
+      className="fixed inset-0 z-[300] flex items-center justify-center p-4"
+      style={{ zIndex: 300 }}
     >
       {/* Scrim */}
       <div className="absolute inset-0 bg-scrim animate-fade-in" onClick={onClose} />
@@ -139,6 +145,7 @@ export function Modal({ open, onClose, title, subtitle, children, footer }: Moda
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

@@ -79,7 +79,7 @@ export interface CreateProfileInput {
 export type UpdateProfileInput = Partial<
   Pick<
     CreateProfileInput,
-    | "firstName" | "lastName" | "phone" | "bio" | "headline"
+    | "firstName" | "lastName" | "phone" | "photoUrl" | "bio" | "headline"
     | "location" | "linkedinUrl" | "githubUrl" | "portfolioUrl"
   >
 >;

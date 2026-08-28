@@ -13,7 +13,6 @@ import {
   X,
   Briefcase,
   MapPin,
-  DollarSign,
   Clock,
   Wifi,
   BarChart2,
@@ -22,17 +21,19 @@ import {
   Check,
   Search,
   HelpCircle,
+  Zap,
 } from "lucide-react";
 import { useResumeUpload } from "@/features/resume/hooks/use-resume-upload";
 import { useParsingStatus, useParsedData } from "@/features/resume/hooks/use-resumes";
 import { validateResumeFile, RESUME_ACCEPT_ATTR, type ParsedResumeDataDto } from "@/features/resume/api/resume.api";
 import { useSession, displayName } from "@/features/auth/hooks/use-session";
 import { useCreateProfile, useUpdatePreferences, useProfile } from "@/features/user-profile/hooks/use-profile";
-import { toast } from "@/stores/toast-store";
 import { parseLocationInput } from "@/features/user-profile/api/profile.mappers";
 import type { EmploymentType, RemoteType } from "@/features/user-profile/api/profile.api";
 import { ApiError } from "@/lib/api/client";
 import { Alert } from "@/shared/components/feedback/alert";
+import { useMatchReadiness } from "@/features/matching/hooks/use-match-readiness";
+import { useRecommendations } from "@/features/matching/hooks/use-recommendations";
 
 /* ─────────────────────────── TYPES ─────────────────────────── */
 type Step = 1 | 2 | 3;
@@ -90,12 +91,66 @@ function toWizardParsed(d: ParsedResumeDataDto): ParsedResume {
 interface ProfileData {
   jobTitle: string;
   locations: string[];
-  salaryMin: number;
-  salaryMax: number;
+  salaryMin?: number;
+  salaryMax?: number;
+  isSalaryNegotiable?: boolean;
+  preferNotToDiscloseSalary?: boolean;
   employmentTypes: string[];
   remotePreference: string;
   industries: string[];
   completeness: "complete" | "partial";
+}
+
+const SALARY_PRESETS = [
+  { id: "80-120", label: "80K-120K", min: 80, max: 120 },
+  { id: "120-160", label: "120K-160K", min: 120, max: 160 },
+  { id: "160-200", label: "160K-200K", min: 160, max: 200 },
+  { id: "200-plus", label: "200K+", min: 200, max: 350 },
+  { id: "custom", label: "Custom", min: null, max: null },
+] as const;
+
+function getMarketSalaryInsight(jobTitle: string, locations: string[]): { title: string; min: number; max: number; locationText: string } {
+  const titleLower = (jobTitle || "").toLowerCase().trim();
+  const locationText = locations.length > 0 ? `in ${locations[0]}` : "in your area";
+
+  let min = 95;
+  let max = 185;
+  let title = jobTitle.trim() || "Software Engineers";
+
+  if (!titleLower) {
+    title = "Software Engineers";
+    min = 95;
+    max = 185;
+  } else if (titleLower.includes("executive") || titleLower.includes("director") || titleLower.includes("vp") || titleLower.includes("lead")) {
+    min = 180;
+    max = 300;
+  } else if (titleLower.includes("senior") || titleLower.includes("staff") || titleLower.includes("principal")) {
+    min = 150;
+    max = 240;
+  } else if (titleLower.includes("data scientist") || titleLower.includes("machine learning") || titleLower.includes("ai")) {
+    min = 130;
+    max = 210;
+  } else if (titleLower.includes("product manager")) {
+    min = 110;
+    max = 190;
+  } else if (titleLower.includes("designer") || titleLower.includes("ux") || titleLower.includes("ui")) {
+    min = 85;
+    max = 155;
+  } else if (titleLower.includes("data analyst") || titleLower.includes("analyst")) {
+    min = 75;
+    max = 130;
+  } else if (titleLower.includes("marketing") || titleLower.includes("sales")) {
+    min = 70;
+    max = 140;
+  } else if (titleLower.includes("software") || titleLower.includes("developer") || titleLower.includes("engineer") || titleLower.includes("frontend") || titleLower.includes("backend")) {
+    min = 95;
+    max = 185;
+  } else {
+    min = 80;
+    max = 160;
+  }
+
+  return { title, min, max, locationText };
 }
 
 /* ─────────────────────────── CONSTANTS ─────────────────────── */
@@ -154,7 +209,7 @@ function StepIndicator({ current }: { current: Step }) {
         {/* Background Line */}
         <div className="absolute top-1/2 left-0 right-0 h-0.5 -translate-y-1/2 bg-neutral-200 -z-10" />
         {/* Progress Line */}
-        <div 
+        <div
           className="absolute top-1/2 left-0 h-0.5 -translate-y-1/2 bg-primary-600 transition-all duration-500 -z-10"
           style={{ width: `${((current - 1) / (TOTAL_STEPS - 1)) * 100}%` }}
         />
@@ -166,20 +221,18 @@ function StepIndicator({ current }: { current: Step }) {
           return (
             <div key={s.num} className="flex flex-col items-center relative bg-white px-2">
               <div
-                className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all duration-300 ${
-                  isCompleted
+                className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all duration-300 ${isCompleted
                     ? "bg-primary-600 border-primary-600 text-white"
                     : isActive
-                    ? "bg-primary-800 border-primary-800 text-white ring-4 ring-primary-100"
-                    : "bg-white border-neutral-300 text-neutral-400"
-                }`}
+                      ? "bg-primary-800 border-primary-800 text-white ring-4 ring-primary-100"
+                      : "bg-white border-neutral-300 text-neutral-400"
+                  }`}
               >
                 {isCompleted ? <Check className="w-4 h-4 stroke-[3]" /> : s.num}
               </div>
               <span
-                className={`absolute top-11 text-[10px] font-bold uppercase tracking-wider whitespace-nowrap transition-colors duration-300 ${
-                  isActive || isCompleted ? "text-primary-800" : "text-neutral-400"
-                }`}
+                className={`absolute top-11 text-[10px] font-bold uppercase tracking-wider whitespace-nowrap transition-colors duration-300 ${isActive || isCompleted ? "text-primary-800" : "text-neutral-400"
+                  }`}
               >
                 {s.label}
               </span>
@@ -195,13 +248,13 @@ function StepIndicator({ current }: { current: Step }) {
 /* ═════════════════════════════════════════════════════════════ */
 /*  STEP 1: RESUME UPLOAD                                          */
 /* ═════════════════════════════════════════════════════════════ */
-function ResumeUploadStep({ 
-  onNext, 
+function ResumeUploadStep({
+  onNext,
   onSetParsedData,
   parsedData,
   setSkipResume
-}: { 
-  onNext: () => void; 
+}: {
+  onNext: () => void;
   onSetParsedData: (data: ParsedResume | null) => void;
   parsedData: ParsedResume | null;
   setSkipResume: (skip: boolean) => void;
@@ -356,9 +409,8 @@ function ResumeUploadStep({
               onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
               onDragLeave={() => setDragOver(false)}
               onDrop={onDrop}
-              className={`relative border-2 border-dashed rounded-lg p-10 text-center cursor-pointer transition-all duration-200 ${
-                dragOver ? "border-primary-500 bg-primary-50" : "border-neutral-300 bg-neutral-50 hover:border-primary-400 hover:bg-primary-50/50"
-              }`}
+              className={`relative border-2 border-dashed rounded-lg p-10 text-center cursor-pointer transition-all duration-200 ${dragOver ? "border-primary-500 bg-primary-50" : "border-neutral-300 bg-neutral-50 hover:border-primary-400 hover:bg-primary-50/50"
+                }`}
               onClick={() => document.getElementById("resume-file-input")?.click()}
             >
               <input
@@ -409,8 +461,8 @@ function ResumeUploadStep({
                 <div className="space-y-1.5">
                   <div className="flex justify-between text-xs text-neutral-600 font-semibold">
                     <span>Uploading... {uploadProgress}%</span>
-                    <button 
-                      onClick={resetFile} 
+                    <button
+                      onClick={resetFile}
                       className="text-primary-600 hover:underline hover:text-primary-700 font-bold"
                     >
                       Cancel upload
@@ -512,7 +564,7 @@ function ResumeUploadStep({
                   {parsedData.parsedBy === "ai" ? "AI-parsed" : "Basic parse"}
                 </span>
               </div>
-              
+
               {isEditing ? (
                 /* LOW CONFIDENCE EDITABLE VIEW */
                 <div className="p-5 space-y-4">
@@ -753,8 +805,12 @@ function ProfileSetupStep({
   const [locations, setLocations] = useState<string[]>([]);
   const [locationSearch, setLocationSearch] = useState("");
   const [showLocationDropdown, setShowLocationDropdown] = useState(false);
-  const [salaryMin, setSalaryMin] = useState(100);
-  const [salaryMax, setSalaryMax] = useState(200);
+  const [salaryMin, setSalaryMin] = useState<number | string>(100);
+  const [salaryMax, setSalaryMax] = useState<number | string>(200);
+  const [isSalaryNegotiable, setIsSalaryNegotiable] = useState(false);
+  const [preferNotToDisclose, setPreferNotToDisclose] = useState(false);
+  const [salaryError, setSalaryError] = useState("");
+  const [showSalaryWhyAsk, setShowSalaryWhyAsk] = useState(false);
   const [employmentTypes, setEmploymentTypes] = useState<string[]>(["Full-time"]);
   const [remotePreference, setRemotePreference] = useState("Fully Remote");
   const [industries, setIndustries] = useState<string[]>([]);
@@ -777,6 +833,54 @@ function ProfileSetupStep({
   const titleRef = useRef<HTMLDivElement>(null);
   const locRef = useRef<HTMLDivElement>(null);
   const indRef = useRef<HTMLDivElement>(null);
+
+  // Active preset determination
+  const activePreset = React.useMemo(() => {
+    if (preferNotToDisclose) return null;
+    const min = Number(salaryMin);
+    const max = Number(salaryMax);
+    if (min === 80 && max === 120) return "80-120";
+    if (min === 120 && max === 160) return "120-160";
+    if (min === 160 && max === 200) return "160-200";
+    if (min === 200 && max === 350) return "200-plus";
+    return "custom";
+  }, [salaryMin, salaryMax, preferNotToDisclose]);
+
+  const handlePresetClick = (preset: typeof SALARY_PRESETS[number]) => {
+    if (preferNotToDisclose) return;
+    if (preset.id === "custom") {
+      setSalaryError("");
+      return;
+    }
+    if (preset.min !== null && preset.max !== null) {
+      setSalaryMin(preset.min);
+      setSalaryMax(preset.max);
+      setSalaryError("");
+    }
+  };
+
+  const handleSalaryChange = (field: "min" | "max", value: string) => {
+    setSalaryError("");
+    if (field === "min") {
+      setSalaryMin(value);
+      const minNum = Number(value);
+      const maxNum = Number(salaryMax);
+      if (value !== "" && salaryMax !== "" && !isNaN(minNum) && !isNaN(maxNum)) {
+        if (minNum >= maxNum) {
+          setSalaryError("Minimum salary must be less than maximum");
+        }
+      }
+    } else {
+      setSalaryMax(value);
+      const minNum = Number(salaryMin);
+      const maxNum = Number(value);
+      if (salaryMin !== "" && value !== "" && !isNaN(minNum) && !isNaN(maxNum)) {
+        if (minNum >= maxNum) {
+          setSalaryError("Minimum salary must be less than maximum");
+        }
+      }
+    }
+  };
 
   // Autofill if resume details are available
   useEffect(() => {
@@ -846,6 +950,26 @@ function ProfileSetupStep({
     } else {
       setLocError("");
     }
+
+    if (!preferNotToDisclose) {
+      const min = Number(salaryMin);
+      const max = Number(salaryMax);
+      if (salaryMin === "" || salaryMax === "" || isNaN(min) || isNaN(max)) {
+        setSalaryError("Please enter valid minimum and maximum salary or choose 'Prefer not to disclose'.");
+        valid = false;
+      } else if (min >= max) {
+        setSalaryError("Minimum salary must be less than maximum");
+        valid = false;
+      } else if (min < 10) {
+        setSalaryError("Minimum salary is too low (minimum is $10K).");
+        valid = false;
+      } else {
+        setSalaryError("");
+      }
+    } else {
+      setSalaryError("");
+    }
+
     return valid;
   };
 
@@ -863,13 +987,20 @@ function ProfileSetupStep({
 
     if (!existingProfile) {
       try {
+        const minSalaryVal = data.preferNotToDiscloseSalary || data.salaryMin === undefined
+          ? undefined
+          : data.salaryMin * 1000;
+        const maxSalaryVal = data.preferNotToDiscloseSalary || data.salaryMax === undefined
+          ? undefined
+          : data.salaryMax * 1000;
+
         await createProfile.mutateAsync({
           firstName: safeFirst,
           lastName: safeLast,
           headline: data.jobTitle.trim() || undefined,
           location: parseLocationInput(data.locations[0] ?? ""),
-          minSalary: data.salaryMin * 1000,
-          maxSalary: data.salaryMax * 1000,
+          minSalary: minSalaryVal,
+          maxSalary: maxSalaryVal,
         });
       } catch (error) {
         // Already created (e.g. a re-run) — treat as done and carry on.
@@ -914,8 +1045,10 @@ function ProfileSetupStep({
     void submit({
       jobTitle,
       locations,
-      salaryMin,
-      salaryMax,
+      salaryMin: preferNotToDisclose ? undefined : Number(salaryMin),
+      salaryMax: preferNotToDisclose ? undefined : Number(salaryMax),
+      isSalaryNegotiable,
+      preferNotToDiscloseSalary: preferNotToDisclose,
       employmentTypes,
       remotePreference,
       industries,
@@ -934,12 +1067,16 @@ function ProfileSetupStep({
       locations,
       salaryMin: 100, // Default values
       salaryMax: 200,
+      isSalaryNegotiable: true,
+      preferNotToDiscloseSalary: false,
       employmentTypes: ["Full-time"],
       remotePreference: "No preference",
       industries: [],
       completeness: "partial",
     });
   };
+
+  const marketInsight = getMarketSalaryInsight(jobTitle, locations);
 
   return (
     <div className="space-y-6">
@@ -992,9 +1129,8 @@ function ProfileSetupStep({
                 setTitleError("");
               }}
               onFocus={() => setShowSuggestions(true)}
-              className={`block w-full pl-10 pr-4 py-2.5 border rounded-md text-sm text-neutral-900 bg-white placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 ${
-                titleError ? "border-red-400 ring-1 ring-red-400" : "border-neutral-200"
-              }`}
+              className={`block w-full pl-10 pr-4 py-2.5 border rounded-md text-sm text-neutral-900 bg-white placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 ${titleError ? "border-red-400 ring-1 ring-red-400" : "border-neutral-200"
+                }`}
             />
           </div>
 
@@ -1068,46 +1204,156 @@ function ProfileSetupStep({
           <p className="text-[10px] text-neutral-400 mt-1">This helps us filter relevant jobs matching your regions.</p>
         </div>
 
-        {/* Salary Slider */}
+        {/* Salary Expectations */}
         <div>
-          <div className="flex justify-between items-center mb-1.5">
-            <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wider">
-              Salary Expectations
-            </label>
+          <div className="flex justify-between items-start mb-1.5">
+            <div>
+              <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wider">
+                Base salary expectations (USD/year)
+              </label>
+              <p className="text-xs text-neutral-500 mt-0.5">
+                Help us find opportunities that match your goals
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowSalaryWhyAsk(!showSalaryWhyAsk)}
+              className="text-[11px] font-semibold text-neutral-400 hover:text-primary-600 flex items-center gap-1 shrink-0 ml-2"
+              title="Why we ask for salary expectations"
+            >
+              <HelpCircle className="w-3.5 h-3.5" />
+              <span>Why we ask</span>
+            </button>
           </div>
-          
+
+          {showSalaryWhyAsk && (
+            <div className="p-3 bg-primary-50 border border-primary-200 rounded-md text-[11px] text-primary-800 mb-2.5 animate-fade-in flex gap-2">
+              <Info className="w-4 h-4 shrink-0 text-primary-600" />
+              <span>We use this to filter jobs matching your expectations.</span>
+            </div>
+          )}
+
           <div className="p-4 bg-neutral-50 rounded-lg border border-neutral-200 space-y-4">
-            <div className="flex items-center justify-between text-sm font-semibold text-neutral-800">
-              <span>Range Expectations:</span>
-              <span className="text-primary-700">${salaryMin}K – ${salaryMax}K / yr</span>
-            </div>
-            
-            {/* Custom dual sliders / inputs */}
-            <div className="flex items-center gap-3">
-              <div className="relative flex-1">
-                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none" />
-                <input
-                  type="number"
-                  min={20}
-                  max={salaryMax - 10}
-                  value={salaryMin}
-                  onChange={(e) => setSalaryMin(Math.max(20, Number(e.target.value)))}
-                  className="block w-full pl-9 pr-3 py-2 border border-neutral-200 bg-white rounded-md text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 font-semibold"
-                />
-              </div>
-              <span className="text-neutral-400 text-sm font-semibold">to</span>
-              <div className="relative flex-1">
-                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none" />
-                <input
-                  type="number"
-                  min={salaryMin + 10}
-                  max={600}
-                  value={salaryMax}
-                  onChange={(e) => setSalaryMax(Math.min(600, Number(e.target.value)))}
-                  className="block w-full pl-9 pr-3 py-2 border border-neutral-200 bg-white rounded-md text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 font-semibold"
-                />
+            {/* Quick select buttons */}
+            <div>
+              <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                <Zap className="w-3.5 h-3.5 text-amber-500" />
+                Quick select (optional):
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {SALARY_PRESETS.map((preset) => {
+                  const isActive = !preferNotToDisclose && activePreset === preset.id;
+                  return (
+                    <button
+                      key={preset.id}
+                      type="button"
+                      disabled={preferNotToDisclose}
+                      onClick={() => handlePresetClick(preset)}
+                      className={`text-xs font-bold px-3 py-1.5 rounded-md border transition-all duration-150 ${isActive
+                          ? "bg-primary-800 border-primary-800 text-white shadow-sm"
+                          : "bg-white border-neutral-200 text-neutral-600 hover:border-neutral-300 hover:bg-neutral-50"
+                        } ${preferNotToDisclose ? "opacity-50 cursor-not-allowed" : ""}`}
+                    >
+                      {preset.label}
+                    </button>
+                  );
+                })}
               </div>
             </div>
+
+            {/* Custom Range Inputs */}
+            <div>
+              <label className="block text-xs font-semibold text-neutral-600 mb-1.5">
+                Or enter custom range:
+              </label>
+              <div className="flex items-center gap-3">
+                {/* Min salary input */}
+                <div className="flex-1">
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 font-semibold text-sm pointer-events-none">$</span>
+                    <input
+                      type="number"
+                      placeholder="100"
+                      value={preferNotToDisclose ? "" : salaryMin}
+                      disabled={preferNotToDisclose}
+                      onChange={(e) => handleSalaryChange("min", e.target.value)}
+                      className={`block w-full pl-7 pr-8 py-2 border rounded-md text-sm text-neutral-900 bg-white font-semibold placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 ${salaryError ? "border-red-400 ring-1 ring-red-400" : "border-neutral-200"
+                        } ${preferNotToDisclose ? "bg-neutral-100 opacity-50 cursor-not-allowed" : ""}`}
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 font-bold text-xs pointer-events-none">K</span>
+                  </div>
+                  <span className="block text-[11px] font-medium text-neutral-500 mt-1 pl-0.5">Min salary</span>
+                </div>
+
+                <span className="text-neutral-400 text-base font-bold select-none mb-4">—</span>
+
+                {/* Max salary input */}
+                <div className="flex-1">
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 font-semibold text-sm pointer-events-none">$</span>
+                    <input
+                      type="number"
+                      placeholder="200"
+                      value={preferNotToDisclose ? "" : salaryMax}
+                      disabled={preferNotToDisclose}
+                      onChange={(e) => handleSalaryChange("max", e.target.value)}
+                      className={`block w-full pl-7 pr-8 py-2 border rounded-md text-sm text-neutral-900 bg-white font-semibold placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 ${salaryError ? "border-red-400 ring-1 ring-red-400" : "border-neutral-200"
+                        } ${preferNotToDisclose ? "bg-neutral-100 opacity-50 cursor-not-allowed" : ""}`}
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 font-bold text-xs pointer-events-none">K</span>
+                  </div>
+                  <span className="block text-[11px] font-medium text-neutral-500 mt-1 pl-0.5">Max salary</span>
+                </div>
+              </div>
+
+              {salaryError && !preferNotToDisclose && (
+                <p className="text-[11px] text-red-600 mt-1.5 font-semibold flex items-center gap-1">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                  {salaryError}
+                </p>
+              )}
+            </div>
+
+            {/* Flexibility Options */}
+            <div className="pt-2 border-t border-neutral-200/70 space-y-2">
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={isSalaryNegotiable}
+                  onChange={(e) => setIsSalaryNegotiable(e.target.checked)}
+                  className="w-4 h-4 text-primary-600 rounded border-neutral-300 focus:ring-primary-500 cursor-pointer"
+                />
+                <span className="text-xs font-medium text-neutral-700">Salary is negotiable</span>
+              </label>
+
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={preferNotToDisclose}
+                  onChange={(e) => {
+                    setPreferNotToDisclose(e.target.checked);
+                    if (e.target.checked) {
+                      setSalaryError("");
+                    }
+                  }}
+                  className="w-4 h-4 text-primary-600 rounded border-neutral-300 focus:ring-primary-500 cursor-pointer"
+                />
+                <span className="text-xs font-medium text-neutral-700">Prefer not to disclose</span>
+              </label>
+            </div>
+
+            {/* Smart Helper Text / Market Insight */}
+            {/* <div className="p-3 bg-amber-50/80 border border-amber-200/80 rounded-md text-[11px] text-amber-900 flex items-start gap-2">
+              <Sparkles className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+              <div>
+                <span className="font-bold">Market insight:</span>{" "}
+                {marketInsight.title.endsWith("s") || marketInsight.title.toLowerCase().includes("engineer")
+                  ? marketInsight.title
+                  : `Roles like "${marketInsight.title}"`}{" "}
+                {marketInsight.locationText} typically earn{" "}
+                <span className="font-bold">${marketInsight.min}K–${marketInsight.max}K</span> per year.
+              </div>
+            </div> */}
           </div>
         </div>
 
@@ -1124,11 +1370,10 @@ function ProfileSetupStep({
                   key={type}
                   type="button"
                   onClick={() => toggleListItem(employmentTypes, setEmploymentTypes, type)}
-                  className={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-2 rounded-md border transition-all duration-150 ${
-                    selected
+                  className={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-2 rounded-md border transition-all duration-150 ${selected
                       ? "bg-primary-800 border-primary-800 text-white shadow-sm"
                       : "bg-white border-neutral-200 text-neutral-600 hover:border-neutral-300 hover:bg-neutral-50"
-                  }`}
+                    }`}
                 >
                   <Clock className="w-3.5 h-3.5" />
                   {type}
@@ -1151,11 +1396,10 @@ function ProfileSetupStep({
                   key={opt}
                   type="button"
                   onClick={() => setRemotePreference(opt)}
-                  className={`inline-flex items-center justify-center gap-1.5 text-xs font-bold px-3 py-2 rounded-md border transition-all duration-150 ${
-                    selected
+                  className={`inline-flex items-center justify-center gap-1.5 text-xs font-bold px-3 py-2 rounded-md border transition-all duration-150 ${selected
                       ? "bg-primary-800 border-primary-800 text-white shadow-sm"
                       : "bg-white border-neutral-200 text-neutral-600 hover:border-neutral-300 hover:bg-neutral-50"
-                  }`}
+                    }`}
                 >
                   <Wifi className="w-3.5 h-3.5 shrink-0" />
                   <span className="truncate">{opt}</span>
@@ -1228,7 +1472,7 @@ function ProfileSetupStep({
             <ArrowLeft className="w-4 h-4" />
             Back
           </button>
-          
+
           <button
             type="submit"
             disabled={isLoading}
@@ -1241,6 +1485,13 @@ function ProfileSetupStep({
             )}
           </button>
         </div>
+
+        {/* Sets the expectation for step 3 before they get there. "About a minute" is
+            the embedding's real cost, and the same figure the backend's own readiness
+            copy uses - not an invented duration. */}
+        <p className="text-xs text-center pt-1" style={{ color: "var(--color-text-tertiary)" }}>
+          Next, we&rsquo;ll analyze your profile to find your best matches. This usually takes about a minute.
+        </p>
       </form>
     </div>
   );
@@ -1249,312 +1500,237 @@ function ProfileSetupStep({
 /* ═════════════════════════════════════════════════════════════ */
 /*  STEP 3: FIRST RECOMMENDATIONS / MATCHES PAGE                  */
 /* ═════════════════════════════════════════════════════════════ */
-function FirstMatchesStep({ 
-  onBack, 
+function FirstMatchesStep({
+  onBack,
   // Passed by the parent but not read here; the prop stays in the contract.
-  profileData: _profileData 
-}: { 
-  onBack: () => void; 
+  profileData: _profileData
+}: {
+  onBack: () => void;
   profileData: ProfileData | null;
 }) {
   const router = useRouter();
 
-  // Simulation mode switcher
-  const [recommendationPath, setRecommendationPath] = useState<"pending" | "ready">("pending");
-  const [expandedMatchIdx, setExpandedMatchIdx] = useState<number | null>(null);
+  /**
+   * THE BRIDGE SCREEN.
+   *
+   * This step used to assert a nightly batch at 11:00 PM PT and a 4-20 hour wait, and
+   * then - seventy lines further down, in this same component - that matches were ready.
+   * Both were fiction: there is no cron in the backend, and `RecommendationsQueryService`
+   * recomputes lazily on read. The only real wait is the profile embedding, which the
+   * backend itself describes as "about a minute".
+   *
+   * So nothing here invents a duration. `GET /recommendations/readiness` already answers
+   * "can we match this person yet, and if not, whose move is it" - and ships a `message`
+   * written for the candidate. We render that string rather than writing a second,
+   * competing copy of it that can drift from what the server believes.
+   */
+  const { data: readiness, isLoading, isError, refetch } = useMatchReadiness();
 
-  const demoJobs = [
-    { 
-      title: "Senior Frontend Engineer", 
-      company: "Stripe", 
-      location: "San Francisco, CA (Hybrid)", 
-      salary: "$165,000 – $210,000 / yr", 
-      match: 94, 
-      logoColor: "bg-indigo-600",
-      logoLetter: "S",
-      breakdown: { skills: 95, exp: 90, loc: 98 },
-      explanation: "Matches your expertise in React & TypeScript. Matches hybrid preference. Lies directly within your expected salary range."
-    },
-    { 
-      title: "React Specialist Developer", 
-      company: "Airbnb", 
-      location: "Remote (US)", 
-      salary: "$150,000 – $195,000 / yr", 
-      match: 89, 
-      logoColor: "bg-rose-500",
-      logoLetter: "A",
-      breakdown: { skills: 92, exp: 85, loc: 90 },
-      explanation: "High alignment with front-end technologies extracted from your resume. Strong company alignment with Technology interest."
-    },
-    { 
-      title: "Software Engineer - UI/UX Platforms", 
-      company: "Figma", 
-      location: "New York, NY (Hybrid)", 
-      salary: "$140,000 – $185,000 / yr", 
-      match: 85, 
-      logoColor: "bg-purple-600",
-      logoLetter: "F",
-      breakdown: { skills: 82, exp: 88, loc: 85 },
-      explanation: "Matches your React/TypeScript requirements. Standard location criteria meets NYC requirements."
-    },
-    { 
-      title: "Lead Web Developer", 
-      company: "Notion", 
-      location: "Remote (Global)", 
-      salary: "$180,000 – $230,000 / yr", 
-      match: 81, 
-      logoColor: "bg-black",
-      logoLetter: "N",
-      breakdown: { skills: 80, exp: 85, loc: 78 },
-      explanation: "Offers remote flexibility with high compensation matching your upper expectations."
-    },
-  ];
+  // Warm the list while they are still on this screen, so "View my matches" lands on
+  // data instead of a spinner. This is also what triggers the lazy recompute.
+  const ready = readiness?.state === "READY";
+  const { data: matches } = useRecommendations({ enabled: ready });
 
-  // The session is now real (httpOnly refresh cookie + in-memory access token),
-  // so there is nothing to persist here.
-  // TODO(phase-3): "onboarding complete" needs a real source — the backend has
-  // no such flag on the user; it is derived from the profile endpoints.
-  const handleDashboardRedirect = () => {
-    router.push("/dashboard");
-  };
+  const goToDashboard = () => router.push("/dashboard");
+
+  // -- First load ----------------------------------------------------------
+  if (isLoading) {
+    return (
+      <BridgeShell>
+        <Loader2 className="w-7 h-7 animate-spin" style={{ color: "var(--color-primary-500)" }} />
+        <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
+          Checking your matches...
+        </p>
+      </BridgeShell>
+    );
+  }
+
+  // -- The readiness call itself failed (network, auth) --------------------
+  // Distinct from EMBEDDING_FAILED: we do not know the state, so we must not claim one.
+  if (isError || !readiness) {
+    return (
+      <BridgeShell>
+        <BridgeIcon tone="warning"><AlertTriangle className="w-7 h-7" /></BridgeIcon>
+        <BridgeCopy
+          title="We couldn't check your matches"
+          body="Something went wrong reaching our servers. Your profile is saved."
+        />
+        <div className="flex flex-col sm:flex-row gap-2">
+          <BridgeButton onClick={() => void refetch()}>Try again</BridgeButton>
+          <BridgeButton variant="ghost" onClick={goToDashboard}>Go to dashboard</BridgeButton>
+        </div>
+      </BridgeShell>
+    );
+  }
+
+  // -- Scenario A: still working. The only honest spinner. -----------------
+  // `transient` is the backend's own statement that this resolves by itself; the hook
+  // polls on exactly that flag, so there is no interval to manage here.
+  if (readiness.state === "EMBEDDING_PENDING") {
+    return (
+      <BridgeShell>
+        <div className="relative flex items-center justify-center">
+          <span
+            className="absolute w-16 h-16 rounded-full animate-pulse-soft"
+            style={{ background: "var(--color-primary-100)" }}
+          />
+          <Loader2 className="w-8 h-8 animate-spin relative" style={{ color: "var(--color-primary-600)" }} />
+        </div>
+        <BridgeCopy title="Analyzing your profile" body={readiness.message} />
+        <p className="text-xs" style={{ color: "var(--color-text-tertiary)" }}>
+          This page updates on its own - no need to refresh.
+        </p>
+        <BridgeButton variant="ghost" onClick={goToDashboard}>
+          Browse jobs while you wait
+        </BridgeButton>
+      </BridgeShell>
+    );
+  }
+
+  // -- Scenario B: it broke, and it will not fix itself --------------------
+  // Warning, not error: nothing the candidate did caused this, and their data is intact.
+  // The embed is a one-shot listener with no retry, so the only way out is an event that
+  // fires it again - which is precisely what editing the profile does. Never a dead end.
+  if (readiness.state === "EMBEDDING_FAILED") {
+    return (
+      <BridgeShell>
+        <BridgeIcon tone="warning"><AlertTriangle className="w-7 h-7" /></BridgeIcon>
+        <BridgeCopy title="We hit a snag" body={readiness.message} />
+        <div className="flex flex-col sm:flex-row gap-2">
+          <BridgeButton onClick={onBack}>
+            <ArrowLeft className="w-4 h-4" /> Update profile &amp; retry
+          </BridgeButton>
+          <BridgeButton variant="ghost" onClick={goToDashboard}>Skip for now</BridgeButton>
+        </div>
+      </BridgeShell>
+    );
+  }
+
+  // -- NO_PROFILE: onboarding is genuinely incomplete ----------------------
+  // Reachable if the profile write failed silently on step 2. Sending them forward to an
+  // empty dashboard would strand them, so the only offer is the step that fixes it.
+  if (readiness.state === "NO_PROFILE") {
+    return (
+      <BridgeShell>
+        <BridgeIcon tone="info"><AlertCircle className="w-7 h-7" /></BridgeIcon>
+        <BridgeCopy title="One step left" body={readiness.message} />
+        <BridgeButton onClick={onBack}>
+          <ArrowLeft className="w-4 h-4" /> Complete my profile
+        </BridgeButton>
+      </BridgeShell>
+    );
+  }
+
+  // -- Scenario C: READY ---------------------------------------------------
+  const count = matches?.length ?? 0;
+  return (
+    <BridgeShell>
+      <BridgeIcon tone="success"><CheckCircle2 className="w-7 h-7" /></BridgeIcon>
+      <BridgeCopy
+        title="Your matches are ready"
+        body={
+          count > 0
+            ? `We found ${count} ${count === 1 ? "job" : "jobs"} matched to your profile.`
+            : readiness.message
+        }
+      />
+      <BridgeButton onClick={goToDashboard}>
+        View my matches <ArrowRight className="w-4 h-4" />
+      </BridgeButton>
+      <p className="text-xs" style={{ color: "var(--color-text-tertiary)" }}>
+        Your matches update automatically when you change your profile or when new jobs are posted.
+      </p>
+    </BridgeShell>
+  );
+}
+
+/* ----------------- Bridge screen primitives -----------------
+   Local to this step: one centred column, so every readiness state has identical
+   geometry and only the icon, words and action change between them. */
+
+function BridgeShell({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      className="flex flex-col items-center justify-center text-center gap-4 py-12 px-6 rounded-xl border min-h-[22rem]"
+      style={{
+        background: "var(--color-card)",
+        borderColor: "var(--color-border)",
+        boxShadow: "var(--shadow-sm)",
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+function BridgeIcon({
+  tone,
+  children,
+}: {
+  tone: "success" | "warning" | "info";
+  children: React.ReactNode;
+}) {
+  const tones = {
+    success: { bg: "var(--color-success-50)", fg: "var(--color-success-600)" },
+    warning: { bg: "var(--color-warning-50)", fg: "var(--color-warning-600)" },
+    info: { bg: "var(--color-primary-50)", fg: "var(--color-primary-600)" },
+  }[tone];
 
   return (
-    <div className="space-y-6">
-      {/* SIMULATOR SWITCHER */}
-      <div className="p-3 bg-neutral-50 rounded-lg border border-neutral-200">
-        <label className="block text-[11px] font-bold text-neutral-500 uppercase tracking-wider mb-2 text-center">
-          Recommendation Simulation Path
-        </label>
-        <div className="grid grid-cols-2 gap-2">
-          <button
-            type="button"
-            onClick={() => setRecommendationPath("pending")}
-            className={`py-1.5 px-2 text-xs font-semibold rounded border transition-all duration-150 ${
-              recommendationPath === "pending"
-                ? "bg-primary-600 text-white border-primary-600 shadow-sm"
-                : "bg-white text-neutral-600 border-neutral-300 hover:border-neutral-400"
-            }`}
-          >
-            Path B: Pending Matches
-          </button>
-          <button
-            type="button"
-            onClick={() => setRecommendationPath("ready")}
-            className={`py-1.5 px-2 text-xs font-semibold rounded border transition-all duration-150 ${
-              recommendationPath === "ready"
-                ? "bg-primary-600 text-white border-primary-600 shadow-sm"
-                : "bg-white text-neutral-600 border-neutral-300 hover:border-neutral-400"
-            }`}
-          >
-            Path A: Matches Ready
-          </button>
-        </div>
-      </div>
-
-      <div className="text-center space-y-2">
-        <div className="flex justify-center">
-          <div className="w-14 h-14 rounded-lg flex items-center justify-center bg-primary-600 text-white shadow-md">
-            <Sparkles className="w-7 h-7" />
-          </div>
-        </div>
-        <h2 className="text-2xl font-bold text-neutral-900 tracking-tight">Your First Matches</h2>
-        <p className="text-sm text-neutral-500">
-          We&apos;re analyzing your profile and finding opportunities
-        </p>
-      </div>
-
-      {recommendationPath === "pending" ? (
-        /* PATH B: RECOMMENDATIONS PENDING (MOST LIKELY FLOW) */
-        <div className="space-y-5">
-          <div className="border rounded-lg p-5 bg-primary-50 border-primary-200 text-sm space-y-3 shadow-sm">
-            <div className="flex items-center gap-2 font-bold text-primary-800 text-base">
-              Your personalized matches will be ready in a few hours
-            </div>
-            <p className="text-primary-700 text-xs leading-relaxed">
-              We run our complex matching and analytics engine nightly (typically 11:00 PM PT).
-            </p>
-            <div className="border-t border-primary-200/50 pt-2.5 mt-1 space-y-1.5 text-xs text-primary-800 font-semibold">
-              <div className="flex justify-between">
-                <span>Nightly Batch Schedule:</span>
-                <span>11:00 PM PT</span>
-              </div>
-              <div className="flex justify-between text-neutral-500">
-                <span>Estimated Wait Time:</span>
-                <span>4 - 20 hours</span>
-              </div>
-              <p className="text-[11px] text-primary-600 italic font-medium">We will email you immediately when matches are ready.</p>
-            </div>
-          </div>
-
-          <div className="space-y-2.5">
-            <p className="text-xs font-bold text-neutral-500 uppercase tracking-wider">In the meantime, you can:</p>
-            
-            <button
-              onClick={handleDashboardRedirect}
-              className="w-full flex items-center justify-between p-3.5 bg-white border border-neutral-200 rounded-lg hover:border-primary-400 hover:bg-primary-50/20 text-left transition-all duration-200 group"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-md bg-indigo-50 flex items-center justify-center text-indigo-600 shrink-0">
-                  <Search className="w-5 h-5" />
-                </div>
-                <div>
-                  <p className="text-sm font-bold text-neutral-900 group-hover:text-primary-700">Browse all jobs now</p>
-                  <p className="text-xs text-neutral-500 mt-0.5">Directly search and apply manually</p>
-                </div>
-              </div>
-              <ArrowRight className="w-4 h-4 text-neutral-400 group-hover:text-primary-600 transition-colors" />
-            </button>
-
-            <button
-              onClick={handleDashboardRedirect}
-              className="w-full flex items-center justify-between p-3.5 bg-white border border-neutral-200 rounded-lg hover:border-primary-400 hover:bg-primary-50/20 text-left transition-all duration-200 group"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-md bg-green-50 flex items-center justify-center text-green-600 shrink-0">
-                  <CheckCircle2 className="w-5 h-5" />
-                </div>
-                <div>
-                  <p className="text-sm font-bold text-neutral-900 group-hover:text-primary-700">Save job searches for alerts</p>
-                  <p className="text-xs text-neutral-500 mt-0.5">Get notified immediately when matches align</p>
-                </div>
-              </div>
-              <ArrowRight className="w-4 h-4 text-neutral-400 group-hover:text-primary-600 transition-colors" />
-            </button>
-
-            <button
-              onClick={handleDashboardRedirect}
-              className="w-full flex items-center justify-between p-3.5 bg-white border border-neutral-200 rounded-lg hover:border-primary-400 hover:bg-primary-50/20 text-left transition-all duration-200 group"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-md bg-purple-50 flex items-center justify-center text-purple-600 shrink-0">
-                  <Briefcase className="w-5 h-5" />
-                </div>
-                <div>
-                  <p className="text-sm font-bold text-neutral-900 group-hover:text-primary-700">Complete your profile</p>
-                  <p className="text-xs text-neutral-500 mt-0.5">Add portfolio, certs, and resume credentials</p>
-                </div>
-              </div>
-              <ArrowRight className="w-4 h-4 text-neutral-400 group-hover:text-primary-600 transition-colors" />
-            </button>
-          </div>
-        </div>
-      ) : (
-        /* PATH A: RECOMMENDATIONS READY */
-        <div className="space-y-4">
-          <div className="bg-green-50 border border-green-200 text-green-800 rounded-lg p-3 text-xs font-semibold flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-green-600 shrink-0" />
-            <span>✓ Your matches are ready! Based on your profile, here are your top matches:</span>
-          </div>
-
-          <div className="space-y-3">
-            {demoJobs.map((job, idx) => {
-              const isExpanded = expandedMatchIdx === idx;
-              return (
-                <div
-                  key={job.title}
-                  className="border border-neutral-200 rounded-lg bg-white overflow-hidden hover:border-primary-400 transition-all duration-200 shadow-sm"
-                >
-                  <div 
-                    onClick={() => setExpandedMatchIdx(isExpanded ? null : idx)}
-                    className="p-4 cursor-pointer flex items-start justify-between gap-3 hover:bg-neutral-50/40"
-                  >
-                    <div className="flex items-start gap-3 min-w-0">
-                      <div className={`w-10 h-10 rounded-md ${job.logoColor} text-white flex items-center justify-center font-bold text-sm shrink-0`}>
-                        {job.logoLetter}
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-sm font-bold text-neutral-900 truncate hover:text-primary-700 transition-colors">{job.title}</p>
-                        <p className="text-xs text-neutral-600 mt-0.5">{job.company} · {job.location}</p>
-                        <p className="text-xs text-neutral-500 mt-0.5">{job.salary}</p>
-                      </div>
-                    </div>
-
-                    <div className="shrink-0 text-center flex flex-col items-center">
-                      <div className={`w-11 h-11 rounded-lg flex items-center justify-center font-black text-sm ${
-                        job.match >= 90 ? "bg-green-100 text-green-700" : "bg-primary-100 text-primary-700"
-                      }`}>
-                        {job.match}%
-                      </div>
-                      <span className="text-[10px] text-neutral-400 mt-1 font-bold">match</span>
-                    </div>
-                  </div>
-
-                  {/* Accordion content */}
-                  {isExpanded && (
-                    <div className="bg-neutral-50 border-t border-neutral-100 p-4 text-xs space-y-3 animate-slide-down">
-                      <div>
-                        <p className="font-bold text-neutral-700 uppercase tracking-wider text-[10px] mb-1">Match breakdown</p>
-                        <div className="grid grid-cols-3 gap-2 text-center text-neutral-700 font-semibold bg-white p-2 rounded border border-neutral-200">
-                          <div>
-                            <p className="text-neutral-400 text-[9px] uppercase">Skills</p>
-                            <p className="text-primary-700 font-bold">{job.breakdown.skills}%</p>
-                          </div>
-                          <div className="border-x border-neutral-200">
-                            <p className="text-neutral-400 text-[9px] uppercase">Experience</p>
-                            <p className="text-primary-700 font-bold">{job.breakdown.exp}%</p>
-                          </div>
-                          <div>
-                            <p className="text-neutral-400 text-[9px] uppercase">Location</p>
-                            <p className="text-primary-700 font-bold">{job.breakdown.loc}%</p>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div>
-                        <p className="font-bold text-neutral-700 uppercase tracking-wider text-[10px] mb-1">Why this match?</p>
-                        <p className="text-neutral-600 leading-relaxed">{job.explanation}</p>
-                      </div>
-
-                      <div className="flex gap-2 pt-1">
-                        <button
-                          onClick={handleDashboardRedirect}
-                          className="flex-1 py-1.5 px-3 bg-primary-600 hover:bg-primary-700 text-white font-bold rounded text-xs transition-colors"
-                        >
-                          Apply Now
-                        </button>
-                        <button
-                          onClick={() => toast.success(`Saved ${job.title} to saved jobs list!`)}
-                          className="py-1.5 px-3 border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-700 font-semibold rounded text-xs transition-colors"
-                        >
-                          Save for later
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="flex justify-center border-t border-neutral-100 bg-neutral-50/20 py-1">
-                    <button 
-                      onClick={() => setExpandedMatchIdx(isExpanded ? null : idx)}
-                      className="text-[10px] font-bold text-primary-600 hover:text-primary-700 flex items-center gap-1"
-                    >
-                      {isExpanded ? "Collapse info" : "Why this match?"}
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* FOOTER ACTIONS */}
-      <div className="space-y-2.5 pt-3">
-        <button
-          onClick={handleDashboardRedirect}
-          className="w-full flex items-center justify-center gap-2 py-2.5 px-5 rounded-md text-sm text-white font-bold transition-all duration-200 bg-primary-600 hover:bg-primary-700 active:scale-[0.98]"
-        >
-          <span>Continue to My Dashboard</span>
-          <ArrowRight className="w-4.5 h-4.5" />
-        </button>
-        
-        <button
-          onClick={onBack}
-          className="w-full text-xs text-neutral-500 hover:text-neutral-700 hover:underline py-1 text-center font-semibold"
-        >
-          ← Back to profile setup
-        </button>
-      </div>
+    <div
+      className="w-14 h-14 rounded-full flex items-center justify-center"
+      style={{ background: tones.bg, color: tones.fg }}
+    >
+      {children}
     </div>
+  );
+}
+
+function BridgeCopy({ title, body }: { title: string; body: string }) {
+  return (
+    <div className="space-y-1.5 max-w-md">
+      <h2 className="text-xl font-bold" style={{ color: "var(--color-text-primary)" }}>
+        {title}
+      </h2>
+      {/* Server-authored and documented as safe to display verbatim. */}
+      <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
+        {body}
+      </p>
+    </div>
+  );
+}
+
+function BridgeButton({
+  children,
+  onClick,
+  variant = "primary",
+}: {
+  children: React.ReactNode;
+  onClick: () => void;
+  variant?: "primary" | "ghost";
+}) {
+  const base =
+    "inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-md text-sm font-bold transition-all duration-200";
+  if (variant === "ghost") {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        className={`${base} border`}
+        style={{ borderColor: "var(--color-border)", color: "var(--color-text-secondary)" }}
+      >
+        {children}
+      </button>
+    );
+  }
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`${base} bg-primary-600 hover:bg-primary-700 text-white shadow-sm`}
+    >
+      {children}
+    </button>
   );
 }
 
@@ -1590,10 +1766,10 @@ export default function OnboardingResumePage() {
         <div className="text-center mb-6">
           <div className="inline-flex items-center gap-3 mb-3">
             <img
-                src="/logo.png"
-                alt="JobFits Logo"
-                className="w-12 h-12 rounded-full object-cover shadow-lg"
-              />
+              src="/logo.png"
+              alt="JobFits Logo"
+              className="w-12 h-12 rounded-full object-cover shadow-lg"
+            />
             <span className="text-xl font-extrabold text-white tracking-tight">JobFits</span>
           </div>
           {/* Step Quote */}
