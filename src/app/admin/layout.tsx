@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { LayoutDashboard, Users, Activity, Mail, Loader2, Building2, Briefcase, BarChart3, ClipboardCheck } from "lucide-react";
+import { LayoutDashboard, Users, Activity, Mail, Loader2, Building2, Briefcase, ClipboardCheck } from "lucide-react";
 import { DashboardShell } from "@/shared/components/layout/dashboard-shell";
 import { SidebarMenuGroup } from "@/shared/components/layout/sidebar";
 import { useRequireAuth, displayName } from "@/features/auth/hooks/use-session";
@@ -22,7 +22,6 @@ const ADMIN_MENU_GROUPS: SidebarMenuGroup[] = [
       { href: "/admin/employer-requests", label: "Employer Requests", icon: <ClipboardCheck size={18} /> },
       { href: "/admin/companies", label: "Companies", icon: <Building2 size={18} /> },
       { href: "/admin/jobs", label: "Jobs", icon: <Briefcase size={18} /> },
-      { href: "/admin/reports", label: "Reports", icon: <BarChart3 size={18} /> },
       { href: "/admin/system", label: "System Health", icon: <Activity size={18} /> },
       { href: "/admin/email", label: "Email Tracking", icon: <Mail size={18} /> },
     ]
