@@ -111,6 +111,13 @@ export const qk = {
     emailBounces: () => [...qk.admin.all, "email", "bounces"] as const,
     auditLogs: (filters: Record<string, unknown> = {}) =>
       [...qk.admin.all, "audit-logs", filters] as const,
+    /** Employer onboarding queue — the only path to an EMPLOYER account. */
+    employerRequests: (filters: Record<string, unknown> = {}) =>
+      [...qk.admin.all, "employer-requests", filters] as const,
+    employerRequest: (id: string) =>
+      [...qk.admin.all, "employer-request", id] as const,
+    companyOptions: (search: string) =>
+      [...qk.admin.all, "company-options", search] as const,
   },
 
   analytics: {
