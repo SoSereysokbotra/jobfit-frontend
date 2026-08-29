@@ -36,7 +36,10 @@ import type {
   AdminCompanyOption,
   DomainCheckResult,
 } from "@/features/employer-request/api/employer-request.api";
-import { STATUS_LABEL, STATUS_TONE } from "../page";
+import {
+  STATUS_LABEL,
+  STATUS_TONE,
+} from "@/features/employer-request/components/request-status";
 import { ApiError } from "@/lib/api/client";
 import { useDebounce } from "@/shared/hooks/use-debounce";
 import { Badge } from "@/shared/components/data-display/badge";

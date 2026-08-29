@@ -123,6 +123,8 @@ export const es: Record<MessageKey, string> = {
   "auth.signingIn": "Iniciando sesión…",
   "auth.dontHaveAccount": "¿No tienes una cuenta?",
   "auth.createAccount": "Crear una cuenta",
+  "auth.employerPrompt": "¿Estás contratando?",
+  "auth.employerSignIn": "Acceso para empresas",
   "auth.signupTitle": "Crea tu cuenta",
   "auth.signupSubtitle": "Comienza a descubrir oportunidades diseñadas para ti",
   "auth.fullNameLabel": "Nombre completo",

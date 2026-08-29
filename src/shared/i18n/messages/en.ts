@@ -121,6 +121,8 @@ export const en = {
   "auth.signingIn": "Signing in…",
   "auth.dontHaveAccount": "Don't have an account?",
   "auth.createAccount": "Create an account",
+  "auth.employerPrompt": "Hiring?",
+  "auth.employerSignIn": "Employer sign-in",
   "auth.signupTitle": "Create your account",
   "auth.signupSubtitle": "Start finding career opportunities tailored to you",
   "auth.fullNameLabel": "Full name",

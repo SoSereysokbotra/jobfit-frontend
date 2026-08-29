@@ -27,6 +27,12 @@ export interface RequireAuthOptions {
   roles?: UserRole[];
   /** Where to send unauthenticated visitors. */
   redirectTo?: string;
+  /**
+   * Set false to make the guard inert. For a layout that also hosts PUBLIC routes — the
+   * employer portal's own login and activation pages, which cannot be guarded because
+   * reaching them is how you get a session. Keeps the hook call unconditional.
+   */
+  enabled?: boolean;
 }
 
 export interface RequireAuthState extends SessionState {
@@ -43,7 +49,7 @@ export interface RequireAuthState extends SessionState {
  * to /login before finding out is what makes a hard refresh look like a logout.
  */
 export function useRequireAuth(options: RequireAuthOptions = {}): RequireAuthState {
-  const { roles, redirectTo = "/login" } = options;
+  const { roles, redirectTo = "/login", enabled = true } = options;
   const router = useRouter();
   const { user, isLoading, isAuthenticated } = useAuth();
 
@@ -51,7 +57,7 @@ export function useRequireAuth(options: RequireAuthOptions = {}): RequireAuthSta
     isAuthenticated && Boolean(user) && (!roles || roles.includes(user!.role));
 
   useEffect(() => {
-    if (isLoading) return;
+    if (!enabled || isLoading) return;
 
     if (!isAuthenticated || !user) {
       router.replace(redirectTo);
@@ -63,7 +69,7 @@ export function useRequireAuth(options: RequireAuthOptions = {}): RequireAuthSta
     if (roles && !roles.includes(user.role)) {
       router.replace(homeForRole(user.role));
     }
-  }, [isLoading, isAuthenticated, user, roles, redirectTo, router]);
+  }, [enabled, isLoading, isAuthenticated, user, roles, redirectTo, router]);
 
   return { user, isLoading, isAuthenticated, isAllowed };
 }

@@ -123,6 +123,8 @@ export const km: Record<MessageKey, string> = {
   "auth.signingIn": "កំពុងចូល…",
   "auth.dontHaveAccount": "មិនទាន់មានគណនី?",
   "auth.createAccount": "បង្កើតគណនី",
+  "auth.employerPrompt": "កំពុងជ្រើសរើសបុគ្គលិក?",
+  "auth.employerSignIn": "ចូលគណនីនិយោជក",
   "auth.signupTitle": "បង្កើតគណនីរបស់អ្នក",
   "auth.signupSubtitle": "ចាប់ផ្តើមស្វែងរកឱកាសការងារដែលសមស្របនឹងសមត្ថភាពរបស់អ្នក",
   "auth.fullNameLabel": "ឈ្មោះពេញ",

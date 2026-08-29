@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { usePathname } from "next/navigation";
 import { Briefcase, Inbox, BarChart3, DownloadCloud, Loader2, Settings } from "lucide-react";
 import { DashboardShell } from "@/shared/components/layout/dashboard-shell";
 import { SidebarMenuGroup } from "@/shared/components/layout/sidebar";
@@ -25,10 +26,29 @@ const EMPLOYER_MENU_GROUPS: SidebarMenuGroup[] = [
   }
 ];
 
+/**
+ * Routes under /employer that must NOT be guarded, because reaching them is how you get an
+ * employer session in the first place. Guarding them would bounce an employer to the seeker
+ * login and strand an approved account that has never been activated.
+ */
+const PUBLIC_EMPLOYER_ROUTES = ["/employer/login", "/employer/activate"];
+
 export default function EmployerLayout({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const isPublic = PUBLIC_EMPLOYER_ROUTES.includes(pathname ?? "");
+
   // This area was previously unguarded — anyone who knew the URL could open it.
-  const { user, isAllowed } = useRequireAuth({ roles: ["EMPLOYER"] });
+  // `enabled: false` keeps the hook call unconditional (rules of hooks) while letting the
+  // public routes through.
+  const { user, isAllowed } = useRequireAuth({
+    roles: ["EMPLOYER"],
+    enabled: !isPublic,
+  });
   const { logout } = useAuth();
+
+  // The portal chrome would be wrong here anyway: there is no session to render a sidebar
+  // or a user menu from.
+  if (isPublic) return <>{children}</>;
 
   if (!isAllowed || !user) {
     return (

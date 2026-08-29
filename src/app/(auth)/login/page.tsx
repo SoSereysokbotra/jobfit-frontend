@@ -200,6 +200,15 @@ export default function LoginPage() {
               {t("auth.createAccount")}
             </Link>
           </div>
+
+          {/* EMPLOYER PORTAL — the roles have separate sign-ins, so someone who arrives at
+              the wrong one needs a way across rather than a failed password attempt. */}
+          <div className="text-center text-xs mt-2">
+            <span style={{ color: "var(--color-text-tertiary)" }}>{t("auth.employerPrompt")} </span>
+            <Link href="/employer/login" className="text-primary-600 dark:text-primary-400 font-semibold hover:underline">
+              {t("auth.employerSignIn")}
+            </Link>
+          </div>
         </>
       )}
     </AuthShell>

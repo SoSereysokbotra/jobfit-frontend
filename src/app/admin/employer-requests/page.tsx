@@ -17,7 +17,11 @@ import type {
   EmployerRequestStatus,
 } from "@/features/employer-request/api/employer-request.api";
 import { useDebounce } from "@/shared/hooks/use-debounce";
-import { Badge, type BadgeTone } from "@/shared/components/data-display/badge";
+import { Badge } from "@/shared/components/data-display/badge";
+import {
+  STATUS_LABEL,
+  STATUS_TONE,
+} from "@/features/employer-request/components/request-status";
 import { EmptyState } from "@/shared/components/data-display/empty-state";
 import { Skeleton } from "@/shared/components/feedback/skeleton";
 import { Alert } from "@/shared/components/feedback/alert";
@@ -30,22 +34,6 @@ const FILTERS: { label: string; value?: EmployerRequestStatus }[] = [
   { label: "Approved", value: "APPROVED" },
   { label: "Rejected", value: "REJECTED" },
 ];
-
-export const STATUS_TONE: Record<EmployerRequestStatus, BadgeTone> = {
-  SUBMITTED: "info",
-  REVIEWING: "primary",
-  PENDING_INFO: "warning",
-  APPROVED: "success",
-  REJECTED: "neutral",
-};
-
-export const STATUS_LABEL: Record<EmployerRequestStatus, string> = {
-  SUBMITTED: "New",
-  REVIEWING: "Reviewing",
-  PENDING_INFO: "Waiting on them",
-  APPROVED: "Approved",
-  REJECTED: "Rejected",
-};
 
 export default function EmployerRequestsPage() {
   const [status, setStatus] = useState<EmployerRequestStatus | undefined>();
