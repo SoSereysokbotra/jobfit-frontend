@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import { Search, X, KeyRound, Unlock, Trash2, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { Search, X, KeyRound, Unlock, Trash2, AlertTriangle, CheckCircle2, PauseCircle, PlayCircle } from "lucide-react";
 import { cn } from "@/shared/utils/cn";
 import { Badge } from "@/shared/components/data-display/badge";
 import { EmptyState } from "@/shared/components/data-display/empty-state";
@@ -15,6 +15,7 @@ import {
   useResetUserPassword,
   useUnlockUser,
   useDeleteUser,
+  useSetUserStatus,
 } from "@/features/admin/hooks/use-admin";
 import {
   USER_STATUS_TONE,
@@ -127,6 +128,7 @@ function UserDetailDrawer({ id, onClose }: { id: string; onClose: () => void }) 
   const resetPassword = useResetUserPassword();
   const unlock = useUnlockUser();
   const deleteUser = useDeleteUser();
+  const setStatus = useSetUserStatus();
   const [deleteConfirm, setDeleteConfirm] = useState("");
 
   return (
@@ -160,6 +162,11 @@ function UserDetailDrawer({ id, onClose }: { id: string; onClose: () => void }) 
               <Row label="Applications"><span className="text-content">{user.applicationsCount}</span></Row>
               <Row label="Resumes"><span className="text-content">{user.resumesCount}</span></Row>
               <Row label="Locked"><Badge tone={user.isLocked ? "error" : "neutral"}>{user.isLocked ? "Yes" : "No"}</Badge></Row>
+              <Row label="Status">
+                <Badge tone={user.status === "ACTIVE" ? "success" : user.status === "SUSPENDED" ? "warning" : "neutral"}>
+                  {user.status}
+                </Badge>
+              </Row>
             </Section>
 
             {/* Actions */}
@@ -181,6 +188,32 @@ function UserDetailDrawer({ id, onClose }: { id: string; onClose: () => void }) 
                 >
                   <Unlock size={16} className="text-success-600" /> Unlock Account
                 </button>
+              )}
+
+              {/* Lifecycle. Suspension is reversible and takes effect at once — the
+                  backend clears the auth cache with the write, so the account stops
+                  authenticating immediately rather than at the end of a 300s TTL. */}
+              {user.status === "ACTIVE" ? (
+                <button
+                  onClick={() => setStatus.mutate({ id: user.id, status: "SUSPENDED" })}
+                  disabled={setStatus.isPending}
+                  className="w-full flex items-center gap-2 px-4 py-2.5 rounded-md border border-border text-sm font-semibold text-content transition-colors hover:bg-neutral-50 disabled:opacity-50"
+                >
+                  <PauseCircle size={16} className="text-warning-600" /> Suspend Account
+                </button>
+              ) : (
+                <button
+                  onClick={() => setStatus.mutate({ id: user.id, status: "ACTIVE" })}
+                  disabled={setStatus.isPending}
+                  className="w-full flex items-center gap-2 px-4 py-2.5 rounded-md border border-border text-sm font-semibold text-content transition-colors hover:bg-neutral-50 disabled:opacity-50"
+                >
+                  <PlayCircle size={16} className="text-success-600" /> Reactivate Account
+                </button>
+              )}
+              {setStatus.isError && (
+                <Alert variant="error">
+                  {setStatus.error instanceof Error ? setStatus.error.message : "Could not change the status."}
+                </Alert>
               )}
 
               {/* Delete (GDPR) */}

@@ -15,12 +15,19 @@ import { apiClient } from "@/lib/api/client";
 
 export type UserRole = "JOB_SEEKER" | "EMPLOYER" | "ADMIN";
 
+/**
+ * Account lifecycle. Supersedes `isActive`, which could not tell a reversible suspension
+ * from a permanent close. Both are returned while the boolean still has readers.
+ */
+export type UserStatus = "ACTIVE" | "SUSPENDED" | "DEACTIVATED";
+
 export interface AdminUserListItem {
   id: string;
   email: string;
   name: string;
   role: UserRole;
   isActive: boolean;
+  status: UserStatus;
   emailVerified: boolean;
   lastLogin: string | null;
   createdAt: string;
@@ -120,6 +127,12 @@ export const adminApi = {
     apiClient.post<{ message: string }>(`/admin/users/${id}/reset-password`),
   unlockUser: (id: string) =>
     apiClient.post<{ message: string }>(`/admin/users/${id}/unlock`),
+  /**
+   * Suspend, reactivate or deactivate. Takes effect immediately — the backend invalidates
+   * the auth cache with the write, so there is no window where the account keeps working.
+   */
+  setUserStatus: (id: string, status: UserStatus) =>
+    apiClient.post<{ message: string }>(`/admin/users/${id}/status`, { status }),
   deleteUser: (id: string) =>
     apiClient.delete<{ message: string }>(`/admin/users/${id}`),
 

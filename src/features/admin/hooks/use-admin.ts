@@ -2,7 +2,11 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { qk } from "@/lib/api/query-keys";
-import { adminApi, type SearchUsersParams } from "../api/admin.api";
+import {
+  adminApi,
+  type SearchUsersParams,
+  type UserStatus,
+} from "../api/admin.api";
 
 // ── Users ────────────────────────────────────────────────────────────────────
 export function useAdminUsers(params: SearchUsersParams = {}) {
@@ -30,6 +34,19 @@ export function useUnlockUser() {
   return useMutation({
     mutationFn: (id: string) => adminApi.unlockUser(id),
     onSuccess: (_d, id) => {
+      qc.invalidateQueries({ queryKey: qk.admin.user(id) });
+      qc.invalidateQueries({ queryKey: qk.admin.all });
+    },
+  });
+}
+
+/** Suspend / reactivate / deactivate. Invalidates the row and the list it sits in. */
+export function useSetUserStatus() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, status }: { id: string; status: UserStatus }) =>
+      adminApi.setUserStatus(id, status),
+    onSuccess: (_d, { id }) => {
       qc.invalidateQueries({ queryKey: qk.admin.user(id) });
       qc.invalidateQueries({ queryKey: qk.admin.all });
     },
