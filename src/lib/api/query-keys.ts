@@ -118,6 +118,8 @@ export const qk = {
       [...qk.admin.all, "employer-request", id] as const,
     companyOptions: (search: string) =>
       [...qk.admin.all, "company-options", search] as const,
+    companyMatch: (name: string, website: string) =>
+      [...qk.admin.all, "company-match", name, website] as const,
   },
 
   analytics: {

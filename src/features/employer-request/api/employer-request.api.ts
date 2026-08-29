@@ -61,10 +61,33 @@ export interface AdminCompanyOption {
   id: string;
   name: string;
   website: string | null;
-  logoUrl: string | null;
+  /** Normalized host. THIS identifies the company — the name does not. */
+  domain: string | null;
+  city: string | null;
+  country: string | null;
   isVerified: boolean;
   /** Already managed by an employer — one employer per company is the MVP rule. */
   isClaimed: boolean;
+}
+
+/**
+ * What a proposed company collides with.
+ *
+ * A shared NAME is never a conflict: two real businesses can be called "Acme Robotics".
+ * A shared DOMAIN is, because a website belongs to one business.
+ */
+export type CompanyConflictKind =
+  | "NONE"
+  | "SAME_DOMAIN_SAME_NAME"
+  | "SAME_DOMAIN_DIFFERENT_NAME";
+
+export interface CompanyMatchResult {
+  /** Same normalized name. Advisory — shown so the admin can decide, never acted on. */
+  nameMatches: AdminCompanyOption[];
+  /** Already holds this website. Blocking. */
+  domainMatch: AdminCompanyOption | null;
+  conflict: CompanyConflictKind;
+  normalizedDomain: string | null;
 }
 
 /** The six fields employer_logic.md v2.1 §4.1 requires. */
@@ -133,6 +156,19 @@ export const employerRequestApi = {
    * The common case for a real employer: nothing has ingested a job for them, so no row
    * exists and the picker has nothing to offer. 409 when the name is already taken.
    */
-  createCompany: (body: { name: string; website?: string }) =>
-    apiClient.post<AdminCompanyOption>("/admin/companies", body),
+  createCompany: (body: {
+    name: string;
+    website?: string;
+    /** Used as the company domain when no website was given. */
+    contactEmail?: string;
+  }) => apiClient.post<AdminCompanyOption>("/admin/companies", body),
+
+  /**
+   * What would this name + website collide with? Asked before creating, so the admin sees
+   * candidates and conflicts rather than an error after the fact.
+   */
+  matchCompany: (name: string, website?: string, contactEmail?: string) =>
+    apiClient.get<CompanyMatchResult>("/admin/companies/match", {
+      query: { name, website, contactEmail },
+    }),
 };

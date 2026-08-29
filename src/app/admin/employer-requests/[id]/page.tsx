@@ -27,6 +27,7 @@ import {
 
 import {
   useApproveEmployerRequest,
+  useCompanyMatch,
   useCompanyOptions,
   useCreateCompany,
   useEmployerRequest,
@@ -185,6 +186,7 @@ export default function EmployerRequestDetailPage() {
         requestId={request.id}
         companyName={request.companyName}
         companyWebsite={request.companyWebsite}
+        companyEmail={request.companyEmail}
       />
       <NotesDialog
         open={dialog === "reject"}
@@ -210,12 +212,15 @@ function ApproveDialog({
   requestId,
   companyName,
   companyWebsite,
+  companyEmail,
 }: {
   open: boolean;
   onClose: () => void;
   requestId: string;
   companyName: string;
   companyWebsite?: string;
+  /** Falls back to this for the company domain when no website was given. */
+  companyEmail: string;
 }) {
   /**
    * Seeded with the FIRST WORD of the submitted name, not the whole thing.
@@ -340,6 +345,16 @@ function ApproveDialog({
           </p>
         </div>
 
+        <CompanyConflictPanel
+          companyName={companyName}
+          companyWebsite={companyWebsite}
+          companyEmail={companyEmail}
+          onSelect={(c) => {
+            setSelected(c);
+            setQuery(c.name);
+          }}
+        />
+
         <div
           className="max-h-56 overflow-y-auto rounded-md border divide-y"
           style={{ borderColor: "var(--color-border)" }}
@@ -363,36 +378,16 @@ function ApproveDialog({
                 No company named “{search}”. A brand-new employer usually has no company
                 row yet — create one from this request.
               </p>
-              <button
-                type="button"
-                disabled={createCompany.isPending}
-                onClick={() =>
-                  createCompany.mutate(
-                    { name: companyName, website: companyWebsite },
-                    {
-                      // Select it straight away: the admin asked for this company, so
-                      // making them search again for the row they just made is busywork.
-                      onSuccess: (created) => {
-                        setSelected(created);
-                        setQuery(created.name);
-                      },
-                    },
-                  )
-                }
-                className="text-xs font-bold underline disabled:opacity-50"
-                style={{ color: "var(--color-primary-600)" }}
-              >
-                {createCompany.isPending
-                  ? "Creating…"
-                  : `Create “${companyName}” and select it`}
-              </button>
-              {createCompany.isError && (
-                <p className="text-xs" style={{ color: "var(--color-error-600)" }}>
-                  {createCompany.error instanceof Error
-                    ? createCompany.error.message
-                    : "Could not create the company."}
-                </p>
-              )}
+              <CreateCompanyAction
+                companyName={companyName}
+                companyWebsite={companyWebsite}
+                companyEmail={companyEmail}
+                createCompany={createCompany}
+                onCreated={(created) => {
+                  setSelected(created);
+                  setQuery(created.name);
+                }}
+              />
             </div>
           ) : (
             companies.map((company) => (
@@ -666,5 +661,164 @@ function Action({
     >
       {children}
     </button>
+  );
+}
+
+/* ─────────────────── Company identity conflicts ───────────────────
+   COMPANY NAME IS A DISPLAY ATTRIBUTE, NOT AN IDENTITY.
+
+   Two real businesses can be called "Acme Robotics" — one in Phnom Penh, one in Siem Reap,
+   different owners, different websites. So a name match is a CANDIDATE the admin is shown
+   and never something the system acts on. A domain match is different: a website belongs to
+   one business, so the backend refuses to create over it and this panel offers the choices
+   instead of a dead end. */
+
+function CompanyConflictPanel({
+  companyName,
+  companyWebsite,
+  companyEmail,
+  onSelect,
+}: {
+  companyName: string;
+  companyWebsite?: string;
+  companyEmail: string;
+  onSelect: (c: AdminCompanyOption) => void;
+}) {
+  const { data: match } = useCompanyMatch(
+    companyName,
+    companyWebsite,
+    companyEmail,
+  );
+  if (!match) return null;
+
+  // Same website, whatever it is called: the strongest signal there is.
+  if (match.domainMatch) {
+    const sameName = match.conflict === "SAME_DOMAIN_SAME_NAME";
+    return (
+      <Alert variant="warning">
+        <div className="space-y-2">
+          <p className="text-xs">
+            <strong>{match.normalizedDomain}</strong> already belongs to{" "}
+            <strong>{match.domainMatch.name}</strong>
+            {match.domainMatch.city ? ` (${match.domainMatch.city})` : ""}.{" "}
+            {sameName
+              ? "Same name and same website — this is very likely the same company."
+              : "A different name on the same website. Could be a rebrand, a subsidiary, or a mistake."}
+          </p>
+          <button
+            type="button"
+            onClick={() => onSelect(match.domainMatch as AdminCompanyOption)}
+            disabled={match.domainMatch.isClaimed}
+            className="text-xs font-bold underline disabled:opacity-50 disabled:no-underline"
+            style={{ color: "var(--color-primary-600)" }}
+          >
+            {match.domainMatch.isClaimed
+              ? "Already claimed by another employer — needs review"
+              : `Approve them onto ${match.domainMatch.name}`}
+          </button>
+          <p className="text-xs" style={{ color: "var(--color-text-tertiary)" }}>
+            If it is genuinely a different business, ask them for their own website — a new
+            company cannot be created on a website that is already taken.
+          </p>
+        </div>
+      </Alert>
+    );
+  }
+
+  // Same name, different (or absent) website. Advisory only.
+  if (match.nameMatches.length > 0) {
+    return (
+      <Alert variant="info">
+        <div className="space-y-2">
+          <p className="text-xs">
+            {match.nameMatches.length === 1 ? "A company" : `${match.nameMatches.length} companies`}{" "}
+            already named <strong>{companyName}</strong>. Same name does not mean same
+            business — check the website before choosing.
+          </p>
+          <ul className="space-y-1">
+            {match.nameMatches.map((c) => (
+              <li key={c.id}>
+                <button
+                  type="button"
+                  onClick={() => onSelect(c)}
+                  disabled={c.isClaimed}
+                  className="text-xs underline disabled:opacity-50 disabled:no-underline"
+                  style={{ color: "var(--color-primary-600)" }}
+                >
+                  {c.name}
+                  {c.city ? ` · ${c.city}` : ""}
+                  {c.domain ? ` · ${c.domain}` : " · no website"}
+                  {c.isClaimed ? " · already claimed" : ""}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </Alert>
+    );
+  }
+
+  return null;
+}
+
+/** Create the company from the request, and surface a domain conflict if one comes back. */
+function CreateCompanyAction({
+  companyName,
+  companyWebsite,
+  companyEmail,
+  createCompany,
+  onCreated,
+}: {
+  companyName: string;
+  companyWebsite?: string;
+  companyEmail: string;
+  createCompany: ReturnType<typeof useCreateCompany>;
+  onCreated: (c: AdminCompanyOption) => void;
+}) {
+  // The backend refuses a website that already belongs to a company. That 409 is a real
+  // answer, not a failure, so it is rendered as the reason rather than as an error.
+  const conflict =
+    createCompany.error instanceof ApiError && createCompany.error.statusCode === 409
+      ? createCompany.error.message
+      : null;
+
+  return (
+    <>
+      <button
+        type="button"
+        disabled={createCompany.isPending}
+        onClick={() =>
+          createCompany.mutate(
+            {
+              name: companyName,
+              website: companyWebsite,
+              // No website? The contact address identifies the business just as well,
+              // unless it is a consumer provider — the backend ignores those.
+              contactEmail: companyEmail,
+            },
+            { onSuccess: onCreated },
+          )
+        }
+        className="text-xs font-bold underline disabled:opacity-50"
+        style={{ color: "var(--color-primary-600)" }}
+      >
+        {createCompany.isPending
+          ? "Creating…"
+          : `Create “${companyName}”${companyWebsite ? ` (${companyWebsite})` : ""} and select it`}
+      </button>
+      {createCompany.isError && (
+        <p
+          className="text-xs"
+          style={{
+            color: conflict ? "var(--color-warning-600)" : "var(--color-error-600)",
+          }}
+        >
+          {conflict ??
+            (createCompany.error instanceof Error
+              ? createCompany.error.message
+              : "Could not create the company.")}
+        </p>
+      )}
+    </>
   );
 }

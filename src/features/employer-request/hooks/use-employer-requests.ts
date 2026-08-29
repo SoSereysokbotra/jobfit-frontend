@@ -86,12 +86,34 @@ export function useCompanyOptions(search: string) {
   });
 }
 
+/**
+ * Does this name + website already exist as a company?
+ *
+ * Gated on a name, and re-run whenever the website changes — the website is what decides
+ * whether a same-named row is the same business or a different one.
+ */
+export function useCompanyMatch(
+  name: string,
+  website?: string,
+  contactEmail?: string,
+) {
+  return useQuery({
+    queryKey: qk.admin.companyMatch(name, website ?? contactEmail ?? ""),
+    queryFn: () => employerRequestApi.matchCompany(name, website, contactEmail),
+    enabled: name.trim().length >= 2,
+    staleTime: 30_000,
+  });
+}
+
 /** Create a company from the approve dialog, then select it. */
 export function useCreateCompany() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: { name: string; website?: string }) =>
-      employerRequestApi.createCompany(body),
+    mutationFn: (body: {
+      name: string;
+      website?: string;
+      contactEmail?: string;
+    }) => employerRequestApi.createCompany(body),
     // Any cached search could now be missing this row.
     onSuccess: () => qc.invalidateQueries({ queryKey: qk.admin.all }),
   });
