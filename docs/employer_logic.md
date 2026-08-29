@@ -63,10 +63,13 @@ TechCorp) who uses JobFit to fill TechCorp's roles. The admin is the JobFit side
   claim per company.
 - **Email exclusivity.** Enforced by the database. One address cannot be both a seeker and
   an employer.
-- **No self-registration.** Employers **cannot register via the public website**. The
-  process is entirely admin-controlled.
+- **No self-registration.** Submitting a request **never creates an account**. An employer
+  account exists only after an admin approves the request and selects the company. The
+  public form at `/employer/register` collects the request; it grants nothing — no account,
+  no password, no login.
   *(Enforced today: the signup DTO has no role field, so registration can only ever produce
-  a `JOB_SEEKER`, and `POST /employer-requests` is `@Roles('ADMIN')`.)*
+  a `JOB_SEEKER`, and the sole code path that assigns `role = EMPLOYER` is the admin
+  approval handler.)*
 - **Credentials are non-transferable**, bound to the verified company.
 - **Channel security.** Email and Telegram may be used for *conversation*. Activation codes
   and any account link are sent **only** to the verified official company email address.
@@ -83,8 +86,10 @@ The employer contacts the JobFit admin via **Email** (`admin@jobfit.com`) or **T
 *If contacting via Telegram, the admin replies with a template directing them to send their
 formal details by email, so the official company address is on record.*
 
-There is **no public intake form** — see §3.1. The admin enters the request into the Admin
-Panel from what the employer sent.
+**Two ways in, one queue.** The employer can fill in the public form at
+`/employer/register` themselves, or contact the admin, who records what they sent using
+**New request** in the Admin Panel. Either way it lands in the same queue as `SUBMITTED`
+and grants nothing until approved — see §3.1.
 
 **Required information:**
 - Company / organisation name

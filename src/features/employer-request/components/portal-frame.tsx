@@ -1,7 +1,7 @@
 "use client";
 
-import React from "react";
-import { Building2 } from "lucide-react";
+import React, { useState } from "react";
+import { Building2, Eye, EyeOff } from "lucide-react";
 
 /**
  * The centred card the employer portal's public pages sit in — sign-in and activation.
@@ -86,6 +86,17 @@ export function Field({
   maxLength?: number;
   hint?: string;
 }) {
+  const [show, setShow] = useState(false);
+
+  /**
+   * Reveal, for password fields only. Same affordance as the shared TextField, because a
+   * portal password typed blind is the one people get wrong twice and then blame the
+   * account for — and here they are choosing a password against four printed rules, so
+   * they need to see what they typed.
+   */
+  const isPassword = type === "password";
+  const inputType = isPassword && show ? "text" : type;
+
   return (
     <div>
       <label
@@ -95,22 +106,40 @@ export function Field({
       >
         {label}
       </label>
-      <input
-        id={id}
-        type={type}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        autoComplete={autoComplete}
-        required={required}
-        inputMode={inputMode}
-        maxLength={maxLength}
-        className="w-full px-3 py-2.5 rounded-md border text-sm outline-none transition-all duration-200 focus:border-primary-500"
-        style={{
-          background: "var(--color-bg-secondary)",
-          borderColor: "var(--color-border)",
-          color: "var(--color-text-primary)",
-        }}
-      />
+      <div className="relative">
+        <input
+          id={id}
+          type={inputType}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          autoComplete={autoComplete}
+          required={required}
+          inputMode={inputMode}
+          maxLength={maxLength}
+          className={`w-full pl-3 py-2.5 rounded-md border text-sm outline-none transition-all duration-200 focus:border-primary-500 ${
+            isPassword ? "pr-10" : "pr-3"
+          }`}
+          style={{
+            background: "var(--color-bg-secondary)",
+            borderColor: "var(--color-border)",
+            color: "var(--color-text-primary)",
+          }}
+        />
+        {isPassword && (
+          <button
+            type="button"
+            onClick={() => setShow((v) => !v)}
+            // Not in the tab order: a keyboard user tabbing from password to submit should
+            // not be interrupted by a control they did not ask for.
+            tabIndex={-1}
+            aria-label={show ? "Hide password" : "Show password"}
+            className="absolute inset-y-0 right-0 pr-3 flex items-center hover:opacity-80"
+            style={{ color: "var(--color-text-tertiary)" }}
+          >
+            {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </button>
+        )}
+      </div>
       {hint && (
         <p className="text-xs mt-1.5" style={{ color: "var(--color-text-tertiary)" }}>
           {hint}

@@ -8,9 +8,9 @@
  * and the login command refuses unverified accounts.
  */
 
-import React, { useState } from "react";
+import React, { Suspense, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2, ArrowRight } from "lucide-react";
 
 import { employerAuthApi } from "@/features/employer-request/api/employer-auth.api";
@@ -29,9 +29,27 @@ const PASSWORD_RULES: { test: (v: string) => boolean; label: string }[] = [
 ];
 
 export default function EmployerActivatePage() {
-  const router = useRouter();
+  // useSearchParams needs a Suspense boundary in the app router.
+  return (
+    <Suspense
+      fallback={
+        <PortalFrame title="Activate your account">
+          <Loader2 className="w-6 h-6 animate-spin mx-auto" />
+        </PortalFrame>
+      }
+    >
+      <ActivateForm />
+    </Suspense>
+  );
+}
 
-  const [email, setEmail] = useState("");
+function ActivateForm() {
+  const router = useRouter();
+  const params = useSearchParams();
+
+  // Carried in the link from the approval email, so they neither retype it nor guess which
+  // address the code belongs to.
+  const [email, setEmail] = useState(params.get("email") ?? "");
   const [code, setCode] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");

@@ -49,6 +49,7 @@ true, criteria that can be checked, and the code that satisfies them.
 
 1. `POST /employer-requests` succeeds without authentication and stores company name,
    contact name and role, company email, description, and optional website and documents.
+   It is rate-limited per IP; the limit slows abuse but is not the containment — see (5).
 2. The public signup form cannot produce an `EMPLOYER`: `RegisterDto` has no role field, so
    registration always yields `JOB_SEEKER`.
 3. The response reveals nothing about whether the address already has an account. A second
@@ -56,8 +57,12 @@ true, criteria that can be checked, and the code that satisfies them.
    user is not distinguishable through this endpoint.
 4. A rejected request does not block the address from applying again.
 
+5. **A request grants nothing.** No account, password or login exists until an admin
+   approves it and selects a company, so the worst outcome of abuse is queue noise an
+   admin rejects. That, not the rate limit, is why the endpoint can be public.
+
 **Satisfied by:** `employer-request.controller.ts`, `employer-request.service.ts#submit`,
-`register.dto.ts` (absence of a role field is the control).
+`src/app/employer/register/`, `register.dto.ts` (absence of a role field is the control).
 
 **Why (3) is a criterion, not a nicety:** answering "that email is taken" to an anonymous
 caller turns the intake form into an account-enumeration oracle.
@@ -258,8 +263,6 @@ with a stated horizon. So does `User.deletedEmail`. Neither exists.
   a document that, for those ids, still does not exist. The `EMPLOYER-00x` block above is
   the format to copy; doing the same for `AUTH-001` … `SALARY-002` is the remaining work,
   and writing the criteria is what surfaces gaps like the résumé one.
-- **No public intake page.** `POST /employer-requests` works and nothing in the frontend
-  posts to it, so EMPLOYER-001 is satisfied by the API but not reachable by a real company.
 - **No company creation from the admin panel.** An employer whose company is not already in
   the database cannot be approved (EMPLOYER-003).
 - **Retention policy** for `SecurityEvent` and `User.deletedEmail`.

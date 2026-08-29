@@ -157,6 +157,12 @@ function EmployerLoginForm() {
           </Link>
         </p>
         <p>
+          Not registered yet?{" "}
+          <Link href="/employer/register" className="underline font-semibold" style={{ color: "var(--color-primary-600)" }}>
+            Request employer access
+          </Link>
+        </p>
+        <p>
           Looking for a job instead?{" "}
           <Link href="/login" className="underline" style={{ color: "var(--color-primary-600)" }}>
             Sign in as a job seeker

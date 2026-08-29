@@ -31,7 +31,11 @@ const EMPLOYER_MENU_GROUPS: SidebarMenuGroup[] = [
  * employer session in the first place. Guarding them would bounce an employer to the seeker
  * login and strand an approved account that has never been activated.
  */
-const PUBLIC_EMPLOYER_ROUTES = ["/employer/login", "/employer/activate"];
+const PUBLIC_EMPLOYER_ROUTES = [
+  "/employer/login",
+  "/employer/activate",
+  "/employer/register",
+];
 
 export default function EmployerLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();

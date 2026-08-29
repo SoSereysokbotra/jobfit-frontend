@@ -30,6 +30,15 @@ const FOOTER_COLUMNS = [
       { label: "Interview Prep", href: "/learning" },
     ],
   },
+  // The business side of the product had no route in from anywhere public. Every other
+  // CTA on the marketing site points at /signup, which can only create a job seeker.
+  {
+    heading: "For Employers",
+    links: [
+      { label: "Post a Job", href: "/employer/register" },
+      { label: "Employer Sign-in", href: "/employer/login" },
+    ],
+  },
 ];
 
 /** Site footer — dark brand bookend with link columns and legal row. */
