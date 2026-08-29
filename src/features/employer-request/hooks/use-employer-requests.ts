@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { qk } from "@/lib/api/query-keys";
 import {
   employerRequestApi,
+  type CreateEmployerRequestInput,
   type ListEmployerRequestsParams,
   type ReviewableStatus,
 } from "../api/employer-request.api";
@@ -19,6 +20,16 @@ export function useEmployerRequests(params: ListEmployerRequestsParams = {}) {
     queryKey: qk.admin.employerRequests({ ...params }),
     queryFn: () => employerRequestApi.list(params),
     staleTime: 15_000,
+  });
+}
+
+/** Record a request that arrived by email or Telegram. */
+export function useCreateEmployerRequest() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: CreateEmployerRequestInput) =>
+      employerRequestApi.create(input),
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk.admin.all }),
   });
 }
 
@@ -72,6 +83,17 @@ export function useCompanyOptions(search: string) {
     queryFn: () => employerRequestApi.searchCompanies(search),
     enabled: search.trim().length >= 2,
     staleTime: 60_000,
+  });
+}
+
+/** Create a company from the approve dialog, then select it. */
+export function useCreateCompany() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: { name: string; website?: string }) =>
+      employerRequestApi.createCompany(body),
+    // Any cached search could now be missing this row.
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk.admin.all }),
   });
 }
 

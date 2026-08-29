@@ -11,10 +11,13 @@
 import React, { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { Loader2, ArrowRight } from "lucide-react";
 
 import { employerAuthApi } from "@/features/employer-request/api/employer-auth.api";
-import { useAuth } from "@/providers/auth-provider";
+import { useAuth, type AuthUser } from "@/providers/auth-provider";
+import { apiClient } from "@/lib/api/client";
+import { qk } from "@/lib/api/query-keys";
 import { ApiError } from "@/lib/api/client";
 import { Alert } from "@/shared/components/feedback/alert";
 import {
@@ -34,6 +37,7 @@ function EmployerLoginForm() {
   const router = useRouter();
   const params = useSearchParams();
   const { setAccessToken } = useAuth();
+  const queryClient = useQueryClient();
 
   // Carried over from activation, so a freshly activated employer does not retype it.
   const [email, setEmail] = useState(params.get("email") ?? "");
@@ -51,8 +55,23 @@ function EmployerLoginForm() {
     setBusy(true);
     try {
       const { accessToken } = await employerAuthApi.login({ email, password });
-      // Same bridge the admin portal uses: adopt a token minted by a separate flow.
+
+      // A new identity must inherit NOTHING from the previous one — the same rule
+      // AuthProvider.login follows, and skipping it is a real bug rather than an
+      // optimisation. /auth/me is cached with a 5-minute staleTime, so signing in here
+      // while an ADMIN session was cached left the provider still reporting ADMIN. The
+      // employer layout then saw the wrong role and bounced to the admin dashboard.
+      queryClient.clear();
       setAccessToken(accessToken);
+
+      // Fetch eagerly with staleTime 0, so the layout guard sees the REAL role on its
+      // first render instead of routing on a stale one.
+      await queryClient.fetchQuery({
+        queryKey: qk.auth.me(),
+        queryFn: () => apiClient.get<AuthUser>("/auth/me"),
+        staleTime: 0,
+      });
+
       router.replace("/employer/dashboard");
     } catch (err) {
       // 403 means the password was RIGHT and the account is simply not an employer. That

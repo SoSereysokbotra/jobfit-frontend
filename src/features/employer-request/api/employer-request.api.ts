@@ -67,7 +67,27 @@ export interface AdminCompanyOption {
   isClaimed: boolean;
 }
 
+/** The six fields employer_logic.md v2.1 §4.1 requires. */
+export interface CreateEmployerRequestInput {
+  companyName: string;
+  companyEmail: string;
+  contactName: string;
+  contactRole: string;
+  description: string;
+  companyWebsite?: string;
+  supportingDocsUrl?: string;
+}
+
 export const employerRequestApi = {
+  /**
+   * Record a request the admin received by email or Telegram.
+   *
+   * ADMIN ONLY — §3.1 forbids employers registering through the website, so there is no
+   * public intake path. The admin transcribes what the employer sent.
+   */
+  create: (input: CreateEmployerRequestInput) =>
+    apiClient.post<{ id: string; message: string }>("/employer-requests", input),
+
   list: (params: ListEmployerRequestsParams = {}) =>
     apiClient.get<EmployerRequestList>("/admin/employer-requests", {
       query: { ...params },
@@ -106,4 +126,13 @@ export const employerRequestApi = {
     apiClient.get<AdminCompanyOption[]>("/admin/companies", {
       query: { search, take: 20 },
     }),
+
+  /**
+   * Create a company so a brand-new employer can be approved onto one.
+   *
+   * The common case for a real employer: nothing has ingested a job for them, so no row
+   * exists and the picker has nothing to offer. 409 when the name is already taken.
+   */
+  createCompany: (body: { name: string; website?: string }) =>
+    apiClient.post<AdminCompanyOption>("/admin/companies", body),
 };

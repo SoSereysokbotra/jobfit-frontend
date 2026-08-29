@@ -28,6 +28,7 @@ import {
 import {
   useApproveEmployerRequest,
   useCompanyOptions,
+  useCreateCompany,
   useEmployerRequest,
   useResendActivation,
   useReviewEmployerRequest,
@@ -183,6 +184,7 @@ export default function EmployerRequestDetailPage() {
         onClose={() => setDialog(null)}
         requestId={request.id}
         companyName={request.companyName}
+        companyWebsite={request.companyWebsite}
       />
       <NotesDialog
         open={dialog === "reject"}
@@ -207,19 +209,35 @@ function ApproveDialog({
   onClose,
   requestId,
   companyName,
+  companyWebsite,
 }: {
   open: boolean;
   onClose: () => void;
   requestId: string;
   companyName: string;
+  companyWebsite?: string;
 }) {
-  // Seeded with the submitted name, which is nearly always the right search.
-  const [query, setQuery] = useState(companyName);
+  /**
+   * Seeded with the FIRST WORD of the submitted name, not the whole thing.
+   *
+   * The full name is an exact string that usually matches nothing — "Acme Robotics" finds
+   * no row when the company was ingested as "Acme Robotics Co., Ltd". Seeding the whole
+   * name made the dialog open on "no matches" for precisely the requests it exists to
+   * approve.
+   */
+  const [query, setQuery] = useState(() => companyName.trim().split(/\s+/)[0] ?? "");
   const [selected, setSelected] = useState<AdminCompanyOption | null>(null);
   const search = useDebounce(query, 250);
 
-  const { data: companies = [], isFetching } = useCompanyOptions(search);
+  const {
+    data: companies = [],
+    isFetching,
+    // Surfaced below. Without it a failed search rendered as "no company matches", which
+    // sent us hunting for missing data that was there all along.
+    error: searchError,
+  } = useCompanyOptions(search);
   const approve = useApproveEmployerRequest(requestId);
+  const createCompany = useCreateCompany();
 
   // The email conflict is answered by the unique index during approval, so it arrives as a
   // 409 rather than being known in advance. It gets its own branch because the admin has
@@ -267,6 +285,18 @@ function ApproveDialog({
       }
     >
       <div className="space-y-3">
+        {/* The Approve button is disabled until a row is CLICKED — typing a name is not
+            selecting one. Saying so removes the commonest confusion in this dialog. */}
+        <p className="text-xs" style={{ color: "var(--color-text-tertiary)" }}>
+          {selected ? (
+            <span style={{ color: "var(--color-success-600)" }}>
+              Selected: <strong>{selected.name}</strong>
+            </span>
+          ) : (
+            "Click a company below to select it, then Approve."
+          )}
+        </p>
+
         {conflict && (
           <Alert variant="warning">
             {conflict} Ask them for a different address (Request more info), or reject the
@@ -322,11 +352,48 @@ function ApproveDialog({
             <p className="p-3 text-xs" style={{ color: "var(--color-text-tertiary)" }}>
               Searching…
             </p>
-          ) : companies.length === 0 ? (
-            <p className="p-3 text-xs" style={{ color: "var(--color-text-tertiary)" }}>
-              No company matches. It has to exist before an employer can be approved onto
-              it.
+          ) : searchError ? (
+            <p className="p-3 text-xs" style={{ color: "var(--color-error-600)" }}>
+              Could not search companies:{" "}
+              {searchError instanceof Error ? searchError.message : "request failed"}
             </p>
+          ) : companies.length === 0 ? (
+            <div className="p-3 space-y-2">
+              <p className="text-xs" style={{ color: "var(--color-text-tertiary)" }}>
+                No company named “{search}”. A brand-new employer usually has no company
+                row yet — create one from this request.
+              </p>
+              <button
+                type="button"
+                disabled={createCompany.isPending}
+                onClick={() =>
+                  createCompany.mutate(
+                    { name: companyName, website: companyWebsite },
+                    {
+                      // Select it straight away: the admin asked for this company, so
+                      // making them search again for the row they just made is busywork.
+                      onSuccess: (created) => {
+                        setSelected(created);
+                        setQuery(created.name);
+                      },
+                    },
+                  )
+                }
+                className="text-xs font-bold underline disabled:opacity-50"
+                style={{ color: "var(--color-primary-600)" }}
+              >
+                {createCompany.isPending
+                  ? "Creating…"
+                  : `Create “${companyName}” and select it`}
+              </button>
+              {createCompany.isError && (
+                <p className="text-xs" style={{ color: "var(--color-error-600)" }}>
+                  {createCompany.error instanceof Error
+                    ? createCompany.error.message
+                    : "Could not create the company."}
+                </p>
+              )}
+            </div>
           ) : (
             companies.map((company) => (
               <button

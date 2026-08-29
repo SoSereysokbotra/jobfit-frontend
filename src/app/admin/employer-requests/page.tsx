@@ -9,9 +9,14 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { Search, Inbox, Clock, AlertTriangle, ChevronRight } from "lucide-react";
+import { Search, Inbox, Clock, AlertTriangle, ChevronRight, Plus } from "lucide-react";
 
-import { useEmployerRequests } from "@/features/employer-request/hooks/use-employer-requests";
+import {
+  useCreateEmployerRequest,
+  useEmployerRequests,
+} from "@/features/employer-request/hooks/use-employer-requests";
+import { Modal } from "@/shared/components/ui/modal";
+import { toast } from "@/stores/toast-store";
 import type {
   EmployerRequest,
   EmployerRequestStatus,
@@ -38,6 +43,7 @@ const FILTERS: { label: string; value?: EmployerRequestStatus }[] = [
 export default function EmployerRequestsPage() {
   const [status, setStatus] = useState<EmployerRequestStatus | undefined>();
   const [query, setQuery] = useState("");
+  const [newOpen, setNewOpen] = useState(false);
   const search = useDebounce(query, 250);
 
   const { data, isLoading, isError, error } = useEmployerRequests({
@@ -63,12 +69,23 @@ export default function EmployerRequestsPage() {
           </p>
         </div>
 
-        {overdue > 0 && (
-          <Badge tone="error" dot>
-            {overdue} past the 48-hour SLA
-          </Badge>
-        )}
+        <div className="flex items-center gap-3">
+          {overdue > 0 && (
+            <Badge tone="error" dot>
+              {overdue} past the 48-hour SLA
+            </Badge>
+          )}
+          <button
+            type="button"
+            onClick={() => setNewOpen(true)}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-md text-sm font-bold text-white bg-primary-600 hover:bg-primary-700 transition-all duration-200"
+          >
+            <Plus size={16} /> New request
+          </button>
+        </div>
       </header>
+
+      <NewRequestDialog open={newOpen} onClose={() => setNewOpen(false)} />
 
       {isError && (
         <Alert variant="error">
@@ -240,5 +257,159 @@ function WaitingFor({ request }: { request: EmployerRequest }) {
       {request.breachesSla ? <AlertTriangle size={12} /> : <Clock size={12} />}
       {label}
     </span>
+  );
+}
+
+/* ─────────────────────────── New request ───────────────────────────
+   Employers cannot register through the website (employer_logic.md v2.1 §3.1) — they email
+   or Telegram the admin, who records what they sent here. This form is the only way a
+   request enters the queue. */
+
+const FIELDS = [
+  { name: "companyName", label: "Company name", required: true },
+  { name: "companyEmail", label: "Official company email", required: true, type: "email" },
+  { name: "contactName", label: "Contact person", required: true },
+  { name: "contactRole", label: "Their role", required: true },
+  { name: "companyWebsite", label: "Website or social page", required: false },
+  { name: "supportingDocsUrl", label: "Link to supporting documents", required: false },
+] as const;
+
+type FieldName = (typeof FIELDS)[number]["name"];
+
+function NewRequestDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const [values, setValues] = useState<Record<FieldName, string>>({
+    companyName: "",
+    companyEmail: "",
+    contactName: "",
+    contactRole: "",
+    companyWebsite: "",
+    supportingDocsUrl: "",
+  });
+  const [description, setDescription] = useState("");
+  const create = useCreateEmployerRequest();
+
+  const set = (name: FieldName, v: string) =>
+    setValues((prev) => ({ ...prev, [name]: v }));
+
+  const complete =
+    FIELDS.every((f) => !f.required || values[f.name].trim()) && description.trim();
+
+  const submit = () => {
+    create.mutate(
+      {
+        companyName: values.companyName.trim(),
+        companyEmail: values.companyEmail.trim(),
+        contactName: values.contactName.trim(),
+        contactRole: values.contactRole.trim(),
+        description: description.trim(),
+        companyWebsite: values.companyWebsite.trim() || undefined,
+        supportingDocsUrl: values.supportingDocsUrl.trim() || undefined,
+      },
+      {
+        onSuccess: () => {
+          toast.success("Request added to the queue.");
+          setValues({
+            companyName: "",
+            companyEmail: "",
+            contactName: "",
+            contactRole: "",
+            companyWebsite: "",
+            supportingDocsUrl: "",
+          });
+          setDescription("");
+          onClose();
+        },
+      },
+    );
+  };
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="Record an employer request"
+      subtitle="From the email or Telegram message they sent you."
+      footer={
+        <div className="flex justify-end gap-2">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4 py-2 rounded-md border text-sm font-semibold"
+            style={{
+              borderColor: "var(--color-border)",
+              color: "var(--color-text-secondary)",
+              background: "var(--color-card)",
+            }}
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={submit}
+            disabled={!complete || create.isPending}
+            className="px-4 py-2 rounded-md text-sm font-bold text-white bg-primary-600 hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {create.isPending ? "Adding…" : "Add to queue"}
+          </button>
+        </div>
+      }
+    >
+      <div className="space-y-3">
+        {create.isError && (
+          <Alert variant="error">
+            {create.error instanceof Error
+              ? create.error.message
+              : "Could not add the request."}
+          </Alert>
+        )}
+
+        {FIELDS.map((f) => (
+          <div key={f.name}>
+            <label
+              htmlFor={f.name}
+              className="block text-xs font-bold uppercase tracking-wider mb-1.5"
+              style={{ color: "var(--color-text-secondary)" }}
+            >
+              {f.label}
+              {!f.required && " (optional)"}
+            </label>
+            <input
+              id={f.name}
+              type={"type" in f ? f.type : "text"}
+              value={values[f.name]}
+              onChange={(e) => set(f.name, e.target.value)}
+              className="w-full px-3 py-2 rounded-md border text-sm outline-none focus:border-primary-500"
+              style={{
+                background: "var(--color-bg-secondary)",
+                borderColor: "var(--color-border)",
+                color: "var(--color-text-primary)",
+              }}
+            />
+          </div>
+        ))}
+
+        <div>
+          <label
+            htmlFor="description"
+            className="block text-xs font-bold uppercase tracking-wider mb-1.5"
+            style={{ color: "var(--color-text-secondary)" }}
+          >
+            What they plan to post
+          </label>
+          <textarea
+            id="description"
+            rows={3}
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            className="w-full px-3 py-2 rounded-md border text-sm outline-none focus:border-primary-500 resize-y"
+            style={{
+              background: "var(--color-bg-secondary)",
+              borderColor: "var(--color-border)",
+              color: "var(--color-text-primary)",
+            }}
+          />
+        </div>
+      </div>
+    </Modal>
   );
 }
