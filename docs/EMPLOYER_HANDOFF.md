@@ -148,6 +148,7 @@ src/features/employer-request/           api, hooks, portal shell, status maps
 | `EMPLOYER_ONBOARDING_PLAN.md` | the 8-phase plan, all delivered |
 | `EMPLOYER_INTAKE_PLAN.md` | public intake, delivered |
 | `SRS.md` | `EMPLOYER-001…008` with testable acceptance criteria |
+| `EMPLOYER_E2E_FINDINGS.md` | **2026-08-30 end-to-end run.** 6 defects found and fixed, verified live. §6 lists what is still open; finding 3 explains why a dead Redis silently disables logout revocation and lockout. |
 
 ---
 
@@ -284,6 +285,11 @@ heredoc.
 ---
 
 ## 9. What is not done
+
+> Superseded in part by `EMPLOYER_E2E_FINDINGS.md` (2026-08-30). The first live end-to-end
+> run found six real defects — including drafts being publicly applicable and every failed
+> employer/admin login answering 500 — all now fixed and re-verified. Its §6 lists what
+> remains; repost is the only piece of the employer spec still unbuilt.
 
 - **Seeker FRs have no acceptance criteria.** `SRS.md` now has `EMPLOYER-001…008`, but the
   33 seeker requirements the scorecard grades still resolve to nothing. The employer block
