@@ -95,6 +95,9 @@ export const qk = {
       [...qk.employer.all, "job", jobId, "analytics"] as const,
     applications: (filters: Record<string, unknown> = {}) =>
       [...qk.employer.all, "applications", filters] as const,
+    /** Signed CV link. Held only while the viewer is open — see useResumeLink. */
+    applicationResume: (applicationId: string) =>
+      [...qk.employer.all, "application", applicationId, "resume"] as const,
   },
 
   admin: {
@@ -107,6 +110,8 @@ export const qk = {
       [...qk.admin.all, "system", "metrics", period] as const,
     systemAlerts: (filters: Record<string, unknown> = {}) =>
       [...qk.admin.all, "system", "alerts", filters] as const,
+    /** Externally-ingested jobs (FR-JOBS-001). Admin-owned since the move off /employer. */
+    importedJobs: () => [...qk.admin.all, "imported-jobs"] as const,
     emailMetrics: () => [...qk.admin.all, "email", "metrics"] as const,
     emailBounces: () => [...qk.admin.all, "email", "bounces"] as const,
     auditLogs: (filters: Record<string, unknown> = {}) =>

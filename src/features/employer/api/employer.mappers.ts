@@ -153,6 +153,12 @@ export interface ApplicantView {
   unreadMessages: number;
   appliedAt: string;
   notes: string | null;
+  /**
+   * The CV this candidate applied with — metadata only, so the card can name the file and
+   * show the button. NULL when the candidate has since deleted it, which is a real state
+   * and not an error: the button is hidden rather than handed a link that cannot resolve.
+   */
+  resume: { fileName: string; fileType: string; fileSize: number } | null;
 }
 
 export function toApplicantView(dto: EmployerApplicationDto): ApplicantView {
@@ -176,6 +182,13 @@ export function toApplicantView(dto: EmployerApplicationDto): ApplicantView {
     unreadMessages: dto.unreadMessages ?? 0,
     appliedAt: postedLabel(dto.appliedAt),
     notes: dto.employerNotes,
+    resume: dto.resume
+      ? {
+          fileName: dto.resume.fileName,
+          fileType: dto.resume.fileType,
+          fileSize: dto.resume.fileSize,
+        }
+      : null,
   };
 }
 

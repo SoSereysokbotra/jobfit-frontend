@@ -65,6 +65,25 @@ export function usePublishJob() {
   });
 }
 
+/**
+ * A signed link to one candidate's CV, fetched only while the viewer is open.
+ *
+ * The URL is minted per request and expires, so it is never cached alongside the
+ * application list and never persisted: `gcTime: 0` drops it as soon as the viewer
+ * closes, so reopening always asks for a fresh one rather than rendering a dead link.
+ * Pass null to fetch nothing.
+ */
+export function useResumeLink(applicationId: string | null) {
+  return useQuery({
+    queryKey: qk.employer.applicationResume(applicationId ?? ""),
+    queryFn: () => employerApi.applicationResume(applicationId as string),
+    enabled: Boolean(applicationId),
+    staleTime: 0,
+    gcTime: 0,
+    retry: false,
+  });
+}
+
 export function useCloseJob() {
   const qc = useQueryClient();
   return useMutation({
@@ -113,28 +132,3 @@ export function useAddApplicantNotes() {
   });
 }
 
-// ── Job ingestion (FR-JOBS-001) ───────────────────────────────────────────────
-const importedJobsKey = [...qk.employer.all, "imported-jobs"] as const;
-
-/** Trigger a TheMuse ingestion run; the mutation resolves to the run summary. */
-export function useIngestJobs() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (pages: number) => employerApi.ingestThemuse(pages),
-    onSuccess: () => {
-      // Ingested jobs join the shared pool; refresh both the public board and
-      // the employer's "Imported Jobs" list.
-      qc.invalidateQueries({ queryKey: qk.jobs.all });
-      qc.invalidateQueries({ queryKey: importedJobsKey });
-    },
-  });
-}
-
-/** The externally-ingested jobs, for the employer "Imported Jobs" view. */
-export function useImportedJobs() {
-  return useQuery({
-    queryKey: importedJobsKey,
-    queryFn: () => employerApi.importedJobs(),
-    staleTime: 30_000,
-  });
-}

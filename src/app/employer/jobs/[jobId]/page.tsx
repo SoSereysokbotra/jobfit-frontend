@@ -3,11 +3,12 @@
 import React from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowLeft, Eye, Users, Target, Star, MapPin, DollarSign, ArrowRight } from "lucide-react";
+import { ArrowLeft, Eye, Users, Target, Star, MapPin, DollarSign, ArrowRight, FileText } from "lucide-react";
 import { Badge } from "@/shared/components/data-display/badge";
 import { EmptyState } from "@/shared/components/data-display/empty-state";
 import { Skeleton } from "@/shared/components/feedback/skeleton";
 import { Button } from "@/shared/components/ui/button";
+import { ResumeViewerModal } from "@/features/employer/components/resume-viewer-modal";
 import {
   useEmployerJobs,
   useJobAnalytics,
@@ -24,6 +25,13 @@ export default function EmployerJobDetailPage() {
   const { data: applicants = [] } = useEmployerApplications(params.jobId);
   const publish = usePublishJob();
   const close = useCloseJob();
+  // Which applicant's CV is open. Null closes the viewer and drops the signed URL.
+  const [resumeFor, setResumeFor] = React.useState<{
+    id: string;
+    name: string;
+    fileName: string | null;
+    fileType: string | null;
+  } | null>(null);
 
   if (isLoading) {
     return (
@@ -159,20 +167,61 @@ export default function EmployerJobDetailPage() {
             <div className="p-8"><EmptyState title="No applicants yet" description="Applicants will appear here once candidates apply." /></div>
           ) : (
             <div className="divide-y divide-neutral-100">
+              {/* Column headers, so the Resume action reads as a column rather than a
+                  button floating at the end of a row. */}
+              <div className="hidden sm:flex items-center gap-3 px-5 py-2 bg-neutral-50">
+                <span className="w-9 shrink-0" />
+                <span className="flex-1 text-[11px] font-bold uppercase tracking-wider text-content-tertiary">Candidate</span>
+                <span className="w-16 text-[11px] font-bold uppercase tracking-wider text-content-tertiary text-right">Match</span>
+                <span className="w-24 text-[11px] font-bold uppercase tracking-wider text-content-tertiary text-right">Resume</span>
+              </div>
               {recent.map((a) => (
                 <div key={a.id} className="flex items-center gap-3 px-5 py-3.5">
                   <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0 bg-primary-100 text-primary-700">{a.initials}</div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-bold truncate text-content">{a.name}</p>
-                    <p className="text-xs text-content-tertiary">{a.email} · {a.appliedAt}</p>
+                    <p className="text-xs text-content-tertiary truncate">{a.email} · {a.appliedAt}</p>
                   </div>
-                  {a.match !== null && <span className="text-sm font-extrabold text-primary-600">{a.match}%</span>}
+                  <span className="w-16 text-right text-sm font-extrabold text-primary-600">
+                    {a.match !== null ? `${a.match}%` : ""}
+                  </span>
+                  {/* Opens in-app. Absent when the candidate has since deleted the file —
+                      the row still renders, it just has no CV to show. */}
+                  <span className="w-24 flex justify-end">
+                    {a.resume ? (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setResumeFor({
+                            id: a.id,
+                            name: a.name,
+                            fileName: a.resume?.fileName ?? null,
+                            fileType: a.resume?.fileType ?? null,
+                          })
+                        }
+                        title={a.resume.fileName}
+                        className="inline-flex items-center gap-1.5 text-xs font-bold px-2 py-1 rounded-md border border-border text-content-secondary transition-colors hover:bg-neutral-50"
+                      >
+                        <FileText size={11} /> View
+                      </button>
+                    ) : (
+                      <span className="text-xs text-content-disabled">—</span>
+                    )}
+                  </span>
                 </div>
               ))}
             </div>
           )}
         </div>
       </div>
+
+      <ResumeViewerModal
+        applicationId={resumeFor?.id ?? null}
+        candidateName={resumeFor?.name ?? ""}
+        fileName={resumeFor?.fileName ?? null}
+        fileType={resumeFor?.fileType ?? null}
+        onClose={() => setResumeFor(null)}
+      />
     </div>
   );
 }

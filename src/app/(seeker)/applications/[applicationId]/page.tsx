@@ -1,22 +1,18 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowLeft, Briefcase, Clock, UserPlus, Check } from "lucide-react";
+import { ArrowLeft, Briefcase, Clock } from "lucide-react";
 import {
   useApplication,
   useApplicationTimeline,
   useUpdateApplicationStatus,
-  useAddContactPerson,
 } from "@/features/application/hooks/use-applications";
 import { ApplicationTimeline } from "@/features/application/components/application-timeline";
-import { InterviewScheduler } from "@/features/application/components/interview-scheduler";
 import { STATUS_META } from "@/features/application/api/application.mappers";
 import type { ApplicationStatus } from "@/features/application/api/application.api";
 import { Badge } from "@/shared/components/data-display/badge";
-import { Button } from "@/shared/components/ui/button";
-import { Alert } from "@/shared/components/feedback/alert";
 import { Skeleton } from "@/shared/components/feedback/skeleton";
 import { EmptyState } from "@/shared/components/data-display/empty-state";
 
@@ -164,10 +160,10 @@ export default function ApplicationDetailPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+      <div>
         {/* Timeline */}
         <div
-          className="lg:col-span-2 p-6 rounded-lg border"
+          className="p-6 rounded-lg border"
           style={{ background: "var(--color-card)", borderColor: "var(--color-border)", boxShadow: "var(--shadow-sm)" }}
         >
           <h2 className="text-sm font-bold mb-4" style={{ color: "var(--color-text-primary)" }}>
@@ -175,125 +171,7 @@ export default function ApplicationDetailPage() {
           </h2>
           <ApplicationTimeline entries={timeline} loading={timelineLoading} />
         </div>
-
-        {/* Sidebar */}
-        <div className="space-y-6">
-          <InterviewScheduler status={application.status} />
-          <AddContactPerson applicationId={application.id} />
-        </div>
       </div>
-    </div>
-  );
-}
-
-/**
- * Add a contact person to the application (POST /applications/{id}/contact-person).
- * There is no GET for contacts, so this confirms the add without listing them.
- */
-function AddContactPerson({ applicationId }: { applicationId: string }) {
-  const addContact = useAddContactPerson(applicationId);
-  const [open, setOpen] = useState(false);
-  const [name, setName] = useState("");
-  const [title, setTitle] = useState("");
-  const [email, setEmail] = useState("");
-
-  if (addContact.isSuccess) {
-    return (
-      <div
-        className="p-5 rounded-lg border"
-        style={{ background: "var(--color-card)", borderColor: "var(--color-border)", boxShadow: "var(--shadow-sm)" }}
-      >
-        <div className="flex items-center gap-2 text-sm font-semibold" style={{ color: "var(--color-success-600)" }}>
-          <Check size={16} /> Contact added
-        </div>
-        <button
-          onClick={() => {
-            addContact.reset();
-            setName("");
-            setTitle("");
-            setEmail("");
-            setOpen(true);
-          }}
-          className="text-xs font-semibold mt-2 hover:underline"
-          style={{ color: "var(--color-primary-600)" }}
-        >
-          Add another
-        </button>
-      </div>
-    );
-  }
-
-  return (
-    <div
-      className="p-5 rounded-lg border"
-      style={{ background: "var(--color-card)", borderColor: "var(--color-border)", boxShadow: "var(--shadow-sm)" }}
-    >
-      <div className="flex items-center gap-2 mb-3">
-        <UserPlus size={16} style={{ color: "var(--color-primary-600)" }} />
-        <h3 className="text-sm font-bold" style={{ color: "var(--color-text-primary)" }}>
-          Contact person
-        </h3>
-      </div>
-
-      {!open ? (
-        <button
-          onClick={() => setOpen(true)}
-          className="text-xs font-semibold hover:underline"
-          style={{ color: "var(--color-primary-600)" }}
-        >
-          + Add a recruiter or hiring manager
-        </button>
-      ) : (
-        <form
-          className="space-y-2.5"
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (name.trim().length === 0) return;
-            addContact.mutate({
-              name: name.trim(),
-              title: title.trim() || undefined,
-              email: email.trim() || undefined,
-            });
-          }}
-        >
-          <input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Name *"
-            required
-            className="w-full text-sm rounded-md border px-3 py-2 outline-none focus:ring-2 focus:ring-primary-500"
-            style={{ borderColor: "var(--color-border)", background: "var(--color-bg)", color: "var(--color-text-primary)" }}
-          />
-          <input
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Title (e.g. Recruiter)"
-            className="w-full text-sm rounded-md border px-3 py-2 outline-none focus:ring-2 focus:ring-primary-500"
-            style={{ borderColor: "var(--color-border)", background: "var(--color-bg)", color: "var(--color-text-primary)" }}
-          />
-          <input
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            type="email"
-            placeholder="Email"
-            className="w-full text-sm rounded-md border px-3 py-2 outline-none focus:ring-2 focus:ring-primary-500"
-            style={{ borderColor: "var(--color-border)", background: "var(--color-bg)", color: "var(--color-text-primary)" }}
-          />
-          {addContact.isError && (
-            <Alert variant="error">
-              {addContact.error instanceof Error ? addContact.error.message : "Could not add contact."}
-            </Alert>
-          )}
-          <div className="flex gap-2">
-            <Button type="submit" loading={addContact.isPending} loadingText="Saving…" className="text-xs py-2 px-4">
-              Save
-            </Button>
-            <Button type="button" variant="ghost" className="text-xs py-2 px-4" onClick={() => setOpen(false)}>
-              Cancel
-            </Button>
-          </div>
-        </form>
-      )}
     </div>
   );
 }

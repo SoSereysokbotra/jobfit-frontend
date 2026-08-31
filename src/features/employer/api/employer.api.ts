@@ -101,6 +101,19 @@ export interface EmployerApplicationDto {
    * cannot tell a first message from a fifth, which is why later ones went unnoticed.
    */
   unreadMessages: number;
+  /**
+   * The CV the candidate actually applied with — metadata only. NULL when they have since
+   * deleted it, which is why the download button has to be conditional. The file itself
+   * comes from `applicationResume(id)`, which mints a short-lived signed URL per request.
+   */
+  resume: { id: string; fileName: string; fileType: string; fileSize: number } | null;
+  coverLetter: string | null;
+}
+
+/** A signed, time-limited link to one candidate's CV. Minted per request; never cached. */
+export interface ResumeDownloadDto {
+  url: string;
+  expiresAt: string;
 }
 
 export interface CreateJobInput {
@@ -171,6 +184,14 @@ export const employerApi = {
     apiClient.get<EmployerApplicationDto[]>("/employer/applications", {
       query: { ...params },
     }),
+  /**
+   * GET /employer/applications/:id/resume — a signed URL for the CV this candidate
+   * applied with. Access is a checked relationship (an application linking the candidate
+   * to a job at the employer's company), never the EMPLOYER role on its own. The URL
+   * expires, so fetch it at click time rather than rendering it into the page.
+   */
+  applicationResume: (id: string) =>
+    apiClient.get<ResumeDownloadDto>(`/employer/applications/${id}/resume`),
   updateApplicationStatus: (id: string, newStatus: ApplicationStatus, notes?: string) =>
     apiClient.patch<{ id: string; status: ApplicationStatus; previousStatus: ApplicationStatus }>(
       `/employer/applications/${id}/status`,
@@ -182,34 +203,4 @@ export const employerApi = {
       { notes },
     ),
 
-  // ── Job ingestion (FR-JOBS-001) ──
-  ingestThemuse: (pages = 1) =>
-    apiClient.post<IngestionResult>(`/employer/ingest/themuse?pages=${pages}`),
-  /** Externally-ingested jobs (most-recently-seen first). */
-  importedJobs: () => apiClient.get<ImportedJob[]>("/employer/ingest/jobs"),
 };
-
-/** Summary returned by a job-ingestion run. */
-export interface IngestionResult {
-  source: string;
-  fetched: number;
-  created: number;
-  updated: number;
-  skipped: number;
-  errors: string[];
-  ranAt: string;
-}
-
-/** A stored, externally-ingested job. */
-export interface ImportedJob {
-  id: string;
-  title: string;
-  companyName: string;
-  location: string | null;
-  remoteType: string;
-  source: string;
-  externalId: string;
-  externalUrl: string | null;
-  createdAt: string;
-  lastSeenAt: string | null;
-}

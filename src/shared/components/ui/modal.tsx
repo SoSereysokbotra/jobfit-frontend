@@ -13,10 +13,22 @@ interface ModalProps {
   children: React.ReactNode;
   /** Action buttons rendered right-aligned at the bottom. */
   footer?: React.ReactNode;
+  /**
+   * Panel width. "md" is the default confirmation/form size; "lg" and "xl" exist for
+   * content that has to be read rather than confirmed — a document preview at "md" is
+   * too narrow to be legible.
+   */
+  size?: "md" | "lg" | "xl";
 }
 
+const PANEL_WIDTH: Record<"md" | "lg" | "xl", string> = {
+  md: "max-w-md",
+  lg: "max-w-3xl",
+  xl: "max-w-5xl",
+};
+
 /** Centered confirmation/form modal (ui-reference §16): scrim + rounded-lg panel. */
-export function Modal({ open, onClose, title, subtitle, children, footer }: ModalProps) {
+export function Modal({ open, onClose, title, subtitle, children, footer, size = "md" }: ModalProps) {
   const [mounted, setMounted] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
   const previousActiveElement = useRef<HTMLElement | null>(null);
@@ -110,7 +122,7 @@ export function Modal({ open, onClose, title, subtitle, children, footer }: Moda
         tabIndex={-1}
         aria-modal="true"
         aria-label={title}
-        className="relative w-full max-w-md max-h-[calc(100dvh-2rem)] flex flex-col rounded-xl border animate-slide-up outline-none overflow-hidden"
+        className={`relative w-full ${PANEL_WIDTH[size]} max-h-[calc(100dvh-2rem)] flex flex-col rounded-xl border animate-slide-up outline-none overflow-hidden`}
         style={{
           background: "var(--color-card)",
           borderColor: "var(--color-border)",

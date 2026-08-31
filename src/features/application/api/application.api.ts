@@ -10,8 +10,10 @@
  *   - `GET /applications/{id}/timeline` returns raw entries (no envelope fields),
  *     each `{ id, status, eventType, description?, eventDate }`.
  *
- * TODO(backend): there is no interview-scheduling endpoint. InterviewScheduler is
- * presentational only (INTEGRATION_PLAN.md Phase 10).
+ * NOTE: there is no interview-scheduling endpoint (INTEGRATION_PLAN.md Phase 10). The
+ * placeholder InterviewScheduler panel that stood in for one was removed from the
+ * application detail page on 2026-08-31 — it persisted nothing and only announced its
+ * own absence to the candidate.
  */
 
 import { apiClient } from "@/lib/api/client";

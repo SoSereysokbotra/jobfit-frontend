@@ -154,4 +154,38 @@ export const adminApi = {
   // ── Audit ──
   auditLogs: (params: { adminId?: string; actionType?: string } = {}) =>
     apiClient.get<AuditLog[]>("/admin/audit-logs", { query: { ...params } }),
+
+  // ── Job ingestion (FR-JOBS-001) ──
+  // Moved here from the employer portal: a scrape creates companies and jobs the whole
+  // platform then sees, and the listing is not company-scoped, so an employer was shown
+  // other companies' postings inside their own hiring portal.
+  ingestThemuse: (pages = 1) =>
+    apiClient.post<IngestionResult>(`/admin/ingest/themuse?pages=${pages}`),
+  /** Externally-ingested jobs (most-recently-seen first). */
+  importedJobs: () => apiClient.get<ImportedJob[]>("/admin/ingest/jobs"),
 };
+
+/** Summary returned by a job-ingestion run. */
+export interface IngestionResult {
+  source: string;
+  fetched: number;
+  created: number;
+  updated: number;
+  skipped: number;
+  errors: string[];
+  ranAt: string;
+}
+
+/** A stored, externally-ingested job. */
+export interface ImportedJob {
+  id: string;
+  title: string;
+  companyName: string;
+  location: string | null;
+  remoteType: string;
+  source: string;
+  externalId: string;
+  externalUrl: string | null;
+  createdAt: string;
+  lastSeenAt: string | null;
+}

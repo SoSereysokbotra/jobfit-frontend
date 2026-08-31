@@ -77,7 +77,6 @@ export interface JobDto {
 /** Query params accepted by `GET /jobs` (SearchJobQueryDto). */
 export interface SearchJobsParams {
   q?: string;
-  status?: "DRAFT" | "PUBLISHED" | "CLOSED";
   remoteType?: string;
   location?: string;
   skillIds?: string[];
@@ -97,7 +96,11 @@ export const jobApi = {
   search: (params: SearchJobsParams = {}) =>
     apiClient.get<JobDto[]>("/jobs", {
       skipAuth: true,
-      query: { status: "PUBLISHED", limit: 100, ...params },
+      // No `status` here. Public browse is PUBLISHED-only server-side and the parameter
+      // was removed from the API contract, because accepting it meant `?status=DRAFT`
+      // listed every unpublished posting on the platform to anyone. Sending it now is a
+      // 400 (forbidNonWhitelisted), which took the seeker job list down entirely.
+      query: { limit: 100, ...params },
     }),
 
   /** GET /jobs/{id} — public. */

@@ -119,3 +119,29 @@ export function useAuditLogs(params: { adminId?: string; actionType?: string } =
     queryFn: () => adminApi.auditLogs(params),
   });
 }
+
+// ── Job ingestion (FR-JOBS-001) ──────────────────────────────────────────────
+// Lived under the employer portal until it moved here: triggering a scrape creates
+// companies and jobs for the whole platform, and the listing has no company scope.
+
+/** Trigger a TheMuse ingestion run; the mutation resolves to the run summary. */
+export function useIngestJobs() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (pages: number) => adminApi.ingestThemuse(pages),
+    onSuccess: () => {
+      // Ingested jobs join the shared pool, so the public board is stale too.
+      qc.invalidateQueries({ queryKey: qk.jobs.all });
+      qc.invalidateQueries({ queryKey: qk.admin.importedJobs() });
+    },
+  });
+}
+
+/** The externally-ingested jobs, newest-seen first. */
+export function useImportedJobs() {
+  return useQuery({
+    queryKey: qk.admin.importedJobs(),
+    queryFn: () => adminApi.importedJobs(),
+    staleTime: 30_000,
+  });
+}

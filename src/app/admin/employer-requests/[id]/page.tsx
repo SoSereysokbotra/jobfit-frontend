@@ -340,8 +340,13 @@ function ApproveDialog({
               }}
             />
           </div>
+          {/* This used to read "They will only be able to claim this company at first
+              login." That stopped being true when activation started creating the
+              EmployerProfile itself — there is no claim step for the employer any more,
+              and the choice made here is the one they get. */}
           <p className="text-xs mt-1.5" style={{ color: "var(--color-text-tertiary)" }}>
-            They will only be able to claim this company at first login.
+            Their account is linked to this company when they activate. They cannot change
+            it themselves.
           </p>
         </div>
 

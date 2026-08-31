@@ -2,7 +2,7 @@
 
 import React from "react";
 import { usePathname } from "next/navigation";
-import { Briefcase, Inbox, BarChart3, DownloadCloud, Loader2, Settings } from "lucide-react";
+import { Briefcase, Inbox, BarChart3, Loader2, Settings } from "lucide-react";
 import { DashboardShell } from "@/shared/components/layout/dashboard-shell";
 import { SidebarMenuGroup } from "@/shared/components/layout/sidebar";
 import { useRequireAuth, displayName } from "@/features/auth/hooks/use-session";
@@ -19,7 +19,6 @@ const EMPLOYER_MENU_GROUPS: SidebarMenuGroup[] = [
     group: "RECRUITING",
     items: [
       { href: "/employer/jobs", label: "Jobs", icon: <Briefcase size={18} /> },
-      { href: "/employer/imported-jobs", label: "Imported Jobs", icon: <DownloadCloud size={18} /> },
       { href: "/employer/applications", label: "Applications", icon: <Inbox size={18} /> },
       { href: "/employer/settings", label: "Settings", icon: <Settings size={18} /> },
     ]

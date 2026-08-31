@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { LayoutDashboard, Users, Activity, Mail, Loader2, Building2, Briefcase, ClipboardCheck } from "lucide-react";
+import { LayoutDashboard, Users, Activity, Mail, Loader2, Building2, Briefcase, ClipboardCheck, DownloadCloud } from "lucide-react";
 import { DashboardShell } from "@/shared/components/layout/dashboard-shell";
 import { SidebarMenuGroup } from "@/shared/components/layout/sidebar";
 import { useRequireAuth, displayName } from "@/features/auth/hooks/use-session";
@@ -22,6 +22,9 @@ const ADMIN_MENU_GROUPS: SidebarMenuGroup[] = [
       { href: "/admin/employer-requests", label: "Employer Requests", icon: <ClipboardCheck size={18} /> },
       { href: "/admin/companies", label: "Companies", icon: <Building2 size={18} /> },
       { href: "/admin/jobs", label: "Jobs", icon: <Briefcase size={18} /> },
+      // Ingestion is platform content management, not an employer feature — it creates
+      // companies and jobs every seeker sees. Moved off the employer portal 2026-08-31.
+      { href: "/admin/imported-jobs", label: "Imported Jobs", icon: <DownloadCloud size={18} /> },
       { href: "/admin/system", label: "System Health", icon: <Activity size={18} /> },
       { href: "/admin/email", label: "Email Tracking", icon: <Mail size={18} /> },
     ]
