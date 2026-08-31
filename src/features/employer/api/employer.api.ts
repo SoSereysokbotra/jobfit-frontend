@@ -159,6 +159,10 @@ export const employerApi = {
     apiClient.patch<EmployerJobDto>(`/employer/jobs/${jobId}`, input),
   publishJob: (jobId: string) =>
     apiClient.post<EmployerJobDto>(`/employer/jobs/${jobId}/publish`),
+  // Takes a published posting down. Not reversible from the UI — reposting is not built
+  // on the backend yet, so the confirm copy has to say so.
+  closeJob: (jobId: string) =>
+    apiClient.post<EmployerJobDto>(`/employer/jobs/${jobId}/close`),
   jobAnalytics: (jobId: string) =>
     apiClient.get<JobAnalyticsDto>(`/employer/jobs/${jobId}/analytics`),
 

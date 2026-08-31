@@ -13,6 +13,7 @@ import {
   useJobAnalytics,
   useEmployerApplications,
   usePublishJob,
+  useCloseJob,
 } from "@/features/employer/hooks/use-employer";
 
 export default function EmployerJobDetailPage() {
@@ -22,6 +23,7 @@ export default function EmployerJobDetailPage() {
   const { data: analytics } = useJobAnalytics(params.jobId);
   const { data: applicants = [] } = useEmployerApplications(params.jobId);
   const publish = usePublishJob();
+  const close = useCloseJob();
 
   if (isLoading) {
     return (
@@ -45,14 +47,20 @@ export default function EmployerJobDetailPage() {
 
   const appCount = analytics?.applicationsCount ?? applicants.length;
   const bands = analytics?.candidateBands ?? null;
+  // `views` is a declared placeholder on the API — JobAnalyticsResponseDto hardcodes 0
+  // and nothing writes it, because no view tracking exists yet. Rendering "0 views" and
+  // "0% apply rate" states as fact that nobody looked at the posting, which is not what
+  // the API said; it said it does not know. Both read "—" until tracking is built, the
+  // same way Strong Matches renders an absent value.
   const views = analytics?.views ?? 0;
-  const applyRate = views ? ((appCount / views) * 100).toFixed(1) : "0";
+  const hasViewTracking = views > 0;
+  const applyRate = hasViewTracking ? `${((appCount / views) * 100).toFixed(1)}%` : "—";
   const recent = applicants.slice(0, 3);
 
   const tiles = [
-    { label: "Views", value: `${views}`, icon: <Eye size={18} />, accent: "bg-info-50 text-info-600" },
+    { label: "Views", value: hasViewTracking ? `${views}` : "—", icon: <Eye size={18} />, accent: "bg-info-50 text-info-600" },
     { label: "Applications", value: `${appCount}`, icon: <Users size={18} />, accent: "bg-primary-50 text-primary-600" },
-    { label: "Apply Rate", value: `${applyRate}%`, icon: <Target size={18} />, accent: "bg-success-50 text-success-600" },
+    { label: "Apply Rate", value: applyRate, icon: <Target size={18} />, accent: "bg-success-50 text-success-600" },
     // Was "Avg Match", reading an average the API could never compute — it rendered "—"
     // on every load. A count of strong candidates is both real and what an employer
     // actually wants; the score behind it is evidenced for ordering, not magnitude.
@@ -80,16 +88,38 @@ export default function EmployerJobDetailPage() {
             <span>Posted {job.postedAt}</span>
           </div>
         </div>
-        {job.status === "Draft" && (
-          <Button
-            variant="primary"
-            loading={publish.isPending}
-            loadingText="Publishing…"
-            onClick={() => publish.mutate(job.id)}
-          >
-            Publish Job
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          {job.status === "Draft" && (
+            <Button
+              variant="primary"
+              loading={publish.isPending}
+              loadingText="Publishing…"
+              onClick={() => publish.mutate(job.id)}
+            >
+              Publish Job
+            </Button>
+          )}
+          {/* Closing takes the posting down for good: reposting is not built on the
+              backend yet, so this cannot be undone from here. Hence the confirm. */}
+          {job.status === "Published" && (
+            <Button
+              variant="secondary"
+              loading={close.isPending}
+              loadingText="Closing…"
+              onClick={() => {
+                if (
+                  window.confirm(
+                    `Close "${job.title}"? It stops appearing in candidate search and stops accepting applications. Applications already received stay in your pipeline. This cannot be undone.`,
+                  )
+                ) {
+                  close.mutate(job.id);
+                }
+              }}
+            >
+              Close Job
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Analytics tiles */}

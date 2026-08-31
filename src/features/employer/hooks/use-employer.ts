@@ -65,6 +65,14 @@ export function usePublishJob() {
   });
 }
 
+export function useCloseJob() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (jobId: string) => employerApi.closeJob(jobId),
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk.employer.jobs() }),
+  });
+}
+
 export function useJobAnalytics(jobId: string | undefined) {
   return useQuery({
     queryKey: qk.employer.jobAnalytics(jobId ?? ""),
