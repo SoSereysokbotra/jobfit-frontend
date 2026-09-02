@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useCallback } from "react";
-import { Upload, X, Trash2, Check, AlertCircle, Camera, Image as ImageIcon } from "lucide-react";
+import { Upload, Trash2, Check, AlertCircle, Camera } from "lucide-react";
 import { Modal } from "@/shared/components/ui/modal";
 import { Button } from "@/shared/components/ui/button";
 import { toast } from "@/stores/toast-store";
@@ -79,7 +79,9 @@ export function AvatarUploadModal({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  // Only ever written (reset/select/clear); nothing reads it, so the value binding is
+  // omitted rather than kept as an unused variable.
+  const [, setSelectedFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [isRemoving, setIsRemoving] = useState(false);
