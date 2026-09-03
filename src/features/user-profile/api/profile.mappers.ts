@@ -74,19 +74,36 @@ export function formatLocation(location: LocationDto | null | undefined): string
 }
 
 /**
- * Parse a single free-text location field into a LocationDto.
+ * `parseLocationInput` used to live here and was DELETED, not fixed, once the pickers
+ * stopped needing it. It split a free-text location on commas and treated the last part
+ * as the country, which wrote the US state code "CA" into the country column — and "CA"
+ * is also Canada's ISO code, which the backend's location scorer documents as a measured
+ * mis-match against every job in Cambodia. It also returned undefined for a single part,
+ * so "Phnom Penh" silently saved no location at all.
  *
- * The onboarding step collects one "City, Country" input, but LocationDto
- * requires city AND country — so anything less resolves to undefined and the
- * location is simply omitted rather than sent and rejected with a 400.
- *   "Phnom Penh, Cambodia"        -> { city, country }
- *   "San Francisco, CA, USA"      -> { city, state, country }
+ * Inferring a country from a city string is the bug. Use `locationFrom` with a country
+ * the user actually chose.
  */
-export function parseLocationInput(text: string): LocationDto | undefined {
-  const parts = text.split(",").map((p) => p.trim()).filter(Boolean);
-  if (parts.length < 2) return undefined;
-  if (parts.length === 2) return { city: parts[0], country: parts[1] };
-  return { city: parts[0], state: parts.slice(1, -1).join(", "), country: parts[parts.length - 1] };
+
+/**
+ * Build a LocationDto from a city (free text or picked) plus an explicitly chosen
+ * country. This is the path the pickers use: the country is never inferred from the
+ * city string, so a state code can never land in the country column.
+ */
+export function locationFrom(
+  city: string,
+  countryName: string,
+  state?: string,
+): LocationDto | undefined {
+  const trimmedCity = city.trim();
+  const trimmedCountry = countryName.trim();
+  if (!trimmedCity || !trimmedCountry) return undefined;
+  const trimmedState = state?.trim();
+  return {
+    city: trimmedCity,
+    country: trimmedCountry,
+    ...(trimmedState ? { state: trimmedState } : {}),
+  };
 }
 
 /** ISO -> the `yyyy-MM-dd` that <input type="date"> requires. */

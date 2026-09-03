@@ -16,10 +16,8 @@ import {
   Clock,
   Wifi,
   BarChart2,
-  Sparkles,
   Info,
   Check,
-  Search,
   HelpCircle,
   Zap,
 } from "lucide-react";
@@ -28,7 +26,8 @@ import { useParsingStatus, useParsedData } from "@/features/resume/hooks/use-res
 import { validateResumeFile, RESUME_ACCEPT_ATTR, type ParsedResumeDataDto } from "@/features/resume/api/resume.api";
 import { useSession, displayName } from "@/features/auth/hooks/use-session";
 import { useCreateProfile, useUpdatePreferences, useProfile } from "@/features/user-profile/hooks/use-profile";
-import { parseLocationInput } from "@/features/user-profile/api/profile.mappers";
+import { locationFrom } from "@/features/user-profile/api/profile.mappers";
+import { locationApi, type CityDto, type CountryDto } from "@/features/location/api/location.api";
 import type { EmploymentType, RemoteType } from "@/features/user-profile/api/profile.api";
 import { ApiError } from "@/lib/api/client";
 import { Alert } from "@/shared/components/feedback/alert";
@@ -109,53 +108,17 @@ const SALARY_PRESETS = [
   { id: "custom", label: "Custom", min: null, max: null },
 ] as const;
 
-function getMarketSalaryInsight(jobTitle: string, locations: string[]): { title: string; min: number; max: number; locationText: string } {
-  const titleLower = (jobTitle || "").toLowerCase().trim();
-  const locationText = locations.length > 0 ? `in ${locations[0]}` : "in your area";
-
-  let min = 95;
-  let max = 185;
-  let title = jobTitle.trim() || "Software Engineers";
-
-  if (!titleLower) {
-    title = "Software Engineers";
-    min = 95;
-    max = 185;
-  } else if (titleLower.includes("executive") || titleLower.includes("director") || titleLower.includes("vp") || titleLower.includes("lead")) {
-    min = 180;
-    max = 300;
-  } else if (titleLower.includes("senior") || titleLower.includes("staff") || titleLower.includes("principal")) {
-    min = 150;
-    max = 240;
-  } else if (titleLower.includes("data scientist") || titleLower.includes("machine learning") || titleLower.includes("ai")) {
-    min = 130;
-    max = 210;
-  } else if (titleLower.includes("product manager")) {
-    min = 110;
-    max = 190;
-  } else if (titleLower.includes("designer") || titleLower.includes("ux") || titleLower.includes("ui")) {
-    min = 85;
-    max = 155;
-  } else if (titleLower.includes("data analyst") || titleLower.includes("analyst")) {
-    min = 75;
-    max = 130;
-  } else if (titleLower.includes("marketing") || titleLower.includes("sales")) {
-    min = 70;
-    max = 140;
-  } else if (titleLower.includes("software") || titleLower.includes("developer") || titleLower.includes("engineer") || titleLower.includes("frontend") || titleLower.includes("backend")) {
-    min = 95;
-    max = 185;
-  } else {
-    min = 80;
-    max = 160;
-  }
-
-  return { title, min, max, locationText };
-}
-
 /* ─────────────────────────── CONSTANTS ─────────────────────── */
 const TOTAL_STEPS = 3;
-const LOCATION_OPTIONS = ["San Francisco, CA", "New York, NY", "Austin, TX", "Seattle, WA", "Los Angeles, CA", "Chicago, IL", "Boston, MA", "Remote"];
+// LOCATION_OPTIONS is gone. It held seven US cities plus "Remote", in a REQUIRED field,
+// which made a Cambodian address literally unenterable — and "San Francisco, CA" saved
+// the US state code "CA" into the country column. Countries and cities now come from
+// GET /locations/*, the same table the match scorer resolves against, with free text
+// still accepted because the dataset stops at towns of ~15,000 people.
+//
+// "Remote" was also in that list and was NOT a location: it has no comma, so
+// parseLocationInput returned undefined and the profile silently saved nothing. Remote
+// is a work preference and is captured by REMOTE_OPTIONS below, where it belongs.
 const INDUSTRY_OPTIONS = ["Technology", "Finance", "Healthcare", "Education", "E-Commerce", "Media", "Consulting", "Logistics", "Government", "Non-profit"];
 const EMPLOYMENT_TYPES = ["Full-time", "Part-time", "Contract", "Freelance"];
 const REMOTE_OPTIONS = ["On-site", "Hybrid", "Fully Remote", "No preference"];
@@ -805,6 +768,11 @@ function ProfileSetupStep({
   const [locations, setLocations] = useState<string[]>([]);
   const [locationSearch, setLocationSearch] = useState("");
   const [showLocationDropdown, setShowLocationDropdown] = useState(false);
+  // The chosen country scopes the city search AND is what gets saved, so a state code
+  // can never be mistaken for a country.
+  const [countries, setCountries] = useState<CountryDto[]>([]);
+  const [countryCode, setCountryCode] = useState("");
+  const [citySuggestions, setCitySuggestions] = useState<CityDto[]>([]);
   const [salaryMin, setSalaryMin] = useState<number | string>(100);
   const [salaryMax, setSalaryMax] = useState<number | string>(200);
   const [isSalaryNegotiable, setIsSalaryNegotiable] = useState(false);
@@ -896,6 +864,48 @@ function ProfileSetupStep({
     }
   }, [parsedResumeData]);
 
+  // Countries come from the backend's place table, so every option offered is one whose
+  // cities can actually be resolved when a job is scored.
+  useEffect(() => {
+    let active = true;
+    void locationApi
+      .countries()
+      .then((list) => {
+        if (active) setCountries(list);
+      })
+      .catch(() => {
+        // Non-fatal: the city field still accepts free text, so a lookup outage
+        // degrades the picker rather than blocking a required field.
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  // City suggestions for what has been typed, scoped to the chosen country. Debounced
+  // so a keystroke does not become a request.
+  useEffect(() => {
+    if (!countryCode) {
+      setCitySuggestions([]);
+      return;
+    }
+    let active = true;
+    const timer = setTimeout(() => {
+      void locationApi
+        .cities({ country: countryCode, q: locationSearch.trim() || undefined, limit: 8 })
+        .then((list) => {
+          if (active) setCitySuggestions(list);
+        })
+        .catch(() => {
+          if (active) setCitySuggestions([]);
+        });
+    }, 200);
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [countryCode, locationSearch]);
+
   // Click outside listener for dropdowns
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -917,10 +927,19 @@ function ProfileSetupStep({
     setArr(arr.includes(item) ? arr.filter((i) => i !== item) : [...arr, item]);
   };
 
-  const handleLocationSelect = (loc: string) => {
-    if (!locations.includes(loc)) {
-      setLocations([...locations, loc]);
-    }
+  /** The country's display name, used to build the chip and what gets saved. */
+  const countryName = countries.find((c) => c.code === countryCode)?.name ?? "";
+
+  /**
+   * Add a location chip. ALWAYS "City, Country" — the country comes from the selector,
+   * never from parsing the city string, which is what previously wrote a US state code
+   * into the country column.
+   */
+  const addLocation = (city: string) => {
+    const trimmed = city.trim();
+    if (!trimmed || !countryName) return;
+    const chip = `${trimmed}, ${countryName}`;
+    if (!locations.includes(chip)) setLocations([...locations, chip]);
     setLocationSearch("");
     setShowLocationDropdown(false);
     setLocError("");
@@ -998,7 +1017,13 @@ function ProfileSetupStep({
           firstName: safeFirst,
           lastName: safeLast,
           headline: data.jobTitle.trim() || undefined,
-          location: parseLocationInput(data.locations[0] ?? ""),
+          // Split on the FIRST comma only: the chip is built as "City, Country" from the
+          // country selector, so the country is a chosen value rather than something
+          // guessed out of the text. `locationFrom` never infers a country.
+          location: locationFrom(
+            (data.locations[0] ?? "").split(",")[0] ?? "",
+            (data.locations[0] ?? "").split(",").slice(1).join(",").trim(),
+          ),
           minSalary: minSalaryVal,
           maxSalary: maxSalaryVal,
         });
@@ -1075,8 +1100,6 @@ function ProfileSetupStep({
       completeness: "partial",
     });
   };
-
-  const marketInsight = getMarketSalaryInsight(jobTitle, locations);
 
   return (
     <div className="space-y-6">
@@ -1156,11 +1179,32 @@ function ProfileSetupStep({
           )}
         </div>
 
-        {/* Preferred Location */}
+        {/* Preferred Location — country first, then a city typeahead scoped to it.
+            The country is SELECTED, never parsed out of the city string: that is what
+            used to write the US state code "CA" into the country column. Free text is
+            still accepted, because the place dataset stops at towns of ~15,000 people
+            and a smaller one must be typeable rather than blocked. */}
         <div ref={locRef} className="relative">
           <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wider mb-1.5">
             Preferred Location(s) <span className="text-red-500">*</span>
           </label>
+
+          <select
+            value={countryCode}
+            onChange={(e) => {
+              setCountryCode(e.target.value);
+              setLocationSearch("");
+            }}
+            className="w-full mb-1.5 px-3 py-2 border border-neutral-200 rounded-md text-xs text-neutral-900 bg-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+          >
+            <option value="">Select a country…</option>
+            {countries.map((c) => (
+              <option key={c.code} value={c.code}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+
           <div className="flex flex-wrap gap-1.5 p-1.5 border border-neutral-200 rounded-md bg-white min-h-[42px] items-center">
             {locations.map((loc) => (
               <span key={loc} className="inline-flex items-center gap-1 text-xs font-bold bg-primary-100 text-primary-800 rounded px-2 py-0.5 border border-primary-200">
@@ -1173,35 +1217,54 @@ function ProfileSetupStep({
             ))}
             <input
               type="text"
-              placeholder={locations.length === 0 ? "Search cities (e.g. San Francisco)" : "Add more locations..."}
+              disabled={!countryCode}
+              placeholder={
+                !countryCode
+                  ? "Choose a country first"
+                  : locations.length === 0
+                    ? "Type your city, then press Enter"
+                    : "Add another city..."
+              }
               value={locationSearch}
               onChange={(e) => {
                 setLocationSearch(e.target.value);
                 setShowLocationDropdown(true);
               }}
               onFocus={() => setShowLocationDropdown(true)}
-              className="flex-1 bg-transparent border-0 outline-none text-xs min-w-[120px] p-0.5"
+              // Enter accepts whatever was typed. Without this the field would only
+              // admit places the dataset happens to list, which is how the old
+              // seven-city dropdown made a required field impossible to satisfy.
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  addLocation(locationSearch);
+                }
+              }}
+              className="flex-1 bg-transparent border-0 outline-none text-xs min-w-[120px] p-0.5 disabled:cursor-not-allowed"
             />
           </div>
 
           {locError && <p className="text-[11px] text-red-600 mt-1 font-semibold flex items-center gap-1"><AlertCircle className="w-3 h-3" />{locError}</p>}
 
-          {/* Location suggestions */}
-          {showLocationDropdown && (
+          {/* Suggestions from the backend place table */}
+          {showLocationDropdown && countryCode && citySuggestions.length > 0 && (
             <div className="absolute z-20 left-0 right-0 mt-1 bg-white border border-neutral-200 rounded-md shadow-lg max-h-48 overflow-y-auto">
-              {LOCATION_OPTIONS.filter(opt => opt.toLowerCase().includes(locationSearch.toLowerCase())).map((opt) => (
+              {citySuggestions.map((city) => (
                 <button
-                  key={opt}
+                  key={city.geonameId}
                   type="button"
-                  onClick={() => handleLocationSelect(opt)}
+                  onClick={() => addLocation(city.name)}
                   className="w-full text-left px-4 py-2 text-xs text-neutral-700 hover:bg-primary-50 hover:text-primary-800 transition-colors"
                 >
-                  {opt}
+                  {city.name}
+                  {city.admin1Name && <span className="text-neutral-400"> · {city.admin1Name}</span>}
                 </button>
               ))}
             </div>
           )}
-          <p className="text-[10px] text-neutral-400 mt-1">This helps us filter relevant jobs matching your regions.</p>
+          <p className="text-[10px] text-neutral-400 mt-1">
+            Not listed? Type it and press Enter — we accept any city.
+          </p>
         </div>
 
         {/* Salary Expectations */}
@@ -1342,18 +1405,6 @@ function ProfileSetupStep({
               </label>
             </div>
 
-            {/* Smart Helper Text / Market Insight */}
-            {/* <div className="p-3 bg-amber-50/80 border border-amber-200/80 rounded-md text-[11px] text-amber-900 flex items-start gap-2">
-              <Sparkles className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-              <div>
-                <span className="font-bold">Market insight:</span>{" "}
-                {marketInsight.title.endsWith("s") || marketInsight.title.toLowerCase().includes("engineer")
-                  ? marketInsight.title
-                  : `Roles like "${marketInsight.title}"`}{" "}
-                {marketInsight.locationText} typically earn{" "}
-                <span className="font-bold">${marketInsight.min}K–${marketInsight.max}K</span> per year.
-              </div>
-            </div> */}
           </div>
         </div>
 

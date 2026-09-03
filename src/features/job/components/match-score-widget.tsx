@@ -50,10 +50,16 @@ export function MatchScoreWidget({ jobId }: MatchScoreWidgetProps) {
   }
 
   const score = rawScore;
+  // NO LOCATION BAR — deliberate, and it is a DISPLAY decision only.
+  //
+  // Location is still scored and still moves the ranking (15% of the total). It is not
+  // shown because it is only measurable when the posting states a place the resolver can
+  // read: some jobs have one, many don't, and a row that appears for one job and vanishes
+  // for the next reads as the product being broken rather than as the data being uneven.
+  // The score it feeds is consistent; the row would not be.
   const bars = [
     { label: "Skills", score: data.breakdown.skills },
     { label: "Experience", score: data.breakdown.experience },
-    { label: "Location", score: data.breakdown.location },
     { label: "Salary", score: data.breakdown.salary },
   ];
   const circumference = 42 * 2 * Math.PI;
