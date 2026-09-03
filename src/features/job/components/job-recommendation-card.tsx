@@ -11,10 +11,20 @@ import { formatSalaryRange, type Job } from "@/shared/types/shared.types";
 const BREAKDOWN_LABELS: Record<string, string> = {
   skills: "Skills",
   experience: "Experience",
-  location: "Location",
   salary: "Salary",
   other: "Industry",
 };
+
+/**
+ * Sub-scores that are scored but NOT shown.
+ *
+ * `location` still counts toward the ranking (15% of the total); it is hidden because it
+ * can only be measured when the posting names a place the resolver can read. Some
+ * postings do, many don't, so the chip would appear on one card and vanish on the next —
+ * which reads as the product being inconsistent rather than the data being uneven. It is
+ * also null whenever nothing could be measured, and a null must never render as a "gap".
+ */
+const HIDDEN_SUB_SCORES = new Set(["location"]);
 
 interface JobRecommendationCardProps {
   job: Job;
@@ -43,7 +53,9 @@ export function JobRecommendationCard({
   };
 
   // Real sub-scores from the recommendations endpoint (skills/experience/location/…).
-  const breakdownEntries = Object.entries(job.matchBreakdown ?? {});
+  const breakdownEntries = Object.entries(job.matchBreakdown ?? {}).filter(
+    ([key, value]) => !HIDDEN_SUB_SCORES.has(key) && typeof value === "number",
+  );
   const strong = breakdownEntries.filter(([, v]) => v >= 70);
   const gaps = breakdownEntries.filter(([, v]) => v < 50);
   const label = (k: string) => BREAKDOWN_LABELS[k] ?? k;
