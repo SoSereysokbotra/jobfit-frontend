@@ -20,6 +20,7 @@ import {
   Check,
   HelpCircle,
   Zap,
+  Search,
 } from "lucide-react";
 import { useResumeUpload } from "@/features/resume/hooks/use-resume-upload";
 import { useParsingStatus, useParsedData } from "@/features/resume/hooks/use-resumes";
@@ -33,6 +34,7 @@ import { ApiError } from "@/lib/api/client";
 import { Alert } from "@/shared/components/feedback/alert";
 import { useMatchReadiness } from "@/features/matching/hooks/use-match-readiness";
 import { useRecommendations } from "@/features/matching/hooks/use-recommendations";
+import Select, { type StylesConfig, type SingleValue } from "react-select";
 
 /* ─────────────────────────── TYPES ─────────────────────────── */
 type Step = 1 | 2 | 3;
@@ -85,6 +87,15 @@ function toWizardParsed(d: ParsedResumeDataDto): ParsedResume {
     })),
     parsedBy: d.parsedBy,
   };
+}
+
+function getCountryFlagEmoji(code: string) {
+  if (!code || code.length !== 2) return "";
+  const codePoints = code
+    .toUpperCase()
+    .split("")
+    .map((char) => 127397 + char.charCodeAt(0));
+  return String.fromCodePoint(...codePoints);
 }
 
 interface ProfileData {
@@ -163,14 +174,14 @@ function StepIndicator({ current }: { current: Step }) {
   return (
     <div className="w-full max-w-2xl mx-auto mb-8 px-4">
       {/* Tracker headers */}
-      <div className="relative flex items-center justify-center text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-3">
+      <div className="relative flex items-center justify-center text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: "var(--color-text-tertiary)" }}>
         <span>Onboarding Progress</span>
         <span className="absolute right-0">Step {current} of 3</span>
       </div>
       {/* Tracker Visual */}
       <div className="flex items-center justify-between relative">
         {/* Background Line */}
-        <div className="absolute top-1/2 left-0 right-0 h-0.5 -translate-y-1/2 bg-neutral-200 -z-10" />
+        <div className="absolute top-1/2 left-0 right-0 h-0.5 -translate-y-1/2 -z-10" style={{ background: "var(--color-border)" }} />
         {/* Progress Line */}
         <div
           className="absolute top-1/2 left-0 h-0.5 -translate-y-1/2 bg-primary-600 transition-all duration-500 -z-10"
@@ -182,20 +193,25 @@ function StepIndicator({ current }: { current: Step }) {
           const isCompleted = current > s.num;
 
           return (
-            <div key={s.num} className="flex flex-col items-center relative bg-white px-2">
+            <div key={s.num} className="flex flex-col items-center relative px-2" style={{ background: "var(--color-card)" }}>
               <div
                 className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all duration-300 ${isCompleted
                     ? "bg-primary-600 border-primary-600 text-white"
                     : isActive
-                      ? "bg-primary-800 border-primary-800 text-white ring-4 ring-primary-100"
-                      : "bg-white border-neutral-300 text-neutral-400"
+                      ? "bg-primary-700 border-primary-600 text-white"
+                      : ""
                   }`}
+                style={(!isCompleted && !isActive) ? {
+                  background: "var(--color-surface)",
+                  borderColor: "var(--color-border)",
+                  color: "var(--color-text-tertiary)",
+                } : undefined}
               >
                 {isCompleted ? <Check className="w-4 h-4 stroke-[3]" /> : s.num}
               </div>
               <span
-                className={`absolute top-11 text-[10px] font-bold uppercase tracking-wider whitespace-nowrap transition-colors duration-300 ${isActive || isCompleted ? "text-primary-800" : "text-neutral-400"
-                  }`}
+                className="absolute top-11 text-[10px] font-bold uppercase tracking-wider whitespace-nowrap transition-colors duration-300"
+                style={{ color: isActive || isCompleted ? "var(--color-primary-500)" : "var(--color-text-tertiary)" }}
               >
                 {s.label}
               </span>
@@ -1105,8 +1121,8 @@ function ProfileSetupStep({
     <div className="space-y-6">
       <div className="flex justify-between items-start">
         <div>
-          <h2 className="text-2xl font-bold text-neutral-900 tracking-tight">Quick Profile Setup</h2>
-          <p className="text-sm text-neutral-500 mt-1">Help us find better matches for you</p>
+          <h2 className="text-2xl font-bold tracking-tight" style={{ color: "var(--color-text-primary)" }}>Quick Profile Setup</h2>
+          <p className="text-sm mt-1" style={{ color: "var(--color-text-tertiary)" }}>Help us find better matches for you</p>
         </div>
         <button
           onClick={handleSkipOptional}
@@ -1120,13 +1136,13 @@ function ProfileSetupStep({
         {/* Job Title */}
         <div ref={titleRef} className="relative">
           <div className="flex justify-between items-center mb-1.5">
-            <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wider flex items-center gap-1">
+            <label className="block text-xs font-bold uppercase tracking-wider flex items-center gap-1" style={{ color: "var(--color-text-secondary)" }}>
               Current or most recent job title <span className="text-red-500">*</span>
             </label>
             <button
               type="button"
               onClick={() => setShowWhyAsk(!showWhyAsk)}
-              className="text-[11px] font-semibold text-neutral-400 hover:text-primary-600 flex items-center gap-0.5"
+              className="text-[11px] font-semibold hover:text-primary-600 flex items-center gap-0.5" style={{ color: "var(--color-text-tertiary)" } as React.CSSProperties}
             >
               <HelpCircle className="w-3.5 h-3.5" />
               Why we ask
@@ -1141,7 +1157,7 @@ function ProfileSetupStep({
           )}
 
           <div className="relative">
-            <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none" />
+            <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: "var(--color-text-tertiary)" }} />
             <input
               type="text"
               placeholder="e.g. Senior Software Engineer"
@@ -1152,8 +1168,8 @@ function ProfileSetupStep({
                 setTitleError("");
               }}
               onFocus={() => setShowSuggestions(true)}
-              className={`block w-full pl-10 pr-4 py-2.5 border rounded-md text-sm text-neutral-900 bg-white placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 ${titleError ? "border-red-400 ring-1 ring-red-400" : "border-neutral-200"
-                }`}
+              className={`block w-full pl-10 pr-4 py-2.5 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 ${titleError ? "border-red-400 ring-1 ring-red-400" : ""}`}
+              style={{ background: "var(--color-bg)", borderColor: titleError ? undefined : "var(--color-border)", color: "var(--color-text-primary)" }}
             />
           </div>
 
@@ -1161,7 +1177,7 @@ function ProfileSetupStep({
 
           {/* Autocomplete Dropdown */}
           {showSuggestions && (
-            <div className="absolute z-20 left-0 right-0 mt-1 bg-white border border-neutral-200 rounded-md shadow-lg max-h-48 overflow-y-auto">
+            <div className="absolute z-20 left-0 right-0 mt-1 rounded-md shadow-lg max-h-48 overflow-y-auto border" style={{ background: "var(--color-card)", borderColor: "var(--color-border)", boxShadow: "var(--shadow-lg)" }}>
               {JOB_TITLE_SUGGESTIONS.filter(item => item.toLowerCase().includes(jobTitle.toLowerCase())).map((item) => (
                 <button
                   key={item}
@@ -1170,7 +1186,7 @@ function ProfileSetupStep({
                     setJobTitle(item);
                     setShowSuggestions(false);
                   }}
-                  className="w-full text-left px-4 py-2 text-xs text-neutral-700 hover:bg-primary-50 hover:text-primary-800 transition-colors"
+                  className="w-full text-left px-4 py-2 text-xs transition-colors hover:bg-[var(--color-surface-hover)]" style={{ color: "var(--color-text-primary)" } as React.CSSProperties}
                 >
                   {item}
                 </button>
@@ -1185,27 +1201,118 @@ function ProfileSetupStep({
             still accepted, because the place dataset stops at towns of ~15,000 people
             and a smaller one must be typeable rather than blocked. */}
         <div ref={locRef} className="relative">
-          <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wider mb-1.5">
+          <label className="block text-xs font-bold uppercase tracking-wider mb-1.5" style={{ color: "var(--color-text-secondary)" }}>
             Preferred Location(s) <span className="text-red-500">*</span>
           </label>
 
-          <select
-            value={countryCode}
-            onChange={(e) => {
-              setCountryCode(e.target.value);
+          {/* Country selector — react-select with design-system theming */}
+          <Select<{ value: string; label: string }>
+            instanceId="country-select"
+            placeholder="Search a country…"
+            isClearable
+            value={countryCode ? { value: countryCode, label: countries.find(c => c.code === countryCode)?.name ?? countryCode } : null}
+            onChange={(opt: SingleValue<{ value: string; label: string }>) => {
+              setCountryCode(opt?.value ?? "");
               setLocationSearch("");
             }}
-            className="w-full mb-1.5 px-3 py-2 border border-neutral-200 rounded-md text-xs text-neutral-900 bg-white focus:outline-none focus:ring-2 focus:ring-primary-500"
-          >
-            <option value="">Select a country…</option>
-            {countries.map((c) => (
-              <option key={c.code} value={c.code}>
-                {c.name}
-              </option>
-            ))}
-          </select>
+            options={countries.map(c => ({ value: c.code, label: c.name }))}
+            filterOption={(opt, input) =>
+              opt.label.toLowerCase().includes(input.toLowerCase()) ||
+              opt.value.toLowerCase().includes(input.toLowerCase())
+            }
+            formatOptionLabel={(option) => (
+              <div className="flex items-center gap-2">
+                <img
+                  src={`https://flagcdn.com/24x18/${option.value.toLowerCase()}.png`}
+                  alt=""
+                  width={20}
+                  height={15}
+                  className="rounded-[2px] object-cover shrink-0 inline-block"
+                  onError={(e) => {
+                    e.currentTarget.style.display = "none";
+                    const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+                    if (fallback) fallback.style.display = "inline";
+                  }}
+                />
+                <span style={{ display: "none" }} className="text-sm leading-none">
+                  {getCountryFlagEmoji(option.value)}
+                </span>
+                <span className="truncate">{option.label}</span>
+              </div>
+            )}
+            styles={{
+              control: (base, state) => ({
+                ...base,
+                background: "var(--color-bg)",
+                borderColor: state.isFocused ? "var(--color-primary-500)" : "var(--color-border)",
+                boxShadow: state.isFocused ? "0 0 0 2px rgba(157,78,221,0.35)" : "none",
+                borderRadius: "6px",
+                minHeight: "38px",
+                fontSize: "0.75rem",
+                cursor: "pointer",
+                marginBottom: "6px",
+                "&:hover": { borderColor: "var(--color-primary-500)" },
+              }),
+              menu: (base) => ({
+                ...base,
+                background: "var(--color-card)",
+                border: "1px solid var(--color-border)",
+                borderRadius: "8px",
+                boxShadow: "var(--shadow-lg)",
+                zIndex: 50,
+                overflow: "hidden",
+              }),
+              menuList: (base) => ({
+                ...base,
+                padding: "4px",
+                maxHeight: "220px",
+              }),
+              option: (base, state) => ({
+                ...base,
+                background: state.isSelected
+                  ? "var(--color-primary-600)"
+                  : state.isFocused
+                  ? "var(--color-surface-hover)"
+                  : "transparent",
+                color: state.isSelected ? "#fff" : "var(--color-text-primary)",
+                borderRadius: "6px",
+                fontSize: "0.75rem",
+                padding: "8px 12px",
+                cursor: "pointer",
+              }),
+              singleValue: (base) => ({
+                ...base,
+                color: "var(--color-text-primary)",
+                fontSize: "0.75rem",
+                display: "flex",
+                alignItems: "center",
+              }),
+              placeholder: (base) => ({
+                ...base,
+                color: "var(--color-text-tertiary)",
+                fontSize: "0.75rem",
+              }),
+              input: (base) => ({
+                ...base,
+                color: "var(--color-text-primary)",
+                fontSize: "0.75rem",
+              }),
+              indicatorSeparator: () => ({ display: "none" }),
+              dropdownIndicator: (base) => ({
+                ...base,
+                color: "var(--color-text-tertiary)",
+                padding: "0 8px",
+              }),
+              clearIndicator: (base) => ({
+                ...base,
+                color: "var(--color-text-tertiary)",
+                padding: "0 4px",
+                "&:hover": { color: "var(--color-error-500)" },
+              }),
+            } as StylesConfig<{ value: string; label: string }>}
+          />
 
-          <div className="flex flex-wrap gap-1.5 p-1.5 border border-neutral-200 rounded-md bg-white min-h-[42px] items-center">
+          <div className="flex flex-wrap gap-1.5 p-1.5 border rounded-md min-h-[42px] items-center" style={{ background: "var(--color-bg)", borderColor: locError ? "var(--color-error-500)" : "var(--color-border)" }}>
             {locations.map((loc) => (
               <span key={loc} className="inline-flex items-center gap-1 text-xs font-bold bg-primary-100 text-primary-800 rounded px-2 py-0.5 border border-primary-200">
                 <MapPin className="w-3 h-3 shrink-0" />
@@ -1240,7 +1347,7 @@ function ProfileSetupStep({
                   addLocation(locationSearch);
                 }
               }}
-              className="flex-1 bg-transparent border-0 outline-none text-xs min-w-[120px] p-0.5 disabled:cursor-not-allowed"
+              className="flex-1 bg-transparent border-0 outline-none text-xs min-w-[120px] p-0.5 disabled:cursor-not-allowed" style={{ color: "var(--color-text-primary)" }}
             />
           </div>
 
@@ -1248,13 +1355,13 @@ function ProfileSetupStep({
 
           {/* Suggestions from the backend place table */}
           {showLocationDropdown && countryCode && citySuggestions.length > 0 && (
-            <div className="absolute z-20 left-0 right-0 mt-1 bg-white border border-neutral-200 rounded-md shadow-lg max-h-48 overflow-y-auto">
+            <div className="absolute z-20 left-0 right-0 mt-1 rounded-md max-h-48 overflow-y-auto border" style={{ background: "var(--color-card)", borderColor: "var(--color-border)", boxShadow: "var(--shadow-lg)" }}>
               {citySuggestions.map((city) => (
                 <button
                   key={city.geonameId}
                   type="button"
                   onClick={() => addLocation(city.name)}
-                  className="w-full text-left px-4 py-2 text-xs text-neutral-700 hover:bg-primary-50 hover:text-primary-800 transition-colors"
+                  className="w-full text-left px-4 py-2 text-xs transition-colors hover:bg-[var(--color-surface-hover)]" style={{ color: "var(--color-text-primary)" } as React.CSSProperties}
                 >
                   {city.name}
                   {city.admin1Name && <span className="text-neutral-400"> · {city.admin1Name}</span>}
@@ -1271,17 +1378,17 @@ function ProfileSetupStep({
         <div>
           <div className="flex justify-between items-start mb-1.5">
             <div>
-              <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wider">
+              <label className="block text-xs font-bold uppercase tracking-wider" style={{ color: "var(--color-text-secondary)" }}>
                 Base salary expectations (USD/year)
               </label>
-              <p className="text-xs text-neutral-500 mt-0.5">
+              <p className="text-xs mt-0.5" style={{ color: "var(--color-text-tertiary)" }}>
                 Help us find opportunities that match your goals
               </p>
             </div>
             <button
               type="button"
               onClick={() => setShowSalaryWhyAsk(!showSalaryWhyAsk)}
-              className="text-[11px] font-semibold text-neutral-400 hover:text-primary-600 flex items-center gap-1 shrink-0 ml-2"
+              className="text-[11px] font-semibold hover:text-primary-600 flex items-center gap-1 shrink-0 ml-2" style={{ color: "var(--color-text-tertiary)" } as React.CSSProperties}
               title="Why we ask for salary expectations"
             >
               <HelpCircle className="w-3.5 h-3.5" />
@@ -1296,10 +1403,10 @@ function ProfileSetupStep({
             </div>
           )}
 
-          <div className="p-4 bg-neutral-50 rounded-lg border border-neutral-200 space-y-4">
+          <div className="p-4 rounded-lg border space-y-4" style={{ background: "var(--color-bg-secondary)", borderColor: "var(--color-border)" }}>
             {/* Quick select buttons */}
             <div>
-              <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+              <label className="block text-xs font-bold uppercase tracking-wider mb-2 flex items-center gap-1.5" style={{ color: "var(--color-text-secondary)" }}>
                 <Zap className="w-3.5 h-3.5 text-amber-500" />
                 Quick select (optional):
               </label>
@@ -1312,10 +1419,8 @@ function ProfileSetupStep({
                       type="button"
                       disabled={preferNotToDisclose}
                       onClick={() => handlePresetClick(preset)}
-                      className={`text-xs font-bold px-3 py-1.5 rounded-md border transition-all duration-150 ${isActive
-                          ? "bg-primary-800 border-primary-800 text-white shadow-sm"
-                          : "bg-white border-neutral-200 text-neutral-600 hover:border-neutral-300 hover:bg-neutral-50"
-                        } ${preferNotToDisclose ? "opacity-50 cursor-not-allowed" : ""}`}
+                      className={`text-xs font-bold px-3 py-1.5 rounded-md border transition-all duration-150 ${isActive ? "bg-primary-700 border-primary-600 text-white shadow-sm" : ""} ${preferNotToDisclose ? "opacity-50 cursor-not-allowed" : ""}`}
+                      style={!isActive ? { background: "var(--color-surface)", borderColor: "var(--color-border)", color: "var(--color-text-secondary)" } : undefined}
                     >
                       {preset.label}
                     </button>
@@ -1326,46 +1431,46 @@ function ProfileSetupStep({
 
             {/* Custom Range Inputs */}
             <div>
-              <label className="block text-xs font-semibold text-neutral-600 mb-1.5">
+              <label className="block text-xs font-semibold mb-1.5" style={{ color: "var(--color-text-secondary)" }}>
                 Or enter custom range:
               </label>
               <div className="flex items-center gap-3">
                 {/* Min salary input */}
                 <div className="flex-1">
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 font-semibold text-sm pointer-events-none">$</span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 font-semibold text-sm pointer-events-none" style={{ color: "var(--color-text-tertiary)" }}>$</span>
                     <input
                       type="number"
                       placeholder="100"
                       value={preferNotToDisclose ? "" : salaryMin}
                       disabled={preferNotToDisclose}
                       onChange={(e) => handleSalaryChange("min", e.target.value)}
-                      className={`block w-full pl-7 pr-8 py-2 border rounded-md text-sm text-neutral-900 bg-white font-semibold placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 ${salaryError ? "border-red-400 ring-1 ring-red-400" : "border-neutral-200"
-                        } ${preferNotToDisclose ? "bg-neutral-100 opacity-50 cursor-not-allowed" : ""}`}
+                      className={`block w-full pl-7 pr-8 py-2 border rounded-md text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 ${salaryError ? "border-red-400 ring-1 ring-red-400" : ""} ${preferNotToDisclose ? "opacity-50 cursor-not-allowed" : ""}`}
+                      style={{ background: preferNotToDisclose ? "var(--color-bg-secondary)" : "var(--color-bg)", borderColor: salaryError ? undefined : "var(--color-border)", color: "var(--color-text-primary)" }}
                     />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 font-bold text-xs pointer-events-none">K</span>
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 font-bold text-xs pointer-events-none" style={{ color: "var(--color-text-tertiary)" }}>K</span>
                   </div>
-                  <span className="block text-[11px] font-medium text-neutral-500 mt-1 pl-0.5">Min salary</span>
+                  <span className="block text-[11px] font-medium mt-1 pl-0.5" style={{ color: "var(--color-text-tertiary)" }}>Min salary</span>
                 </div>
 
-                <span className="text-neutral-400 text-base font-bold select-none mb-4">—</span>
+                <span className="text-base font-bold select-none mb-4" style={{ color: "var(--color-text-tertiary)" }}>—</span>
 
                 {/* Max salary input */}
                 <div className="flex-1">
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 font-semibold text-sm pointer-events-none">$</span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 font-semibold text-sm pointer-events-none" style={{ color: "var(--color-text-tertiary)" }}>$</span>
                     <input
                       type="number"
                       placeholder="200"
                       value={preferNotToDisclose ? "" : salaryMax}
                       disabled={preferNotToDisclose}
                       onChange={(e) => handleSalaryChange("max", e.target.value)}
-                      className={`block w-full pl-7 pr-8 py-2 border rounded-md text-sm text-neutral-900 bg-white font-semibold placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 ${salaryError ? "border-red-400 ring-1 ring-red-400" : "border-neutral-200"
-                        } ${preferNotToDisclose ? "bg-neutral-100 opacity-50 cursor-not-allowed" : ""}`}
+                      className={`block w-full pl-7 pr-8 py-2 border rounded-md text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 ${salaryError ? "border-red-400 ring-1 ring-red-400" : ""} ${preferNotToDisclose ? "opacity-50 cursor-not-allowed" : ""}`}
+                      style={{ background: preferNotToDisclose ? "var(--color-bg-secondary)" : "var(--color-bg)", borderColor: salaryError ? undefined : "var(--color-border)", color: "var(--color-text-primary)" }}
                     />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 font-bold text-xs pointer-events-none">K</span>
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 font-bold text-xs pointer-events-none" style={{ color: "var(--color-text-tertiary)" }}>K</span>
                   </div>
-                  <span className="block text-[11px] font-medium text-neutral-500 mt-1 pl-0.5">Max salary</span>
+                  <span className="block text-[11px] font-medium mt-1 pl-0.5" style={{ color: "var(--color-text-tertiary)" }}>Max salary</span>
                 </div>
               </div>
 
@@ -1378,18 +1483,29 @@ function ProfileSetupStep({
             </div>
 
             {/* Flexibility Options */}
-            <div className="pt-2 border-t border-neutral-200/70 space-y-2">
-              <label className="flex items-center gap-2 cursor-pointer select-none">
+            <div className="pt-2 border-t space-y-2.5" style={{ borderColor: "var(--color-border)" }}>
+              <label className="flex items-center gap-2.5 cursor-pointer select-none group">
                 <input
                   type="checkbox"
                   checked={isSalaryNegotiable}
                   onChange={(e) => setIsSalaryNegotiable(e.target.checked)}
-                  className="w-4 h-4 text-primary-600 rounded border-neutral-300 focus:ring-primary-500 cursor-pointer"
+                  className="sr-only"
                 />
-                <span className="text-xs font-medium text-neutral-700">Salary is negotiable</span>
+                <span
+                  className="flex items-center justify-center w-4 h-4 rounded border transition-all duration-150 shrink-0"
+                  style={{
+                    background: isSalaryNegotiable ? "var(--color-primary-600)" : "var(--color-surface)",
+                    borderColor: isSalaryNegotiable ? "var(--color-primary-600)" : "var(--color-border)",
+                  }}
+                >
+                  {isSalaryNegotiable && <Check className="w-3 h-3 text-white stroke-[3]" />}
+                </span>
+                <span className="text-xs font-medium transition-colors group-hover:text-[var(--color-primary-500)]" style={{ color: "var(--color-text-primary)" }}>
+                  Salary is negotiable
+                </span>
               </label>
 
-              <label className="flex items-center gap-2 cursor-pointer select-none">
+              <label className="flex items-center gap-2.5 cursor-pointer select-none group">
                 <input
                   type="checkbox"
                   checked={preferNotToDisclose}
@@ -1399,9 +1515,20 @@ function ProfileSetupStep({
                       setSalaryError("");
                     }
                   }}
-                  className="w-4 h-4 text-primary-600 rounded border-neutral-300 focus:ring-primary-500 cursor-pointer"
+                  className="sr-only"
                 />
-                <span className="text-xs font-medium text-neutral-700">Prefer not to disclose</span>
+                <span
+                  className="flex items-center justify-center w-4 h-4 rounded border transition-all duration-150 shrink-0"
+                  style={{
+                    background: preferNotToDisclose ? "var(--color-primary-600)" : "var(--color-surface)",
+                    borderColor: preferNotToDisclose ? "var(--color-primary-600)" : "var(--color-border)",
+                  }}
+                >
+                  {preferNotToDisclose && <Check className="w-3 h-3 text-white stroke-[3]" />}
+                </span>
+                <span className="text-xs font-medium transition-colors group-hover:text-[var(--color-primary-500)]" style={{ color: "var(--color-text-primary)" }}>
+                  Prefer not to disclose
+                </span>
               </label>
             </div>
 
@@ -1410,7 +1537,7 @@ function ProfileSetupStep({
 
         {/* Employment Preference */}
         <div>
-          <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wider mb-1.5">
+          <label className="block text-xs font-bold uppercase tracking-wider mb-1.5" style={{ color: "var(--color-text-secondary)" }}>
             Employment Type Preferences
           </label>
           <div className="flex flex-wrap gap-2">
@@ -1421,10 +1548,8 @@ function ProfileSetupStep({
                   key={type}
                   type="button"
                   onClick={() => toggleListItem(employmentTypes, setEmploymentTypes, type)}
-                  className={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-2 rounded-md border transition-all duration-150 ${selected
-                      ? "bg-primary-800 border-primary-800 text-white shadow-sm"
-                      : "bg-white border-neutral-200 text-neutral-600 hover:border-neutral-300 hover:bg-neutral-50"
-                    }`}
+                  className={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-2 rounded-md border transition-all duration-150 ${selected ? "bg-primary-700 border-primary-600 text-white shadow-sm" : ""}`}
+                  style={!selected ? { background: "var(--color-surface)", borderColor: "var(--color-border)", color: "var(--color-text-secondary)" } : undefined}
                 >
                   <Clock className="w-3.5 h-3.5" />
                   {type}
@@ -1436,7 +1561,7 @@ function ProfileSetupStep({
 
         {/* Remote preference */}
         <div>
-          <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wider mb-1.5">
+          <label className="block text-xs font-bold uppercase tracking-wider mb-1.5" style={{ color: "var(--color-text-secondary)" }}>
             Remote Work Flexibility
           </label>
           <div className="grid grid-cols-4 gap-2">
@@ -1447,10 +1572,8 @@ function ProfileSetupStep({
                   key={opt}
                   type="button"
                   onClick={() => setRemotePreference(opt)}
-                  className={`inline-flex items-center justify-center gap-1.5 text-xs font-bold px-3 py-2 rounded-md border transition-all duration-150 ${selected
-                      ? "bg-primary-800 border-primary-800 text-white shadow-sm"
-                      : "bg-white border-neutral-200 text-neutral-600 hover:border-neutral-300 hover:bg-neutral-50"
-                    }`}
+                  className={`inline-flex items-center justify-center gap-1.5 text-xs font-bold px-3 py-2 rounded-md border transition-all duration-150 ${selected ? "bg-primary-700 border-primary-600 text-white shadow-sm" : ""}`}
+                  style={!selected ? { background: "var(--color-surface)", borderColor: "var(--color-border)", color: "var(--color-text-secondary)" } : undefined}
                 >
                   <Wifi className="w-3.5 h-3.5 shrink-0" />
                   <span className="truncate">{opt}</span>
@@ -1460,29 +1583,50 @@ function ProfileSetupStep({
           </div>
         </div>
 
-        {/* Industries of interest */}
+        {/* Industries of interest — combobox-style */}
         <div ref={indRef} className="relative">
           <div className="flex justify-between items-center mb-1.5">
-            <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wider">
-              Industries of Interest <span className="text-neutral-400 font-normal normal-case">(up to 5)</span>
+            <label className="block text-xs font-bold uppercase tracking-wider" style={{ color: "var(--color-text-secondary)" }}>
+              Industries of Interest <span className="font-normal normal-case" style={{ color: "var(--color-text-tertiary)" }}>(up to 5)</span>
             </label>
-            <span className="text-[10px] font-bold text-neutral-400">
-              {industries.length} of 5 selected
+            <span className="text-[10px] font-bold" style={{ color: "var(--color-text-tertiary)" }}>
+              {industries.length} / 5
             </span>
           </div>
 
-          <div className="flex flex-wrap gap-1.5 p-1.5 border border-neutral-200 rounded-md bg-white min-h-[42px] items-center">
-            {industries.map((ind) => (
-              <span key={ind} className="inline-flex items-center gap-1 text-xs font-bold bg-neutral-100 text-neutral-800 rounded px-2 py-0.5 border border-neutral-200">
-                {ind}
-                <button type="button" onClick={() => setIndustries(industries.filter(i => i !== ind))} className="text-neutral-500 hover:text-red-500 transition-colors p-0.5">
-                  <X className="w-3 h-3" />
-                </button>
-              </span>
-            ))}
+          {/* Selected industry chips */}
+          {industries.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mb-2">
+              {industries.map((ind) => (
+                <span
+                  key={ind}
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold rounded-full px-2.5 py-1 border transition-colors"
+                  style={{ background: "var(--color-primary-100)", color: "var(--color-primary-500)", borderColor: "var(--color-primary-200)" }}
+                >
+                  {ind}
+                  <button
+                    type="button"
+                    onClick={() => setIndustries(industries.filter(i => i !== ind))}
+                    className="rounded-full hover:bg-red-500/20 transition-colors p-0.5"
+                    style={{ color: "var(--color-primary-400)" }}
+                  >
+                    <X className="w-2.5 h-2.5" />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* Search input */}
+          <div
+            className="relative flex items-center border rounded-md transition-all duration-200"
+            style={{ background: "var(--color-bg)", borderColor: showIndustryDropdown ? "var(--color-primary-500)" : "var(--color-border)",
+              boxShadow: showIndustryDropdown ? "0 0 0 2px rgba(157,78,221,0.25)" : "none" }}
+          >
+            <Search className="absolute left-3 w-3.5 h-3.5 pointer-events-none" style={{ color: "var(--color-text-tertiary)" }} />
             <input
               type="text"
-              placeholder={industries.length === 0 ? "Search industries (e.g. Finance)" : "Add industry..."}
+              placeholder={industries.length >= 5 ? "Maximum 5 industries selected" : industries.length === 0 ? "Search industries…" : "Add another industry…"}
               value={industrySearch}
               disabled={industries.length >= 5}
               onChange={(e) => {
@@ -1490,23 +1634,54 @@ function ProfileSetupStep({
                 setShowIndustryDropdown(true);
               }}
               onFocus={() => setShowIndustryDropdown(true)}
-              className="flex-1 bg-transparent border-0 outline-none text-xs min-w-[120px] p-0.5 disabled:opacity-50"
+              className="w-full bg-transparent border-0 outline-none text-xs py-2.5 pl-9 pr-3 disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ color: "var(--color-text-primary)" }}
             />
+            {industrySearch && (
+              <button
+                type="button"
+                onClick={() => { setIndustrySearch(""); setShowIndustryDropdown(false); }}
+                className="absolute right-3 p-0.5 rounded transition-colors hover:text-red-400"
+                style={{ color: "var(--color-text-tertiary)" }}
+              >
+                <X className="w-3 h-3" />
+              </button>
+            )}
           </div>
 
-          {/* Industry Suggestions */}
+          {/* Dropdown */}
           {showIndustryDropdown && industries.length < 5 && (
-            <div className="absolute z-20 left-0 right-0 mt-1 bg-white border border-neutral-200 rounded-md shadow-lg max-h-48 overflow-y-auto">
-              {INDUSTRY_OPTIONS.filter(opt => opt.toLowerCase().includes(industrySearch.toLowerCase())).map((opt) => (
-                <button
-                  key={opt}
-                  type="button"
-                  onClick={() => handleIndustrySelect(opt)}
-                  className="w-full text-left px-4 py-2 text-xs text-neutral-700 hover:bg-primary-50 hover:text-primary-800 transition-colors"
-                >
-                  {opt}
-                </button>
-              ))}
+            <div
+              className="absolute z-20 left-0 right-0 mt-1 rounded-lg border overflow-hidden"
+              style={{ background: "var(--color-card)", borderColor: "var(--color-border)", boxShadow: "var(--shadow-lg)" }}
+            >
+              {(() => {
+                const filtered = INDUSTRY_OPTIONS.filter(
+                  opt => opt.toLowerCase().includes(industrySearch.toLowerCase()) && !industries.includes(opt)
+                );
+                if (filtered.length === 0) {
+                  return (
+                    <div className="px-4 py-3 text-xs text-center" style={{ color: "var(--color-text-tertiary)" }}>
+                      No industries found
+                    </div>
+                  );
+                }
+                return (
+                  <div className="p-1 max-h-52 overflow-y-auto">
+                    {filtered.map((opt) => (
+                      <button
+                        key={opt}
+                        type="button"
+                        onClick={() => handleIndustrySelect(opt)}
+                        className="w-full flex items-center text-left px-3 py-2 text-xs rounded-md transition-colors hover:bg-[var(--color-surface-hover)]"
+                        style={{ color: "var(--color-text-primary)" } as React.CSSProperties}
+                      >
+                        {opt}
+                      </button>
+                    ))}
+                  </div>
+                );
+              })()}
             </div>
           )}
         </div>
@@ -1518,7 +1693,8 @@ function ProfileSetupStep({
           <button
             type="button"
             onClick={onBack}
-            className="flex items-center gap-1.5 px-4 py-2.5 rounded-md border border-neutral-200 text-sm font-semibold text-neutral-600 hover:bg-neutral-50 transition-colors bg-white"
+            className="flex items-center gap-1.5 px-4 py-2.5 rounded-md border text-sm font-semibold transition-colors"
+            style={{ background: "var(--color-surface)", borderColor: "var(--color-border)", color: "var(--color-text-secondary)" } as React.CSSProperties}
           >
             <ArrowLeft className="w-4 h-4" />
             Back
