@@ -12,7 +12,6 @@ const BREAKDOWN_LABELS: Record<string, string> = {
   skills: "Skills",
   experience: "Experience",
   salary: "Salary",
-  other: "Industry",
 };
 
 /**
