@@ -1,5 +1,4 @@
 import React from "react";
-import Image from "next/image";
 import { cn } from "@/shared/utils/cn";
 
 export interface MarqueeLogo {
@@ -35,13 +34,10 @@ export function LogoMarquee({
           key={`${logo.src}${ariaHidden ? "-dup" : ""}`}
           className="flex items-center gap-3 mx-8 select-none"
         >
-          <Image
+          <img
             src={logo.src}
             alt={ariaHidden ? "" : logo.label ?? ""}
-            width={40}
-            height={40}
-            className={logo.label ? "w-10 h-10 object-contain" : "h-10 w-auto object-contain"}
-            unoptimized
+            className={logo.label ? "w-10 h-10   object-contain" : "h-10 w-auto object-contain"}
           />
           {logo.label && (
             <span
