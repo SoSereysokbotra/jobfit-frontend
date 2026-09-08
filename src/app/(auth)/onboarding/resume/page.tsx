@@ -25,7 +25,13 @@ import { useResumeUpload } from "@/features/resume/hooks/use-resume-upload";
 import { useParsingStatus, useParsedData } from "@/features/resume/hooks/use-resumes";
 import { validateResumeFile, RESUME_ACCEPT_ATTR, type ParsedResumeDataDto } from "@/features/resume/api/resume.api";
 import { useSession, displayName } from "@/features/auth/hooks/use-session";
-import { useCreateProfile, useUpdatePreferences, useProfile } from "@/features/user-profile/hooks/use-profile";
+import {
+  useCreateProfile,
+  useUpdateProfile,
+  useUpdatePreferences,
+  useUpdateSalary,
+  useProfile,
+} from "@/features/user-profile/hooks/use-profile";
 import { locationFrom } from "@/features/user-profile/api/profile.mappers";
 import { locationApi, type CityDto, type CountryDto } from "@/features/location/api/location.api";
 import type { EmploymentType, RemoteType } from "@/features/user-profile/api/profile.api";
@@ -796,7 +802,9 @@ function ProfileSetupStep({
   const { user } = useSession();
   const { profile: existingProfile } = useProfile();
   const createProfile = useCreateProfile();
+  const updateProfile = useUpdateProfile();
   const updatePreferences = useUpdatePreferences();
+  const updateSalary = useUpdateSalary();
 
   const titleRef = useRef<HTMLDivElement>(null);
   const locRef = useRef<HTMLDivElement>(null);
@@ -1004,32 +1012,63 @@ function ProfileSetupStep({
     const safeFirst = firstName || user?.email?.split("@")[0] || "New";
     const safeLast = lastName || safeFirst;
 
+    const minSalaryVal = data.preferNotToDiscloseSalary || data.salaryMin === undefined
+      ? undefined
+      : data.salaryMin * 1000;
+    const maxSalaryVal = data.preferNotToDiscloseSalary || data.salaryMax === undefined
+      ? undefined
+      : data.salaryMax * 1000;
+    const headline = data.jobTitle.trim() || undefined;
+    // Split on the FIRST comma only: the chip is built as "City, Country" from the
+    // country selector, so the country is a chosen value rather than something guessed
+    // out of the text. `locationFrom` never infers a country.
+    const location = locationFrom(
+      (data.locations[0] ?? "").split(",")[0] ?? "",
+      (data.locations[0] ?? "").split(",").slice(1).join(",").trim(),
+    );
+
     if (!existingProfile) {
       try {
-        const minSalaryVal = data.preferNotToDiscloseSalary || data.salaryMin === undefined
-          ? undefined
-          : data.salaryMin * 1000;
-        const maxSalaryVal = data.preferNotToDiscloseSalary || data.salaryMax === undefined
-          ? undefined
-          : data.salaryMax * 1000;
-
         await createProfile.mutateAsync({
           firstName: safeFirst,
           lastName: safeLast,
-          headline: data.jobTitle.trim() || undefined,
-          // Split on the FIRST comma only: the chip is built as "City, Country" from the
-          // country selector, so the country is a chosen value rather than something
-          // guessed out of the text. `locationFrom` never infers a country.
-          location: locationFrom(
-            (data.locations[0] ?? "").split(",")[0] ?? "",
-            (data.locations[0] ?? "").split(",").slice(1).join(",").trim(),
-          ),
+          headline,
+          location,
           minSalary: minSalaryVal,
           maxSalary: maxSalaryVal,
         });
       } catch (error) {
         // Already created (e.g. a re-run) — treat as done and carry on.
         if (!(error instanceof ApiError && error.statusCode === 409)) throw error;
+      }
+    } else {
+      // A PROFILE ALREADY EXISTS, AND THIS BRANCH IS THE BUG FIX. Everything typed on
+      // this step used to be discarded when it did — the create call was the only writer,
+      // and `updatePreferences` below carries employment type, remote type and industries
+      // but no location, headline or salary. So a user who reached onboarding with a
+      // profile (a re-run, or a profile created by any earlier path) picked their city,
+      // saw it accepted, and then found the field empty on /profile and typed it again.
+      //
+      // Three endpoints because the backend splits them deliberately: identity+location
+      // on PATCH /profiles, salary on PATCH /profiles/:id/salary. Each is separately
+      // non-fatal — onboarding must reach the recommendations step even if one save
+      // fails, exactly as the preferences call below already assumes.
+      if (headline || location) {
+        try {
+          await updateProfile.mutateAsync({ headline, location });
+        } catch {
+          /* non-fatal: this is a re-run; /profile can still set it */
+        }
+      }
+      if (minSalaryVal !== undefined && maxSalaryVal !== undefined) {
+        try {
+          await updateSalary.mutateAsync({
+            minSalary: minSalaryVal,
+            maxSalary: maxSalaryVal,
+          });
+        } catch {
+          /* non-fatal, same reason */
+        }
       }
     }
 
