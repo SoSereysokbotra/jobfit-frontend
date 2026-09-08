@@ -8,7 +8,6 @@ import {
   CareerPreferencesForm,
   SkillsEditor,
   ExperienceList,
-  EducationList,
   ProfileAvatar,
   formValuesToInput
 } from "@/features/user-profile/components";
@@ -20,8 +19,6 @@ import {
   useUpdateSalary,
   useExperience,
   useExperienceMutations,
-  useEducation,
-  useEducationMutations,
   useSkills,
   useSkillMutations
 } from "@/features/user-profile/hooks/use-profile";
@@ -30,12 +27,11 @@ import { Skeleton } from "@/shared/components/feedback/skeleton";
 import { Alert } from "@/shared/components/feedback/alert";
 import { cn } from "@/shared/utils/cn";
 
-type TabId = "about" | "experience" | "education" | "skills" | "preferences";
+type TabId = "about" | "experience" | "skills" | "preferences";
 
 const TABS: { id: TabId; label: string }[] = [
   { id: "about", label: "About" },
   { id: "experience", label: "Experience" },
-  { id: "education", label: "Education" },
   { id: "skills", label: "Skills" },
   { id: "preferences", label: "Preferences" },
 ];
@@ -58,8 +54,6 @@ export default function ProfilePage() {
 
   const { experience, isLoading: experienceLoading } = useExperience();
   const experienceMutations = useExperienceMutations();
-  const { education, isLoading: educationLoading } = useEducation();
-  const educationMutations = useEducationMutations();
   const { skills, catalogue, isLoading: skillsLoading } = useSkills();
   const skillMutations = useSkillMutations();
 
@@ -226,24 +220,6 @@ export default function ProfilePage() {
               experienceMutations.remove.isPending
             }
             error={experienceMutations.add.error ?? experienceMutations.update.error}
-          />
-        </SectionCard>
-      )}
-
-      {tab === "education" && (
-        <SectionCard>
-          <EducationList
-            education={education}
-            isLoading={educationLoading}
-            onAdd={(input) => educationMutations.add.mutateAsync(input)}
-            onUpdate={(eduId, input) => educationMutations.update.mutateAsync({ eduId, input })}
-            onRemove={(eduId) => educationMutations.remove.mutateAsync(eduId)}
-            isMutating={
-              educationMutations.add.isPending ||
-              educationMutations.update.isPending ||
-              educationMutations.remove.isPending
-            }
-            error={educationMutations.add.error ?? educationMutations.update.error}
           />
         </SectionCard>
       )}
