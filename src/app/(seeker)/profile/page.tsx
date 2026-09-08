@@ -25,9 +25,7 @@ import {
   useSkills,
   useSkillMutations
 } from "@/features/user-profile/hooks/use-profile";
-import { profileCompleteness } from "@/features/user-profile/api/profile.mappers";
 import { useSession, displayName } from "@/features/auth/hooks/use-session";
-import { Badge } from "@/shared/components/ui/badge";
 import { Skeleton } from "@/shared/components/feedback/skeleton";
 import { Alert } from "@/shared/components/feedback/alert";
 import { cn } from "@/shared/utils/cn";
@@ -81,7 +79,6 @@ export default function ProfilePage() {
     );
   }
 
-  const completeness = profileCompleteness(profile);
   const { initials } = displayName(user);
 
   // No profile yet: the page doubles as the create form rather than showing an
@@ -173,26 +170,6 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          {/* Completeness meter — derived client-side; the backend has no such field. */}
-          <div className="w-full sm:w-40 shrink-0 pt-3 sm:pt-0 border-t sm:border-t-0" style={{ borderColor: "var(--color-border)" }}>
-            <div className="flex items-center justify-between mb-1.5">
-              <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--color-text-tertiary)" }}>
-                Complete
-              </span>
-              <span className="text-xs font-bold" style={{ color: "var(--color-primary-500)" }}>{completeness}%</span>
-            </div>
-            <div className="h-2 w-full rounded-full overflow-hidden" style={{ background: "var(--color-border)" }}>
-              <div
-                className="h-full rounded-full transition-all duration-500"
-                style={{ width: `${completeness}%`, background: "var(--color-primary-500)" }}
-              />
-            </div>
-            {profile!.salaryLabel && (
-              <div className="mt-3">
-                <Badge variant="primary">{profile!.salaryLabel}</Badge>
-              </div>
-            )}
-          </div>
         </div>
       </SectionCard>
 
