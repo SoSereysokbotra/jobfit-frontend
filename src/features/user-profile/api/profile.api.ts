@@ -117,8 +117,14 @@ export interface AddExperienceInput {
   industry: string;
   description?: string;
   isCurrentJob?: boolean;
-  /** ISO string; the backend's @Type(() => Date) parses it. */
-  startDate: string;
+  /**
+   * ISO strings; the backend's @Type(() => Date) parses them.
+   *
+   * OPTIONAL: the profile's Experience form no longer collects employment dates, so it
+   * sends neither. Omitted means "not recorded" — the backend stores null rather than
+   * defaulting. Résumé-derived experience may still carry dates.
+   */
+  startDate?: string;
   endDate?: string;
   technologies?: string[];
 }
