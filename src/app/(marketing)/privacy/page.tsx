@@ -14,7 +14,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { LegalPage, LegalSection, ToConfirm } from "@/features/marketing/components/legal-page";
+import { LegalPage, LegalSection } from "@/features/marketing/components/legal-page";
 
 export const metadata = {
   title: "Privacy Policy | JobFits",
@@ -215,9 +215,13 @@ export default function PrivacyPolicyPage() {
           processing, to data portability, and to lodge a complaint with your supervisory
           authority. Our lawful basis for processing is the performance of our contract
           with you (matching you with jobs you asked to be matched with) and, for security
-          logging, our legitimate interest in protecting accounts. International transfers
-          to our Tokyo-hosted infrastructure and to DeepSeek (§3.2) rely on{" "}
-          <ToConfirm>transfer mechanism — standard contractual clauses or other, per counsel</ToConfirm>.
+          logging, our legitimate interest in protecting accounts. JobFits is not
+          established in the EEA, the UK or Singapore. International transfers to our
+          Tokyo-hosted infrastructure and to DeepSeek (§3.2) are made on the basis of your{" "}
+          <strong>explicit consent</strong>, given when you accept these terms having been told
+          exactly where your data goes; and, where a provider offers them, on standard
+          contractual clauses in that provider&rsquo;s data-processing agreement. You may
+          withdraw that consent at any time by deleting your account (§7).
         </p>
       </LegalSection>
 
@@ -232,8 +236,12 @@ export default function PrivacyPolicyPage() {
           When you use it, the text of the job listing you are looking at is sent to
           JobFits to be scored against your profile. Saving a job stores a bookmark to it.
           The extension does not read your messages, contacts, or any page other than the
-          one you invoke it on. Its own privacy notice is at{" "}
-          <ToConfirm>public URL for the extension privacy page</ToConfirm>.
+          one you invoke it on. This section is the extension&rsquo;s privacy notice; its
+          public address is{" "}
+          <a href="https://jobfits.io/privacy#extension" className="text-primary-600 hover:underline">
+            jobfits.io/privacy#extension
+          </a>
+          .
         </p>
       </LegalSection>
 
@@ -257,8 +265,12 @@ export default function PrivacyPolicyPage() {
 
       <LegalSection id="contact" title="12. Contact">
         <p>
-          Privacy requests and questions: <ToConfirm>privacy contact email</ToConfirm>.
-          Operator: <ToConfirm>legal entity name and registered address</ToConfirm>.
+          Privacy requests and questions:{" "}
+          <a href="mailto:support@jobfits.io" className="text-primary-600 hover:underline">
+            support@jobfits.io
+          </a>
+          . Operator: <strong>So Sereysokbotra</strong>, an individual operator based in Phnom
+          Penh, Cambodia. JobFits is not yet incorporated.
         </p>
       </LegalSection>
     </LegalPage>

@@ -82,9 +82,7 @@ export function LegalPage({
             <strong>Draft — pending legal review.</strong> The technical statements on this page
             (what is collected, where it is processed, what is sent to which provider) are
             verified against the platform&apos;s code. The legal wording has not yet been
-            reviewed by qualified counsel. Items marked{" "}
-            <span className="font-semibold">[TO CONFIRM]</span> are awaiting a management
-            decision.
+            reviewed by qualified counsel.
           </p>
         </div>
 

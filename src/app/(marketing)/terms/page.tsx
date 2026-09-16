@@ -5,13 +5,15 @@
 // reference — Candidate §6.1 and §7.3, Employer §4.2, §4.3, §5.1, §6.4, Platform §9.3 —
 // are the section numbers used here, so a deliverable points at a real paragraph.
 //
-// Two decisions the framework leaves OPEN (D11 subscription tiers, D12 refunds, D16
-// governing law) are rendered as [TO CONFIRM] rather than guessed. Inventing a refund
-// policy in a Terms page is a promise; leaving a visible gap is a to-do.
+// D11 (billing) and D12 (refunds) are answered by a fact, not a policy: there is no
+// payments backend (payment.api.ts, "the Stripe webhook route is a stub"), so the page
+// states that nothing is charged and that billing/refund terms will be published and
+// re-accepted before any charge is ever taken. D16 takes the framework's own engineering
+// recommendation (Cambodian law, Phnom Penh, English authoritative).
 
 import React from "react";
 import Link from "next/link";
-import { LegalPage, LegalSection, ToConfirm } from "@/features/marketing/components/legal-page";
+import { LegalPage, LegalSection } from "@/features/marketing/components/legal-page";
 
 export const metadata = {
   title: "Terms of Service | JobFits",
@@ -49,8 +51,11 @@ export default function TermsPage() {
           version you accepted is the one shown at the top of this page at that time.
         </p>
         <p>
-          JobFits is operated by <ToConfirm>legal entity name</ToConfirm> (&ldquo;JobFits&rdquo;,
-          &ldquo;we&rdquo;). You must be at least 18, or the age of majority where you live, to use it.
+          JobFits is operated by <strong>So Sereysokbotra</strong>, an individual operator
+          based in Phnom Penh, Cambodia (&ldquo;JobFits&rdquo;, &ldquo;we&rdquo;). JobFits is
+          not yet incorporated; if it is transferred to a company, that company will assume
+          these terms and this page will be updated. You must be at least 18, or the age of
+          majority where you live, to use it.
         </p>
       </LegalSection>
 
@@ -155,12 +160,15 @@ export default function TermsPage() {
           <Link href="/pricing" className="text-primary-600 hover:underline">pricing page</Link>.
         </p>
         <p>
-          <strong>Billing:</strong>{" "}
-          <ToConfirm>billing terms — D11 subscription model is still an open decision</ToConfirm>.
+          <strong>Beta — no charges.</strong> JobFits is in beta and <strong>does not
+          currently take payment for anything</strong>. Paid tiers shown on the pricing page
+          describe planned features and are not yet available for purchase. Every feature
+          currently offered is provided free of charge.
         </p>
         <p>
-          <strong>Refunds and cancellation:</strong>{" "}
-          <ToConfirm>refund policy — D12 is still an open decision; do not publish a promise here until it is made</ToConfirm>.
+          <strong>Before we charge.</strong> Before any payment is ever taken, we will
+          publish billing terms and a refund and cancellation policy, and ask you to accept
+          them explicitly. Nothing in this version of the terms authorises a charge.
         </p>
       </LegalSection>
 
@@ -238,20 +246,31 @@ export default function TermsPage() {
           to use. Nothing in these terms limits liability that cannot lawfully be limited.
         </p>
         <p>
-          <ToConfirm>liability cap and exclusions — for counsel</ToConfirm>
+          <strong>Cap.</strong> To the extent permitted by law, JobFits&rsquo; total liability
+          to you for all claims arising from the service is limited to the amount you paid
+          JobFits in the twelve months before the claim arose. While the service is free,
+          that amount is zero. JobFits is not liable for indirect, consequential, or
+          lost-opportunity damages, including a job not obtained.
         </p>
       </LegalSection>
 
       <LegalSection id="law" title="11. Governing law and language">
         <p>
-          <ToConfirm>governing law, dispute forum and authoritative language — D16 is still an open decision. Engineering recommendation was Cambodian law, Phnom Penh, English authoritative with a Khmer translation; this is a legal choice and has not been made.</ToConfirm>
+          These terms are governed by the laws of the <strong>Kingdom of Cambodia</strong>.
+          Any dispute that cannot be resolved between us will be brought before the competent
+          courts of <strong>Phnom Penh</strong>. These terms are written in English; the
+          English text is authoritative. A Khmer translation will be provided for
+          convenience, and if the two differ, the English text governs.
         </p>
       </LegalSection>
 
       <LegalSection id="contact" title="12. Contact">
         <p>
           Questions, takedown requests (§9.3) and reports of prohibited postings (Annex A):{" "}
-          <ToConfirm>contact email</ToConfirm>.
+          <a href="mailto:support@jobfits.io" className="text-primary-600 hover:underline">
+            support@jobfits.io
+          </a>
+          .
         </p>
       </LegalSection>
     </LegalPage>
