@@ -778,8 +778,10 @@ const CAROUSEL_CARDS = [
   },
   {
     category: "Resume AI",
+    // Was pointing at the Smart Discovery image below, so two cards in the
+    // same carousel showed an identical cover.
     title: "Upload once, get understood instantly.",
-    src: "/section2/A%20daily%20feed%20built%20around%20you.jpg",
+    src: "https://images.unsplash.com/photo-1586281380349-632531db7ed4?q=80&w=2600&auto=format&fit=crop",
     content: <ResumeAIContent />,
   },
   {
@@ -817,20 +819,26 @@ export function FeaturesSection() {
   return (
     <section
       id="features"
-      className="py-8 md:py-12 overflow-hidden"
+      className="py-16 lg:py-20 overflow-hidden scroll-mt-16"
       style={{ background: "var(--color-bg)" }}
     >
-      <div className="max-w-7xl mx-auto px-6 lg:px-8 mb-2">
+      <div className="max-w-7xl mx-auto px-6 lg:px-8 mb-8">
         <div className="flex flex-col items-start">
+          <p
+            className="text-xs font-bold uppercase tracking-wider"
+            style={{ color: "var(--color-primary-600)" }}
+          >
+            Platform
+          </p>
           <h2
-            className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight"
+            className="mt-3 text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight"
             style={{ color: "var(--color-text-primary)" }}
           >
             Get to know your JobFits.
           </h2>
 
           <p
-            className="mt-2 text-base sm:text-lg max-w-2xl leading-relaxed"
+            className="mt-4 text-base sm:text-lg max-w-2xl leading-relaxed"
             style={{ color: "var(--color-text-secondary)" }}
           >
             Tap any card to explore how our intelligent matching, resume AI,

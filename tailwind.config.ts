@@ -75,6 +75,8 @@ const config: Config = {
         background: {
           DEFAULT: "var(--color-bg)",
           secondary: "var(--color-bg-secondary)",
+          /* Frosted sticky bars — bg-background-translucent + backdrop-blur. */
+          translucent: "var(--color-bg-translucent)",
         },
         surface: {
           DEFAULT: "var(--color-surface)",

@@ -2,6 +2,7 @@
 
 import React, { useRef } from "react";
 import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 import { useScroll, useSpring, type MotionValue } from "framer-motion";
 import { Reveal } from "@/shared/components/motion/reveal";
 import { ThreeDMarquee } from "@/components/ui/3d-marquee";
@@ -148,7 +149,7 @@ export function HowItWorksSection() {
   return (
     <section
       ref={sectionRef}
-      className="relative overflow-hidden py-12 lg:pt-14 lg:pb-24"
+      className="relative overflow-hidden py-16 lg:pt-20 lg:pb-24"
       style={{ background: "var(--color-bg-secondary)" }}
     >
       {/* 3D Marquee Section Backdrop */}
@@ -182,9 +183,10 @@ export function HowItWorksSection() {
             </p>
             <Link
               href="/signup"
-              className="mt-6 inline-flex px-6 py-2.5 rounded-full text-sm font-bold text-white bg-primary-600 hover:bg-primary-700 transition-all duration-200 active:scale-[0.98]"
+              className="mt-6 inline-flex items-center gap-2 px-6 py-3 rounded-md text-sm font-bold text-white bg-primary-600 hover:bg-primary-700 transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.98] group"
             >
-              Get Started
+              Get Started{" "}
+              <ArrowRight size={15} className="transition-transform duration-200 group-hover:translate-x-1" />
             </Link>
           </Reveal>
 
