@@ -153,8 +153,8 @@ export default function SignupPage() {
             </span>
             <span className="text-xs" style={{ color: "var(--color-text-secondary)" }}>
               I agree to the{" "}
-              <a href="#" className="text-primary-600 dark:text-primary-400 hover:underline">Terms of Service</a> and{" "}
-              <a href="#" className="text-primary-600 dark:text-primary-400 hover:underline">Privacy Policy</a>
+              <a href="/terms" target="_blank" rel="noopener" className="text-primary-600 dark:text-primary-400 hover:underline">Terms of Service</a> and{" "}
+              <a href="/privacy" target="_blank" rel="noopener" className="text-primary-600 dark:text-primary-400 hover:underline">Privacy Policy</a>
             </span>
           </label>
         </div>
