@@ -13,7 +13,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { LegalPage, LegalSection } from "@/features/marketing/components/legal-page";
+import { LegalPage, LegalSection, SUPPORT_EMAIL } from "@/features/marketing/components/legal-page";
 
 export const metadata = {
   title: "Terms of Service | JobFits",
@@ -267,8 +267,8 @@ export default function TermsPage() {
       <LegalSection id="contact" title="12. Contact">
         <p>
           Questions, takedown requests (§9.3) and reports of prohibited postings (Annex A):{" "}
-          <a href="mailto:support@jobfits.io" className="text-primary-600 hover:underline">
-            support@jobfits.io
+          <a href={`mailto:${SUPPORT_EMAIL}`} className="text-primary-600 hover:underline">
+            {SUPPORT_EMAIL}
           </a>
           .
         </p>

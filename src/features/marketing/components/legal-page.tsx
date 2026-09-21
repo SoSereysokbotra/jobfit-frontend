@@ -16,6 +16,25 @@ import Link from "next/link";
 import { AlertTriangle } from "lucide-react";
 import { SiteFooter } from "./site-footer";
 
+/**
+ * The site's public address, for links that must be absolute (the extension's privacy
+ * URL, canonical metadata). NEXT_PUBLIC_APP_URL when set, else the Vercel production
+ * alias.
+ *
+ * NOT jobfits.io. That domain belongs to someone else — "jobfits, AI-Powered Career
+ * Coaching Tools", a different product on a different server — and this codebase had
+ * carried it as the canonical URL since before these pages existed. Verified 2026-09-21
+ * by fetching it. Do not reintroduce it anywhere until it is actually owned.
+ */
+export const SITE_URL = (process.env.NEXT_PUBLIC_APP_URL?.trim() || "https://jobfit-frontend-six.vercel.app").replace(/\/$/, "");
+
+/**
+ * Where users write to. The Gmail address is already the sender of every email the
+ * platform sends (SMTP_FROM in the backend deploy), so publishing it here exposes
+ * nothing new. Swap for a domain address once a domain is owned.
+ */
+export const SUPPORT_EMAIL = "soviseth869@gmail.com";
+
 /** Must match `TERMS_VERSION` in jobfit-backend. */
 export const LEGAL_DOCS_VERSION = "2026-09-v1";
 export const LEGAL_DOCS_EFFECTIVE = "16 September 2026";

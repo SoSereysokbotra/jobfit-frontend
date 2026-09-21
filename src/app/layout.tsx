@@ -30,7 +30,8 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://jobfits.io",
+    // jobfits.io is NOT ours (see legal-page.tsx SITE_URL). Canonical is the real site.
+    url: process.env.NEXT_PUBLIC_APP_URL || "https://jobfit-frontend-six.vercel.app",
     title: "JobFits — AI-Powered Job Matching",
     description: "Discover jobs matched precisely to your skills, track applications, and get real-time career insights.",
     siteName: "JobFits",

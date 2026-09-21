@@ -14,7 +14,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { LegalPage, LegalSection } from "@/features/marketing/components/legal-page";
+import { LegalPage, LegalSection, SITE_URL, SUPPORT_EMAIL } from "@/features/marketing/components/legal-page";
 
 export const metadata = {
   title: "Privacy Policy | JobFits",
@@ -238,8 +238,8 @@ export default function PrivacyPolicyPage() {
           The extension does not read your messages, contacts, or any page other than the
           one you invoke it on. This section is the extension&rsquo;s privacy notice; its
           public address is{" "}
-          <a href="https://jobfits.io/privacy#extension" className="text-primary-600 hover:underline">
-            jobfits.io/privacy#extension
+          <a href={`${SITE_URL}/privacy#extension`} className="text-primary-600 hover:underline">
+            {SITE_URL.replace(/^https?:\/\//, "")}/privacy#extension
           </a>
           .
         </p>
@@ -266,8 +266,8 @@ export default function PrivacyPolicyPage() {
       <LegalSection id="contact" title="12. Contact">
         <p>
           Privacy requests and questions:{" "}
-          <a href="mailto:support@jobfits.io" className="text-primary-600 hover:underline">
-            support@jobfits.io
+          <a href={`mailto:${SUPPORT_EMAIL}`} className="text-primary-600 hover:underline">
+            {SUPPORT_EMAIL}
           </a>
           . Operator: <strong>So Sereysokbotra</strong>, an individual operator based in Phnom
           Penh, Cambodia. JobFits is not yet incorporated.
