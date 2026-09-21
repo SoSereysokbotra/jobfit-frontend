@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Mail, Lock, ArrowRight, ShieldAlert, Check } from "lucide-react";
-import { AuthShell, AuthHeading, TextField, SocialAuthButtons } from "@/features/auth/components";
+import { AuthShell, AuthHeading, TextField, GoogleSignInButton, GOOGLE_SIGN_IN_ENABLED } from "@/features/auth/components";
 import { homeForRole } from "@/features/auth/hooks/use-session";
 import { useAuth } from "@/providers/auth-provider";
 import { ApiError } from "@/lib/api/client";
@@ -174,24 +174,41 @@ export default function LoginPage() {
             </Button>
           </form>
 
-          {/* DIVIDER */}
-          <div className="relative my-4">
-            <div className="absolute inset-0 flex items-center" aria-hidden="true">
-              <div className="w-full border-t" style={{ borderColor: "var(--color-border)" }} />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span
-                className="px-3"
-                style={{ background: "var(--color-card)", color: "var(--color-text-tertiary)" }}
-              >
-                Or continue with
-              </span>
-            </div>
-          </div>
+          {/* Google sign-in. The divider and button only exist when a client id is
+              configured; an unconfigured deployment shows the password form alone
+              rather than a button that cannot work. */}
+          {GOOGLE_SIGN_IN_ENABLED && (
+            <>
+              <div className="relative my-4">
+                <div className="absolute inset-0 flex items-center" aria-hidden="true">
+                  <div className="w-full border-t" style={{ borderColor: "var(--color-border)" }} />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span
+                    className="px-3"
+                    style={{ background: "var(--color-card)", color: "var(--color-text-tertiary)" }}
+                  >
+                    Or continue with
+                  </span>
+                </div>
+              </div>
 
-          {/* TODO(backend): no OAuth endpoints exist. Kept visible but disabled
-              rather than removed, so the UI is ready when they land. */}
-          <SocialAuthButtons onGoogle={() => { }} onLinkedIn={() => { }} disabled />
+              <GoogleSignInButton
+                text="signin_with"
+                onSignedIn={({ user, isNewUser }) => {
+                  toast.success(isNewUser ? "Welcome to JobFits!" : (t("auth.welcomeBack") || "Welcome back!"));
+                  // A brand-new account has no profile or resume yet; onboarding is
+                  // where those get made. Everyone else goes home for their role.
+                  router.push(isNewUser ? "/onboarding/resume" : homeForRole(user.role));
+                }}
+                onError={(message) => {
+                  setIsBlocked(false);
+                  setNeedsVerification(false);
+                  setErrorMessage(message);
+                }}
+              />
+            </>
+          )}
 
           {/* SIGN UP LINK */}
           <div className="text-center text-xs mt-4">

@@ -3,6 +3,7 @@ export { AuthHeading } from "./auth-heading";
 export { TextField } from "./text-field";
 export { OtpInput } from "./otp-input";
 export { SocialAuthButtons } from "./social-auth-buttons";
+export { GoogleSignInButton, GOOGLE_SIGN_IN_ENABLED } from "./google-sign-in-button";
 export { GoogleIcon, LinkedInIcon } from "./brand-icons";
 export { PasswordStrengthMeter, getPasswordStrength } from "./password-strength";
 export type { PasswordStrength } from "./password-strength";
