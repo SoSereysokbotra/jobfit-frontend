@@ -15,6 +15,14 @@ import { matchingApi } from "../api/matching.api";
  * `enabled` exists for the onboarding bridge screen, which holds the query back until
  * readiness says READY. Fetching earlier is not merely wasted — this endpoint triggers
  * the lazy recompute, so calling it mid-embedding races the very thing it is waiting on.
+ *
+ * `staleTime` STAYS AT 60s ON PURPOSE. It looks like the reason a profile edit appeared
+ * to do nothing, but shortening it is the wrong fix: this endpoint is not a cheap read —
+ * it is the only thing that rebuilds the cache, and a cold recompute has been measured at
+ * ~56s (docs/AI_DEGRADATION_PLAN.md). Refetching on every mount would put that on the
+ * request path repeatedly. What was actually missing is invalidation on the event that
+ * changes the answer: the profile / preferences / salary mutations now invalidate
+ * `qk.matching.all`, which refetches immediately regardless of this value.
  */
 export function useRecommendations({ enabled = true }: { enabled?: boolean } = {}) {
   return useQuery({
