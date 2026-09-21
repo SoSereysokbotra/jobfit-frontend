@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useRef } from "react";
 import Link from "next/link";
-import { Briefcase, CheckCircle2, Star, ArrowRight, Search, Upload, BarChart3, ChevronRight } from "lucide-react";
+import { Briefcase, CheckCircle2, Star, ArrowRight, ChevronRight } from "lucide-react";
 import { JobCard } from "@/features/job/components";
 import { useSession, displayName } from "@/features/auth/hooks/use-session";
 import { useRecommendations } from "@/features/matching/hooks/use-recommendations";
@@ -16,13 +16,6 @@ import { formatDate } from "@/shared/utils/formatters";
 import { Reveal } from "@/shared/components/motion/reveal";
 import { useCountUp } from "@/shared/hooks/use-count-up";
 import { ProfileAvatar } from "@/features/user-profile/components";
-
-const quickActions = [
-  { icon: <Search size={20} />, label: "Search Jobs", href: "/jobs", color: "var(--color-info-600)", bg: "var(--color-info-50)" },
-  { icon: <Upload size={20} />, label: "Upload Resume", href: "/resumes", color: "var(--color-primary-600)", bg: "var(--color-primary-50)" },
-  { icon: <Star size={20} />, label: "View Matches", href: "/recommendations", color: "var(--color-warning-600)", bg: "var(--color-warning-50)" },
-  { icon: <BarChart3 size={20} />, label: "Career Insights", href: "/insights", color: "var(--color-success-600)", bg: "var(--color-success-50)" },
-];
 
 /* ═══════════════════════════════════════════════════════════════
    PAGE ROOT
@@ -244,33 +237,6 @@ export default function DashboardPage() {
 
         {/* RIGHT COLUMN (1/3) */}
         <div className="space-y-6">
-
-          {/* Quick Actions */}
-          <Reveal variant="up" delay={180}>
-          <SectionCard title="Quick Actions">
-            <div className="grid grid-cols-2 gap-3">
-              {quickActions.map((action) => (
-                <Link
-                  key={action.label}
-                  href={action.href}
-                  onClick={() => toast.info(`Navigating to ${action.label}...`)}
-                  className="flex flex-col items-center gap-2.5 p-4 rounded-lg border transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 group"
-                  style={{ borderColor: "var(--color-border)", background: "var(--color-bg-secondary)" }}
-                >
-                  <div
-                    className="w-10 h-10 rounded-md flex items-center justify-center transition-transform duration-200 group-hover:scale-110"
-                    style={{ background: action.bg, color: action.color }}
-                  >
-                    {action.icon}
-                  </div>
-                  <span className="text-xs font-semibold text-center leading-tight" style={{ color: "var(--color-text-secondary)" }}>
-                    {action.label}
-                  </span>
-                </Link>
-              ))}
-            </div>
-          </SectionCard>
-          </Reveal>
 
           {/* Profile Completion */}
           <Reveal variant="up" delay={260}>
