@@ -152,6 +152,12 @@ export interface ApplicantView {
   /** Unread messages from this candidate about their offer. Drives the board badge. */
   unreadMessages: number;
   appliedAt: string;
+  /**
+   * The raw ISO timestamp behind `appliedAt`. Kept alongside the human label because the
+   * label ("3 days ago") cannot be bucketed, sorted or compared — the dashboard trend
+   * chart groups applications by month off this.
+   */
+  appliedAtISO: string;
   notes: string | null;
   /**
    * The CV this candidate applied with — metadata only, so the card can name the file and
@@ -181,6 +187,7 @@ export function toApplicantView(dto: EmployerApplicationDto): ApplicantView {
     availableActions: dto.availableActions ?? [],
     unreadMessages: dto.unreadMessages ?? 0,
     appliedAt: postedLabel(dto.appliedAt),
+    appliedAtISO: dto.appliedAt,
     notes: dto.employerNotes,
     resume: dto.resume
       ? {
@@ -226,16 +233,44 @@ export function toCompanyView(dto: EmployerCompanyDto): CompanyView {
 }
 
 /**
- * TODO(backend): there is no time-series analytics endpoint. The dashboard trend
- * chart uses this placeholder series (INTEGRATION_PLAN.md Phase 10). Swap when a
- * `GET /employer/analytics/trend` (or similar) exists.
+ * Applications per month, derived from the applications the employer already has.
+ *
+ * Computed client-side on purpose: there is no time-series analytics endpoint, but
+ * `GET /employer/applications` returns every row unpaginated with a real `appliedAt`,
+ * so the applications series needs no backend work. Views are NOT charted — nothing in
+ * the system records job-post impressions (the per-job analytics endpoint hardcodes
+ * `views: 0`), and an invented second line would misreport reach.
+ *
+ * Months with no applications are kept as zeroes rather than skipped, so the gaps read
+ * as quiet months instead of compressing the x-axis into a misleading straight line.
  */
-export const EMPLOYER_TREND_PLACEHOLDER = [
-  { month: "Jan", applications: 8, views: 120 },
-  { month: "Feb", applications: 14, views: 210 },
-  { month: "Mar", applications: 22, views: 340 },
-  { month: "Apr", applications: 18, views: 290 },
-  { month: "May", applications: 31, views: 460 },
-  { month: "Jun", applications: 27, views: 410 },
-  { month: "Jul", applications: 38, views: 540 },
-];
+export interface TrendPoint {
+  month: string;
+  applications: number;
+}
+
+export function buildApplicationTrend(
+  applicants: Pick<ApplicantView, "appliedAtISO">[],
+  months = 6,
+  now = new Date(),
+): TrendPoint[] {
+  const buckets = new Map<string, TrendPoint>();
+
+  for (let i = months - 1; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    buckets.set(`${d.getFullYear()}-${d.getMonth()}`, {
+      month: d.toLocaleString("en-US", { month: "short" }),
+      applications: 0,
+    });
+  }
+
+  for (const a of applicants) {
+    const d = new Date(a.appliedAtISO);
+    // A malformed timestamp must not become a phantom data point.
+    if (Number.isNaN(d.getTime())) continue;
+    const point = buckets.get(`${d.getFullYear()}-${d.getMonth()}`);
+    if (point) point.applications++;
+  }
+
+  return [...buckets.values()];
+}
