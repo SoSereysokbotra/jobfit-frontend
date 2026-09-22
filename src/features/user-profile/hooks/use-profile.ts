@@ -126,6 +126,11 @@ export function useUpdateProfile() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: qk.profiles.detail(userId!) });
+      // Recommendations are DERIVED from this row — the match score reads the profile's
+      // city/country every time it is computed — so a profile edit invalidates them too.
+      // Without this the list keeps its cached copy for `staleTime` (60s) after the user
+      // changes their location, which reads as "the change did nothing".
+      queryClient.invalidateQueries({ queryKey: qk.matching.all });
     },
   });
 }
@@ -139,6 +144,9 @@ export function useUpdatePreferences() {
     mutationFn: (prefs: WorkPreferencesInput) => profileApi.updatePreferences(userId!, prefs),
     onSuccess: (dto) => {
       queryClient.setQueryData(qk.profiles.detail(userId!), toProfileView(dto));
+      // Preferences feed the match score (remote types, industries) — same reasoning as
+      // useUpdateProfile above.
+      queryClient.invalidateQueries({ queryKey: qk.matching.all });
     },
   });
 }
@@ -153,6 +161,8 @@ export function useUpdateSalary() {
       profileApi.updateSalary(userId!, minSalary, maxSalary),
     onSuccess: (dto) => {
       queryClient.setQueryData(qk.profiles.detail(userId!), toProfileView(dto));
+      // Salary is a match sub-score too.
+      queryClient.invalidateQueries({ queryKey: qk.matching.all });
     },
   });
 }
