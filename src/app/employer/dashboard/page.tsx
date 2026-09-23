@@ -4,17 +4,16 @@ import React, { useMemo } from "react";
 import Link from "next/link";
 import { Briefcase, Users, Target, TrendingUp, ArrowRight } from "lucide-react";
 import {
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
 import { StatCard } from "@/shared/components/data-display/stat-card";
 import { Badge } from "@/shared/components/data-display/badge";
 import { Skeleton } from "@/shared/components/feedback/skeleton";
 import { useEmployerJobs, useEmployerApplications } from "@/features/employer/hooks/use-employer";
-import { EMPLOYER_TREND_PLACEHOLDER } from "@/features/employer/api/employer.mappers";
+import { buildApplicationTrend } from "@/features/employer/api/employer.mappers";
 import { toast } from "@/stores/toast-store";
 
-const SERIES = { applications: "var(--color-primary-600)", views: "var(--color-primary-400)" };
-const DOT_CLASS: Record<string, string> = { Applications: "bg-primary-600", Views: "bg-primary-400" };
+const APPLICATIONS_COLOR = "var(--color-primary-600)";
 
 function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: { name: string; value: number }[]; label?: string }) {
   if (!active || !payload?.length) return null;
@@ -23,7 +22,7 @@ function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: 
       <p className="font-bold mb-1.5 text-content">{label}</p>
       {payload.map((p) => (
         <p key={p.name} className="flex items-center gap-1.5 text-content-secondary">
-          <span className={`w-2 h-2 rounded-full ${DOT_CLASS[p.name] ?? "bg-primary-500"}`} />
+          <span className="w-2 h-2 rounded-full bg-primary-600" />
           {p.name}: <span className="font-bold text-content">{p.value}</span>
         </p>
       ))}
@@ -47,6 +46,8 @@ export default function EmployerAnalyticsPage() {
     return m;
   }, [applicants]);
 
+  const trend = useMemo(() => buildApplicationTrend(applicants), [applicants]);
+
   const recent = applicants.slice(0, 4);
 
   return (
@@ -65,30 +66,35 @@ export default function EmployerAnalyticsPage() {
 
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        {/* Chart — TODO(backend): no trend endpoint; placeholder series. */}
+        {/* Applications per month, derived from the employer's own applications. */}
         <div className="xl:col-span-2 rounded-lg border border-border bg-card shadow-sm p-5 sm:p-6">
-          <div className="mb-5 flex items-center justify-between">
-            <div>
-              <h2 className="text-base font-bold text-content">Applications &amp; Views</h2>
-              <p className="text-xs mt-0.5 text-content-tertiary">Last 7 months</p>
-            </div>
-            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-neutral-100 text-content-tertiary">Sample</span>
+          <div className="mb-5">
+            <h2 className="text-base font-bold text-content">Applications over time</h2>
+            <p className="text-xs mt-0.5 text-content-tertiary">Last 6 months</p>
           </div>
-          <ResponsiveContainer width="100%" height={230}>
-            <AreaChart data={EMPLOYER_TREND_PLACEHOLDER} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
-              <defs>
-                <linearGradient id="appsFill" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={SERIES.applications} stopOpacity={0.14} /><stop offset="95%" stopColor={SERIES.applications} stopOpacity={0} /></linearGradient>
-                <linearGradient id="viewsFill" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={SERIES.views} stopOpacity={0.14} /><stop offset="95%" stopColor={SERIES.views} stopOpacity={0} /></linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-neutral-100)" />
-              <XAxis dataKey="month" tick={{ fontSize: 11, fill: "var(--color-text-tertiary)" }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 11, fill: "var(--color-text-tertiary)" }} axisLine={false} tickLine={false} />
-              <Tooltip content={<ChartTooltip />} cursor={{ stroke: "var(--color-neutral-200)" }} />
-              <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11 }} />
-              <Area type="monotone" dataKey="applications" name="Applications" stroke={SERIES.applications} strokeWidth={2} fill="url(#appsFill)" dot={{ r: 3, fill: SERIES.applications, strokeWidth: 0 }} activeDot={{ r: 5, strokeWidth: 2, stroke: "var(--color-card)" }} />
-              <Area type="monotone" dataKey="views" name="Views" stroke={SERIES.views} strokeWidth={2} fill="url(#viewsFill)" dot={{ r: 3, fill: SERIES.views, strokeWidth: 0 }} activeDot={{ r: 5, strokeWidth: 2, stroke: "var(--color-card)" }} />
-            </AreaChart>
-          </ResponsiveContainer>
+          {totalApps === 0 ? (
+            <div className="flex items-center justify-center text-center" style={{ height: 230 }}>
+              <p className="text-sm text-content-tertiary">
+                No applications yet.
+                <br />
+                <span className="text-xs">This chart fills in as candidates apply.</span>
+              </p>
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height={230}>
+              <AreaChart data={trend} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="appsFill" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={APPLICATIONS_COLOR} stopOpacity={0.14} /><stop offset="95%" stopColor={APPLICATIONS_COLOR} stopOpacity={0} /></linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-neutral-100)" />
+                <XAxis dataKey="month" tick={{ fontSize: 11, fill: "var(--color-text-tertiary)" }} axisLine={false} tickLine={false} />
+                {/* Counts are whole applications — fractional ticks would be nonsense at low volume. */}
+                <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: "var(--color-text-tertiary)" }} axisLine={false} tickLine={false} />
+                <Tooltip content={<ChartTooltip />} cursor={{ stroke: "var(--color-neutral-200)" }} />
+                <Area type="monotone" dataKey="applications" name="Applications" stroke={APPLICATIONS_COLOR} strokeWidth={2} fill="url(#appsFill)" dot={{ r: 3, fill: APPLICATIONS_COLOR, strokeWidth: 0 }} activeDot={{ r: 5, strokeWidth: 2, stroke: "var(--color-card)" }} />
+              </AreaChart>
+            </ResponsiveContainer>
+          )}
         </div>
 
         {/* Recent applicants */}

@@ -502,9 +502,21 @@ function MatchRateSection({ report }: { report: MatchReportPayload }) {
             label={rate.experience.basis === "REQUIREMENT" ? "Experience" : "CV depth"}
             value={s.experience}
           />
-          <Bar label="Location" value={s.location} />
-          <Bar label="Salary" value={s.salary} />
-          <Bar label="Industry" value={s.other} />
+          {/* NO LOCATION, SALARY OR INDUSTRY ROWS — the same two dimensions the
+              extension badge shows, for the same reasons.
+
+              Industry was deleted from the backend entirely (it compared an Industry id
+              against industry names, so its match branch was unreachable, and it read a
+              flat 50 on every external job). Location and salary are still SCORED and
+              still affect the total; they are not drawn because neither can answer "do I
+              fit this job": location is measurable only when the posting names a place we
+              can resolve, and salary never reads the advert's pay — it compares the
+              user's expected range against what that EMPLOYER pays in jobs already in our
+              database, which for an external posting is nothing.
+
+              Rendering them was actively misleading here: with `other` now absent the
+              Industry row drew a FULL RED bar from an undefined value, and Location
+              printed a bare "%". */}
         </div>
       </div>
       <ExperienceNote experience={rate.experience} />

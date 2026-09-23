@@ -66,7 +66,7 @@ export const HeroParallax = ({
     springConfig
   );
   const translateY = useSpring(
-    useTransform(scrollYProgress, [0, 0.3], [-80, 0]),
+    useTransform(scrollYProgress, [0, 0.3], [-24, 0]),
     springConfig
   );
 
@@ -74,7 +74,7 @@ export const HeroParallax = ({
     <div
       ref={ref}
       className={cn(
-        "min-h-[100dvh] h-[130vh] md:h-[150vh] pt-6 md:pt-10 pb-12 md:pb-20 overflow-hidden antialiased relative flex flex-col justify-center self-auto [perspective:1200px] [transform-style:preserve-3d]",
+        "py-16 md:py-24 overflow-hidden antialiased relative flex flex-col justify-center self-auto [perspective:1200px] [transform-style:preserve-3d]",
         className
       )}
     >
@@ -86,7 +86,7 @@ export const HeroParallax = ({
           translateY,
           opacity,
         }}
-        className="w-full flex-1 flex flex-col justify-center"
+        className="w-full flex-1 flex flex-col justify-center mt-8 md:mt-12"
       >
         {/* Row 1: Auto moves right-to-left, pauses on hover */}
         <div className="mb-4 sm:mb-6 md:mb-8 overflow-hidden">

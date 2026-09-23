@@ -46,6 +46,12 @@ interface AuthContextValue {
   isLoading: boolean;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<AuthUser>;
+  /**
+   * Sign in (or sign up) with a Google ID token. Same session mechanics as `login`;
+   * `isNewUser` says whether an account was created, so the caller can route to
+   * onboarding instead of the home page.
+   */
+  loginWithGoogle: (idToken: string) => Promise<{ user: AuthUser; isNewUser: boolean }>;
   logout: () => Promise<void>;
   /** Force a silent refresh. Returns true when a session was restored. */
   refresh: () => Promise<boolean>;
@@ -139,13 +145,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     staleTime: 5 * 60_000,
   });
 
-  const login = useCallback(
-    async (email: string, password: string): Promise<AuthUser> => {
-      const { accessToken } = await apiClient.post<{ accessToken: string }>(
-        "/auth/login",
-        { email, password },
-        { skipAuth: true, skipRefresh: true },
-      );
+  /**
+   * Adopt a freshly minted access token as the session and load its identity.
+   *
+   * Shared by password and Google sign-in so the cache rule below applies to both —
+   * it was written for `login`, and a second sign-in path that forgot it would
+   * reproduce the "wrong dashboard until refresh" bug for Google users only.
+   */
+  const adoptSession = useCallback(
+    async (accessToken: string): Promise<AuthUser> => {
       // A new identity must inherit NOTHING from the previous one.
       //
       // `logout` clears the cache, but a session can end without it — an expired token, a
@@ -174,6 +182,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [queryClient, setAccessToken],
   );
 
+  const login = useCallback(
+    async (email: string, password: string): Promise<AuthUser> => {
+      const { accessToken } = await apiClient.post<{ accessToken: string }>(
+        "/auth/login",
+        { email, password },
+        { skipAuth: true, skipRefresh: true },
+      );
+      return adoptSession(accessToken);
+    },
+    [adoptSession],
+  );
+
+  const loginWithGoogle = useCallback(
+    async (idToken: string) => {
+      const { accessToken, isNewUser } = await apiClient.post<{
+        accessToken: string;
+        isNewUser: boolean;
+      }>("/auth/google", { idToken }, { skipAuth: true, skipRefresh: true });
+      const user = await adoptSession(accessToken);
+      return { user, isNewUser };
+    },
+    [adoptSession],
+  );
+
   const logout = useCallback(async () => {
     try {
       await apiClient.post("/auth/logout", undefined, { skipRefresh: true });
@@ -192,11 +224,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isLoading: !bootstrapped || (Boolean(token) && userPending),
       isAuthenticated: Boolean(token && user),
       login,
+      loginWithGoogle,
       logout,
       refresh,
       setAccessToken,
     }),
-    [user, bootstrapped, token, userPending, login, logout, refresh, setAccessToken],
+    [user, bootstrapped, token, userPending, login, loginWithGoogle, logout, refresh, setAccessToken],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

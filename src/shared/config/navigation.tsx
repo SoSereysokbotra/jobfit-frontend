@@ -13,7 +13,6 @@ import {
   LayoutTemplate,
   BarChart3,
   Bell,
-  HelpCircle,
   Settings,
 } from "lucide-react";
 
@@ -68,7 +67,6 @@ export const NAVIGATION_GROUPS: NavigationGroup[] = [
     group: "HELP & PREFERENCES",
     items: [
       { href: "/notifications", label: "Notifications", iconName: "Bell", icon: <Bell size={18} /> },
-      { href: "/help", label: "Help & Feedback", iconName: "HelpCircle", icon: <HelpCircle size={18} /> },
       { href: "/settings", label: "Settings", iconName: "Settings", icon: <Settings size={18} /> },
     ],
   },

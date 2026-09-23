@@ -58,9 +58,19 @@ export interface ReportMatchRate {
   subScores: {
     skills: number;
     experience: number;
-    location: number;
+    /**
+     * Null when the backend could not resolve a place on both sides. It is EXCLUDED
+     * from `overall` rather than scored as a neutral value, so it must never render as
+     * a low bar.
+     */
+    location: number | null;
     salary: number;
-    other: number;
+    /**
+     * The industry sub-score was DELETED backend-side on 2026-09-02 and is absent from
+     * every new report. Kept optional only so reports written before that date still
+     * parse; nothing renders it.
+     */
+    other?: number;
   };
   /**
    * False when the skills sub-score had no embedding to work from. Then `overall` is

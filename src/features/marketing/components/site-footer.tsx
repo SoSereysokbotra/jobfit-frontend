@@ -95,10 +95,10 @@ export function SiteFooter() {
             © {new Date().getFullYear()} JobFits. {t("marketing.copyright")}
           </p>
           <div className="flex items-center gap-5">
-            <Link href="#" className="text-xs text-on-primary-muted hover:text-on-primary transition-colors">
+            <Link href="/privacy" className="text-xs text-on-primary-muted hover:text-on-primary transition-colors">
               Privacy Policy
             </Link>
-            <Link href="#" className="text-xs text-on-primary-muted hover:text-on-primary transition-colors">
+            <Link href="/terms" className="text-xs text-on-primary-muted hover:text-on-primary transition-colors">
               Terms of Service
             </Link>
           </div>

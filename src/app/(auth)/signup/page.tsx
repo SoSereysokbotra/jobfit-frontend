@@ -3,12 +3,15 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { homeForRole } from "@/features/auth/hooks/use-session";
+import { toast } from "@/stores/toast-store";
 import { Mail, Lock, User, ArrowRight, AlertCircle, Check } from "lucide-react";
 import {
   AuthShell,
   AuthHeading,
   TextField,
-  SocialAuthButtons,
+  GoogleSignInButton,
+  GOOGLE_SIGN_IN_ENABLED,
   PasswordStrengthMeter,
 } from "@/features/auth/components";
 import { authApi } from "@/features/auth/api/auth.api";
@@ -153,8 +156,8 @@ export default function SignupPage() {
             </span>
             <span className="text-xs" style={{ color: "var(--color-text-secondary)" }}>
               I agree to the{" "}
-              <a href="#" className="text-primary-600 dark:text-primary-400 hover:underline">Terms of Service</a> and{" "}
-              <a href="#" className="text-primary-600 dark:text-primary-400 hover:underline">Privacy Policy</a>
+              <a href="/terms" target="_blank" rel="noopener" className="text-primary-600 dark:text-primary-400 hover:underline">Terms of Service</a> and{" "}
+              <a href="/privacy" target="_blank" rel="noopener" className="text-primary-600 dark:text-primary-400 hover:underline">Privacy Policy</a>
             </span>
           </label>
         </div>
@@ -170,26 +173,41 @@ export default function SignupPage() {
         </Button>
       </form>
 
-      {/* DIVIDER */}
-      <div className="relative my-4">
-        <div className="absolute inset-0 flex items-center" aria-hidden="true">
-          <div className="w-full border-t" style={{ borderColor: "var(--color-border)" }} />
-        </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span
-            className="px-3"
-            style={{ background: "var(--color-card)", color: "var(--color-text-tertiary)" }}
-          >
-            Or continue with
-          </span>
-        </div>
-      </div>
+      {GOOGLE_SIGN_IN_ENABLED && (
+        <>
+          <div className="relative my-4">
+            <div className="absolute inset-0 flex items-center" aria-hidden="true">
+              <div className="w-full border-t" style={{ borderColor: "var(--color-border)" }} />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span
+                className="px-3"
+                style={{ background: "var(--color-card)", color: "var(--color-text-tertiary)" }}
+              >
+                Or continue with
+              </span>
+            </div>
+          </div>
 
-      {/* TODO(backend): no OAuth endpoints exist. Kept visible but disabled. */}
-      <SocialAuthButtons onGoogle={() => {}} onLinkedIn={() => {}} disabled />
-      <p className="text-center text-xs mt-2" style={{ color: "var(--color-text-tertiary)" }}>
-        Social sign-up is coming soon.
-      </p>
+          <GoogleSignInButton
+            text="signup_with"
+            onSignedIn={({ user, isNewUser }) => {
+              // No verification-code step: Google has already verified the address, and
+              // the backend created the account verified. Straight to onboarding.
+              toast.success(isNewUser ? "Welcome to JobFits!" : "Welcome back!");
+              router.push(isNewUser ? "/onboarding/resume" : homeForRole(user.role));
+            }}
+            onError={(message) => setErrorMessage(message)}
+          />
+          {/* The Google flow has no checkbox, so the acceptance the backend records
+              (termsVersion + time + IP) has to be stated here, next to the button. */}
+          <p className="text-center text-xs mt-2" style={{ color: "var(--color-text-tertiary)" }}>
+            By continuing with Google you agree to the{" "}
+            <a href="/terms" target="_blank" rel="noopener" className="text-primary-600 dark:text-primary-400 hover:underline">Terms of Service</a>{" "}
+            and <a href="/privacy" target="_blank" rel="noopener" className="text-primary-600 dark:text-primary-400 hover:underline">Privacy Policy</a>.
+          </p>
+        </>
+      )}
 
       {/* SIGN IN LINK */}
       <div className="text-center text-xs mt-4">

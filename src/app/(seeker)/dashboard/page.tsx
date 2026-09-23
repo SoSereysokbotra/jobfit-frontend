@@ -1,87 +1,21 @@
 "use client";
 import React, { useEffect, useRef } from "react";
 import Link from "next/link";
-import { Briefcase, Calendar, Award, Target, CheckCircle2, Star, ArrowRight, Search, Upload, BarChart3, ChevronRight } from "lucide-react";
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import { Briefcase, CheckCircle2, Star, ArrowRight, ChevronRight } from "lucide-react";
 import { JobCard } from "@/features/job/components";
 import { useSession, displayName } from "@/features/auth/hooks/use-session";
+import { useRecommendations } from "@/features/matching/hooks/use-recommendations";
+import { useMatchReadiness } from "@/features/matching/hooks/use-match-readiness";
 import { toast } from "@/stores/toast-store";
 import { useMyStats } from "@/features/insights/hooks/use-insights";
-import { useJobs } from "@/features/job/hooks/use-job";
 import { useSavedJobIds, useToggleSavedJob } from "@/features/saved-jobs/hooks/use-saved-jobs";
 import { useProfile } from "@/features/user-profile/hooks/use-profile";
 import { profileCompleteness } from "@/features/user-profile/api/profile.mappers";
-import { StatCard } from "@/shared/components/data-display/stat-card";
 import { SectionCard } from "@/shared/components/layout/section-card";
 import { formatDate } from "@/shared/utils/formatters";
 import { Reveal } from "@/shared/components/motion/reveal";
 import { useCountUp } from "@/shared/hooks/use-count-up";
 import { ProfileAvatar } from "@/features/user-profile/components";
-
-/** Small "Sample" pill for sections with no backend endpoint yet. */
-function SamplePill() {
-  return (
-    <span
-      className="text-xs font-semibold px-2 py-0.5 rounded-full"
-      style={{ background: "var(--color-neutral-100)", color: "var(--color-text-tertiary)" }}
-    >
-      Sample
-    </span>
-  );
-}
-
-/* ─── CHART SERIES COLORS ───────────────────────────────────────
-   Categorical pair from the brand ramp (primary-600 + primary-400).
-   CVD-validated: worst adjacent ΔE 20.7 (protan) on white surface. */
-const SERIES = {
-  applications: "var(--color-primary-600)",
-  interviews: "var(--color-primary-400)"
-};
-
-/* ─── MOCK DATA ─────────────────────────────────────────────── */
-const applicationTrendData = [
-  { month: "Jan", applications: 4, interviews: 1 },
-  { month: "Feb", applications: 7, interviews: 2 },
-  { month: "Mar", applications: 12, interviews: 4 },
-  { month: "Apr", applications: 9, interviews: 3 },
-  { month: "May", applications: 15, interviews: 5 },
-  { month: "Jun", applications: 18, interviews: 7 },
-  { month: "Jul", applications: 22, interviews: 9 },
-];
-
-const quickActions = [
-  { icon: <Search size={20} />, label: "Search Jobs", href: "/jobs", color: "var(--color-info-600)", bg: "var(--color-info-50)" },
-  { icon: <Upload size={20} />, label: "Upload Resume", href: "/resumes", color: "var(--color-primary-600)", bg: "var(--color-primary-50)" },
-  { icon: <Star size={20} />, label: "View Matches", href: "/recommendations", color: "var(--color-warning-600)", bg: "var(--color-warning-50)" },
-  { icon: <BarChart3 size={20} />, label: "Career Insights", href: "/insights", color: "var(--color-success-600)", bg: "var(--color-success-50)" },
-];
-
-/* ─── CHART TOOLTIP ─────────────────────────────────────────────
-   Values wear text tokens; a colored chip beside them carries
-   series identity (never colored text). */
-function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: { name: string; value: number; color: string }[]; label?: string }) {
-  if (!active || !payload || !payload.length) return null;
-  return (
-    <div
-      className="px-3 py-2 rounded-md text-xs border"
-      style={{
-        background: "var(--color-card)",
-        borderColor: "var(--color-border)",
-        boxShadow: "var(--shadow-md)"
-      }}
-    >
-      <p className="font-bold mb-1.5" style={{ color: "var(--color-text-primary)" }}>{label}</p>
-      {payload.map((p) => (
-        <p key={p.name} className="flex items-center gap-1.5" style={{ color: "var(--color-text-secondary)" }}>
-          <span className="w-2 h-2 rounded-full inline-block" style={{ background: p.color }} />
-          {p.name}: <span className="font-bold" style={{ color: "var(--color-text-primary)" }}>{p.value}</span>
-        </p>
-      ))}
-    </div>
-  );
-}
-
-
 
 /* ═══════════════════════════════════════════════════════════════
    PAGE ROOT
@@ -112,9 +46,16 @@ export default function DashboardPage() {
     toast.success(savedIds.has(id) ? "Job removed from saved list" : "Job saved successfully!");
     toggleSaved.mutate(id);
   };
-  // Real published jobs — shown as "Recent openings" (match scores await the AI service).
-  const { data: jobs = [] } = useJobs();
-  const topJobs = jobs.slice(0, 3);
+  // THE MATCHES, not the newest postings. This screen is where a seeker lands after
+  // login and after onboarding, and until now it opened on four zeros and a chart of an
+  // imaginary job hunt while the one thing they came for — jobs scored against their own
+  // profile — sat behind a click. `useRecommendations` is the same query the
+  // /recommendations page runs, so the cache is shared and this costs no extra request.
+  const { data: recommendations = [], isLoading: matchesLoading } = useRecommendations();
+  // Only consulted when the list is empty: [] is a real answer that can mean "no profile
+  // embedding yet", and saying "no matches" to someone mid-onboarding would be a lie.
+  const { data: readiness } = useMatchReadiness();
+  const topMatches = recommendations.slice(0, 5);
   // Real profile drives the completeness score + checklist.
   const { profile } = useProfile();
   const rawProfileScore = profileCompleteness(profile);
@@ -122,7 +63,6 @@ export default function DashboardPage() {
   const profileScore = rawProfileScore;
 
   const num = (n: number | undefined) => (typeof n === "number" ? String(n) : "—");
-  const savedCount = savedIds.size;
 
   // Checklist derived from the real profile (skills/resume/cover-letter have no
   // reliable field here, so we track the profile fields the backend does store).
@@ -228,47 +168,6 @@ export default function DashboardPage() {
       </div>
       </Reveal>
 
-      {/* ── STATS ROW ─────────────────────────────────────── */}
-      <Reveal variant="up" delay={80}>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          label="Applications"
-          value={num(stats?.totalApplications)}
-          icon={<Briefcase size={18} />}
-          accentColor="var(--color-primary-600)"
-          accentBg="var(--color-primary-50)"
-          href="/applications"
-          onClick={() => toast.info("Viewing your applications...")}
-        />
-        <StatCard
-          label="Interviews"
-          value={num(stats?.totalInterviews)}
-          icon={<Calendar size={18} />}
-          accentColor="var(--color-info-600)"
-          accentBg="var(--color-info-50)"
-          href="/applications"
-          onClick={() => toast.info("Viewing your interviews...")}
-        />
-        <StatCard
-          label="Offers"
-          value={num(stats?.totalOffers)}
-          icon={<Award size={18} />}
-          accentColor="var(--color-success-600)"
-          accentBg="var(--color-success-50)"
-          href="/offers"
-          onClick={() => toast.info("Viewing your offers...")}
-        />
-        <StatCard
-          label="Saved Jobs"
-          value={String(savedCount)}
-          icon={<Target size={18} />}
-          accentColor="var(--color-warning-600)"
-          accentBg="var(--color-warning-50)"
-          href="/saved-jobs"
-          onClick={() => toast.info("Viewing saved jobs...")}
-        />
-      </div>
-      </Reveal>
 
       {/* ── MAIN 2-COLUMN GRID ────────────────────────────── */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
@@ -276,57 +175,18 @@ export default function DashboardPage() {
         {/* LEFT COLUMN (2/3) */}
         <div className="xl:col-span-2 space-y-6">
 
-          {/* Application Trend Chart — TODO(backend): no trend endpoint (Phase 10). */}
+          {/* THE MATCHES — first thing on the page, because it is the reason the user
+              logged in. It replaces a "Recent Openings" list built from `useJobs()`,
+              which showed whatever was published most recently, ranked by nothing and
+              personalised to nobody. */}
           <Reveal variant="up" delay={160}>
           <SectionCard
-            title="Application Activity"
-            subtitle="Applications & interviews over the last 7 months"
-            action={<SamplePill />}
-          >
-            <ResponsiveContainer width="100%" height={230}>
-              <AreaChart data={applicationTrendData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="colorApps" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor={SERIES.applications} stopOpacity={0.14} />
-                    <stop offset="95%" stopColor={SERIES.applications} stopOpacity={0} />
-                  </linearGradient>
-                  <linearGradient id="colorInterviews" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor={SERIES.interviews} stopOpacity={0.14} />
-                    <stop offset="95%" stopColor={SERIES.interviews} stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-neutral-100)" />
-                <XAxis dataKey="month" tick={{ fontSize: 11, fill: "var(--color-text-tertiary)" }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 11, fill: "var(--color-text-tertiary)" }} axisLine={false} tickLine={false} allowDecimals={false} />
-                <Tooltip content={<ChartTooltip />} cursor={{ stroke: "var(--color-neutral-200)", strokeWidth: 1 }} />
-                <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11 }} />
-                <Area
-                  type="monotone" dataKey="applications" name="Applications"
-                  stroke={SERIES.applications} strokeWidth={2} fill="url(#colorApps)"
-                  dot={{ r: 3, fill: SERIES.applications, strokeWidth: 0 }}
-                  activeDot={{ r: 5, strokeWidth: 2, stroke: "var(--color-card)" }}
-                />
-                <Area
-                  type="monotone" dataKey="interviews" name="Interviews"
-                  stroke={SERIES.interviews} strokeWidth={2} fill="url(#colorInterviews)"
-                  dot={{ r: 3, fill: SERIES.interviews, strokeWidth: 0 }}
-                  activeDot={{ r: 5, strokeWidth: 2, stroke: "var(--color-card)" }}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </SectionCard>
-          </Reveal>
-
-          {/* Recent openings — real published jobs. Match scores await the AI service. */}
-          <Reveal variant="up" delay={240}>
-          <SectionCard
-            title="Recent Openings"
-            subtitle="Latest jobs on JobFits"
+            title="Your Top Matches"
+            subtitle="Jobs scored against your profile, best first"
             flush
             action={
               <Link
-                href="/jobs"
-                onClick={() => toast.info("Opening job board...")}
+                href="/recommendations"
                 className="text-xs font-bold flex items-center gap-1 transition-colors hover:opacity-80"
                 style={{ color: "var(--color-primary-600)" }}
               >
@@ -334,13 +194,31 @@ export default function DashboardPage() {
               </Link>
             }
           >
-            {topJobs.length === 0 ? (
+            {matchesLoading ? (
               <p className="p-5 text-sm text-center" style={{ color: "var(--color-text-tertiary)" }}>
-                No openings to show yet.
+                Finding your matches...
               </p>
+            ) : topMatches.length === 0 ? (
+              // An empty list is a REAL answer with more than one cause, and the two must
+              // not be told the same way: a candidate still being embedded has no matches
+              // YET, while a failed embedding has none until something is fixed. Saying
+              // "no matches found" to the first is simply false.
+              <div className="p-5 text-sm text-center" style={{ color: "var(--color-text-tertiary)" }}>
+                {readiness?.state === "READY" ? (
+                  <>No matches yet. Try widening your preferences.</>
+                ) : (
+                  <>
+                    We&apos;re still building your matches.{" "}
+                    <Link href="/profile" className="font-bold" style={{ color: "var(--color-primary-600)" }}>
+                      Complete your profile
+                    </Link>{" "}
+                    to speed this up.
+                  </>
+                )}
+              </div>
             ) : (
               <div className="divide-y" style={{ borderColor: "var(--color-neutral-100)" }}>
-                {topJobs.map((job) => (
+                {topMatches.map((job) => (
                   <JobCard
                     key={job.id}
                     job={job}
@@ -354,37 +232,11 @@ export default function DashboardPage() {
             )}
           </SectionCard>
           </Reveal>
+
         </div>
 
         {/* RIGHT COLUMN (1/3) */}
         <div className="space-y-6">
-
-          {/* Quick Actions */}
-          <Reveal variant="up" delay={180}>
-          <SectionCard title="Quick Actions">
-            <div className="grid grid-cols-2 gap-3">
-              {quickActions.map((action) => (
-                <Link
-                  key={action.label}
-                  href={action.href}
-                  onClick={() => toast.info(`Navigating to ${action.label}...`)}
-                  className="flex flex-col items-center gap-2.5 p-4 rounded-lg border transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 group"
-                  style={{ borderColor: "var(--color-border)", background: "var(--color-bg-secondary)" }}
-                >
-                  <div
-                    className="w-10 h-10 rounded-md flex items-center justify-center transition-transform duration-200 group-hover:scale-110"
-                    style={{ background: action.bg, color: action.color }}
-                  >
-                    {action.icon}
-                  </div>
-                  <span className="text-xs font-semibold text-center leading-tight" style={{ color: "var(--color-text-secondary)" }}>
-                    {action.label}
-                  </span>
-                </Link>
-              ))}
-            </div>
-          </SectionCard>
-          </Reveal>
 
           {/* Profile Completion */}
           <Reveal variant="up" delay={260}>
@@ -448,6 +300,7 @@ export default function DashboardPage() {
           </Reveal>
         </div>
       </div>
+
     </div>
   );
 }

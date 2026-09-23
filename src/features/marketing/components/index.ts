@@ -1,4 +1,6 @@
+export { MarketingNavbar } from "./marketing-navbar";
 export { HeroSection } from "./hero-section";
+export { HeroMatchPreview } from "./hero-match-preview";
 export { LogoMarquee } from "./logo-marquee";
 export type { MarqueeLogo } from "./logo-marquee";
 export { SectionHeading } from "./section-heading";

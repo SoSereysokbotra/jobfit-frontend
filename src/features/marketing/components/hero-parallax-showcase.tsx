@@ -155,25 +155,20 @@ function ShowcaseHeader() {
         Scroll through the live ecosystem: transparent scoring breakdowns, verified market salaries, instant ATS resume extraction, and multi-stage pipeline tracking.
       </p>
 
-      <div className="mt-6 flex items-center gap-4">
-        <Link
-          href="/signup"
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-primary-600 hover:bg-primary-700 transition-all duration-200 shadow-md hover:-translate-y-0.5 active:scale-95"
-        >
-          Explore Live Matches <ArrowRight size={15} />
-        </Link>
-        <Link
-          href="/jobs"
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold border transition-all duration-200 hover:-translate-y-0.5"
-          style={{
-            borderColor: "var(--color-border)",
-            background: "var(--color-card)",
-            color: "var(--color-text-primary)",
-          }}
-        >
-          Browse All Roles
-        </Link>
-      </div>
+      {/* A single text link, not another button pair. The hero, "how it
+          works" and the closing CTA already stack three button clusters on
+          this page; a fourth read as noise and pulled focus off the cards. */}
+      <Link
+        href="/jobs"
+        className="mt-5 inline-flex items-center gap-2 text-sm font-bold transition-colors group"
+        style={{ color: "var(--color-primary-600)" }}
+      >
+        Browse all roles
+        <ArrowRight
+          size={15}
+          className="transition-transform duration-200 group-hover:translate-x-1"
+        />
+      </Link>
     </div>
   );
 }

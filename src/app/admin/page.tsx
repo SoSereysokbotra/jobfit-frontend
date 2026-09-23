@@ -2,7 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { Activity, Gauge, Users, AlertTriangle, Info, ArrowRight, Mail } from "lucide-react";
+import { Activity, Gauge, Users, AlertTriangle, Info, ArrowRight } from "lucide-react";
 import { StatCard } from "@/shared/components/data-display/stat-card";
 import { Badge } from "@/shared/components/data-display/badge";
 import { Skeleton } from "@/shared/components/feedback/skeleton";
@@ -106,7 +106,6 @@ export default function AdminDashboardPage() {
           {[
             { href: "/admin/users", label: "Manage Users", icon: <Users size={18} />, accent: "bg-primary-50 text-primary-600" },
             { href: "/admin/system", label: "System Health", icon: <Activity size={18} />, accent: "bg-success-50 text-success-600" },
-            { href: "/admin/email", label: "Email Tracking", icon: <Mail size={18} />, accent: "bg-info-50 text-info-600" },
           ].map((a) => (
             <Link key={a.href} href={a.href} onClick={() => toast.info(`Navigating to ${a.label}...`)} className="flex items-center gap-3 p-4 rounded-lg border border-border bg-card shadow-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 group">
               <div className={`w-10 h-10 rounded-md flex items-center justify-center transition-transform group-hover:scale-110 ${a.accent}`}>{a.icon}</div>

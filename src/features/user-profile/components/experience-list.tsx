@@ -15,8 +15,6 @@ import {
   EMPLOYMENT_TYPE_LABELS,
   JOB_LEVEL_LABELS,
   asOptions,
-  fromDateInputValue,
-  toDateInputValue,
   type ExperienceView,
 } from "../api/profile.mappers";
 
@@ -31,15 +29,13 @@ interface ExperienceFormState {
   industry: string;
   description: string;
   isCurrentJob: boolean;
-  startDate: string;
-  endDate: string;
   technologies: string;
 }
 
 const EMPTY_FORM: ExperienceFormState = {
   company: "", title: "", jobLevel: "MID", employmentType: "FULL_TIME",
   industry: "", description: "", isCurrentJob: false,
-  startDate: "", endDate: "", technologies: "",
+  technologies: "",
 };
 
 function toFormState(item: ExperienceView): ExperienceFormState {
@@ -51,8 +47,6 @@ function toFormState(item: ExperienceView): ExperienceFormState {
     industry: item.industry,
     description: item.description ?? "",
     isCurrentJob: item.isCurrentJob,
-    startDate: toDateInputValue(item.startDate),
-    endDate: toDateInputValue(item.endDate),
     technologies: (item.technologies ?? []).join(", "),
   };
 }
@@ -67,9 +61,7 @@ function toInput(form: ExperienceFormState): AddExperienceInput {
     industry: form.industry.trim(),
     description: form.description.trim() || undefined,
     isCurrentJob: form.isCurrentJob,
-    startDate: fromDateInputValue(form.startDate)!,
     // A current job has no end date — sending one would contradict the flag.
-    endDate: form.isCurrentJob ? undefined : fromDateInputValue(form.endDate),
     technologies: technologies.length ? technologies : undefined,
   };
 }
@@ -120,7 +112,7 @@ export function ExperienceList({
   };
 
   const canSubmit =
-    form.company.trim() && form.title.trim() && form.industry.trim() && form.startDate;
+    form.company.trim() && form.title.trim() && form.industry.trim();
 
   const errorMessage =
     error instanceof ApiError ? error.messages.join(" ") : error ? "Could not save this role." : "";
@@ -265,26 +257,6 @@ export function ExperienceList({
               placeholder="Technology"
               value={form.industry}
               onChange={(e) => setForm((f) => ({ ...f, industry: e.target.value }))}
-            />
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <TextField
-              id="exp-start"
-              label="Start Date"
-              type="date"
-              required
-              value={form.startDate}
-              onChange={(e) => setForm((f) => ({ ...f, startDate: e.target.value }))}
-            />
-            <TextField
-              id="exp-end"
-              label="End Date"
-              type="date"
-              disabled={form.isCurrentJob}
-              value={form.isCurrentJob ? "" : form.endDate}
-              onChange={(e) => setForm((f) => ({ ...f, endDate: e.target.value }))}
-              hint={form.isCurrentJob ? "Not needed for a current role." : undefined}
             />
           </div>
 

@@ -254,17 +254,27 @@ export const Card = ({
         onClick={handleOpen}
         className="rounded-3xl bg-gray-100 dark:bg-neutral-900 h-80 w-56 md:h-[40rem] md:w-96 overflow-hidden flex flex-col items-start justify-start relative z-10"
       >
-        <div className="absolute h-full top-0 inset-x-0 bg-gradient-to-b from-black/50 via-transparent to-transparent z-30 pointer-events-none" />
+        {/* Scrim. The previous `from-black/50 via-transparent` faded out well
+            before the title ended, so white copy landed on bare screenshot
+            art and was unreadable. This holds full strength behind the text
+            block, then clears the lower half of the image. */}
+        <div
+          className="absolute inset-0 z-30 pointer-events-none"
+          style={{
+            background:
+              "linear-gradient(to bottom, var(--color-scrim) 0%, var(--color-scrim) 30%, transparent 68%)",
+          }}
+        />
         <div className="relative z-40 p-8">
           <motion.p
             layoutId={layout ? `category-${card.category}` : undefined}
-            className="text-white text-sm md:text-base font-medium font-sans text-left"
+            className="text-on-primary-muted text-sm md:text-base font-semibold uppercase tracking-wider font-sans text-left"
           >
             {card.category}
           </motion.p>
           <motion.p
             layoutId={layout ? `title-${card.title}` : undefined}
-            className="text-white text-xl md:text-3xl font-semibold max-w-xs text-left [text-wrap:balance] font-sans mt-2"
+            className="text-on-primary text-xl md:text-3xl font-bold max-w-xs text-left [text-wrap:balance] font-sans mt-2"
           >
             {card.title}
           </motion.p>
