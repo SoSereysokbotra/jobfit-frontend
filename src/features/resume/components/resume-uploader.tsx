@@ -38,7 +38,7 @@ export function ResumeUploader({ onUploaded, showTitle = true, className }: Resu
     setLocalError("");
     setFile(candidate);
     // Default the title to the filename without its extension.
-    if (!title) setTitle(candidate.name.replace(/\.(pdf|docx)$/i, ""));
+    if (!title) setTitle(candidate.name.replace(/\.(pdf|docx|png|jpe?g|webp)$/i, ""));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
