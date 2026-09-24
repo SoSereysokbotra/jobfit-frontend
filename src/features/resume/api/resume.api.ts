@@ -14,19 +14,29 @@
 
 import { apiClient, uploadWithProgress, type UploadProgress } from "@/lib/api/client";
 
-export type ResumeFileType = "PDF" | "DOCX";
+export type ResumeFileType = "PDF" | "DOCX" | "IMAGE";
 export type ResumeParsingStatus = "PENDING" | "PROCESSING" | "SUCCESS" | "FAILED";
 
 /** Mirrors MAX_FILE_SIZE in the backend's resume.service.ts. */
 export const MAX_RESUME_BYTES = 5 * 1024 * 1024;
 
-/** The only two mime types MIME_TO_TYPE accepts. */
+/**
+ * What the backend's MIME_TO_TYPE accepts.
+ *
+ * Images are here because a photographed CV is normal in this market: people photograph
+ * documents rather than scan them. The backend reads those with OCR, and does the same
+ * for a PDF that turns out to be a photo in a PDF wrapper — which is what a phone
+ * produces when you "scan" something.
+ */
 export const ACCEPTED_RESUME_MIME: Record<string, ResumeFileType> = {
   "application/pdf": "PDF",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "DOCX",
+  "image/png": "IMAGE",
+  "image/jpeg": "IMAGE",
+  "image/webp": "IMAGE",
 };
 
-export const RESUME_ACCEPT_ATTR = ".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+export const RESUME_ACCEPT_ATTR = ".pdf,.docx,.png,.jpg,.jpeg,.webp,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/png,image/jpeg,image/webp";
 
 export interface ResumeDto {
   id: string;
@@ -96,8 +106,10 @@ export interface ParsedResumeDataDto {
 export function validateResumeFile(file: File): string | null {
   const byMime = ACCEPTED_RESUME_MIME[file.type];
   // Some browsers report an empty type for .docx; fall back to the extension.
-  const byExtension = /\.(pdf|docx)$/i.test(file.name);
-  if (!byMime && !byExtension) return "Only PDF and DOCX resumes are supported.";
+  const byExtension = /\.(pdf|docx|png|jpe?g|webp)$/i.test(file.name);
+  if (!byMime && !byExtension) {
+    return "Upload a PDF, Word file, or a photo of your CV (PNG or JPEG).";
+  }
   if (file.size <= 0) return "That file looks empty.";
   if (file.size > MAX_RESUME_BYTES) return "Resumes must be 5 MB or smaller.";
   return null;

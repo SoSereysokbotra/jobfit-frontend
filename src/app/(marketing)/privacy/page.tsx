@@ -66,7 +66,7 @@ export default function PrivacyPolicyPage() {
       <LegalSection id="collect" title="2. What we collect">
         <p><strong>Account:</strong> email address, password (stored only as a hash), name, role (job seeker or employer), and subscription tier.</p>
         <p><strong>Profile:</strong> headline, city and country, preferred work arrangement, employment types and job levels, salary expectations, desired industries, and social links you choose to add.</p>
-        <p><strong>Résumé:</strong> the PDF or DOCX files you upload; the text extracted from them; and the structured data our parser derives (experience, education, skills).</p>
+        <p><strong>Résumé:</strong> the PDF, Word or image files you upload; the text extracted from them (by OCR, on our own servers, when the file is a photo or a scan); and the structured data our parser derives (experience, education, skills).</p>
         <p><strong>Derived data:</strong> a numerical vector (an &ldquo;embedding&rdquo;) generated from your profile and résumé text, which is what the matching engine compares against jobs. It is derived from your personal data and is treated as personal data.</p>
         <p><strong>Activity:</strong> applications you submit, jobs you save or dismiss, match feedback you give, and jobs you track privately.</p>
         <p><strong>Consent record:</strong> when you accept these terms, we store the time, the version accepted, and the IP address the acceptance came from. See §7.</p>

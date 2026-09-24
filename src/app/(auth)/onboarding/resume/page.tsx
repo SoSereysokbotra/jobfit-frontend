@@ -418,7 +418,7 @@ function ResumeUploadStep({
                   </p>
                 </div>
                 {/* Matches the backend: MIME_TO_TYPE accepts PDF/DOCX only, 5 MB max. */}
-                <p className="text-xs text-neutral-400">Accepted formats: PDF, DOCX (Max 5MB)</p>
+                <p className="text-xs text-neutral-400">Accepted: PDF, Word, or a photo of your CV (max 5MB)</p>
               </div>
             </div>
           )}

@@ -102,7 +102,7 @@ function UploadZone({ onFile }: { onFile: (file: File) => void }) {
       </div>
       {/* Matches the backend: PDF/DOCX only, 5 MB max. */}
       <p className="text-xs" style={{ color: "var(--color-text-tertiary)" }}>
-        Accepted: PDF, DOCX · Max 5 MB
+        Accepted: PDF, Word, or a photo of your CV · Max 5 MB
       </p>
     </div>
   );

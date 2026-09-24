@@ -11,7 +11,7 @@ import { cn } from "@/shared/utils/cn";
 const STEPS = [
   {
     title: "Upload your resume",
-    description: "Drag in a PDF or DOCX. Our AI reads it in seconds and builds your skill profile — no forms to fill out.",
+    description: "Drag in a PDF, a Word file, or a photo of your CV. Our AI reads it in seconds and builds your skill profile — no forms to fill out.",
   },
   {
     title: "Get scored matches",

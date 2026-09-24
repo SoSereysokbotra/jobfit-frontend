@@ -136,7 +136,7 @@ export function ResumeUploader({ onUploaded, showTitle = true, className }: Resu
                 browse
               </button>
             </p>
-            <p className="text-xs text-neutral-400 mt-1">PDF or DOCX, up to 5 MB</p>
+            <p className="text-xs text-neutral-400 mt-1">PDF, Word, or a photo of your CV — up to 5 MB</p>
           </>
         )}
 
