@@ -4,7 +4,6 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
-import { LanguageSwitcher } from "@/shared/components/ui/language-switcher";
 import { ThemeToggle } from "@/shared/components/ui/theme-toggle";
 import { useTranslation } from "@/providers/locale-provider";
 
@@ -114,7 +113,6 @@ export function MarketingNavbar() {
 
           <div className="flex items-center gap-2.5">
             <div className="hidden sm:flex items-center gap-2.5">
-              <LanguageSwitcher />
               <ThemeToggle />
             </div>
             <Link
@@ -198,10 +196,9 @@ export function MarketingNavbar() {
                 {t("marketing.login")}
               </Link>
 
-              {/* Locale + theme are icon-only in the bar on small screens, so
-                  the labelled controls belong here. */}
+              {/* The theme toggle is hidden in the bar on small screens, so
+                  it belongs here. */}
               <div className="flex items-center gap-2.5 pt-1 sm:hidden">
-                <LanguageSwitcher />
                 <ThemeToggle />
               </div>
             </div>

@@ -2,7 +2,11 @@
 
 import { useSyncExternalStore } from "react";
 
-export type SupportedLocale = "en" | "es" | "fr" | "de" | "km";
+// English only. The site used to offer es/fr/de/km; a browser that saved one of those
+// under STORAGE_KEY is no longer in this list and falls back to DEFAULT_LOCALE.
+export type SupportedLocale = "en";
+
+const SUPPORTED: readonly string[] = ["en"];
 
 export const DEFAULT_LOCALE: SupportedLocale = "en";
 const STORAGE_KEY = "jobfit:locale";
@@ -15,12 +19,12 @@ function readStoredLocale(): SupportedLocale {
   if (typeof window === "undefined") return DEFAULT_LOCALE;
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (raw && ["en", "es", "fr", "de", "km"].includes(raw)) {
+    if (raw && SUPPORTED.includes(raw)) {
       return raw as SupportedLocale;
     }
     // Check navigator language if available
     const navLang = window.navigator.language?.slice(0, 2).toLowerCase();
-    if (navLang && ["en", "es", "fr", "de", "km"].includes(navLang)) {
+    if (navLang && SUPPORTED.includes(navLang)) {
       return navLang as SupportedLocale;
     }
     return DEFAULT_LOCALE;

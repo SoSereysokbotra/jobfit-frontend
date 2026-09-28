@@ -4,7 +4,6 @@ import React from "react";
 import Link from "next/link";
 import { Menu, Search } from "lucide-react";
 import { NotificationBell } from "@/features/notification/components/notification-bell";
-import { LanguageSwitcher } from "@/shared/components/ui/language-switcher";
 import { ThemeToggle } from "@/shared/components/ui/theme-toggle";
 import { OfflineIndicator } from "./offline-indicator";
 import { useCommandPaletteOpen } from "@/stores/command-palette-store";
@@ -104,9 +103,6 @@ export default function TopNav({ onMenuToggle, className = "", user }: TopNavPro
         <div className="flex items-center gap-1 sm:gap-2 shrink-0">
           {/* Renders nothing while online and synced. */}
           <OfflineIndicator />
-
-          {/* Language Switcher */}
-          <LanguageSwitcher />
 
           {/* Theme Toggle */}
           <ThemeToggle />
