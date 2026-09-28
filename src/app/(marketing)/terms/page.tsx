@@ -156,14 +156,13 @@ export default function TermsPage() {
       <LegalSection id="subscriptions" title="7. Subscriptions">
         <p>
           JobFits offers a free tier and paid tiers with additional features. Tier names,
-          prices and what each includes are shown on the{" "}
-          <Link href="/pricing" className="text-primary-600 hover:underline">pricing page</Link>.
+          prices and what each includes will be announced prior to billing.
         </p>
         <p>
           <strong>Beta — no charges.</strong> JobFits is in beta and <strong>does not
-          currently take payment for anything</strong>. Paid tiers shown on the pricing page
-          describe planned features and are not yet available for purchase. Every feature
-          currently offered is provided free of charge.
+          currently take payment for anything</strong>. Paid tiers describe planned features
+          and are not yet available for purchase. Every feature currently offered is provided
+          free of charge.
         </p>
         <p>
           <strong>Before we charge.</strong> Before any payment is ever taken, we will

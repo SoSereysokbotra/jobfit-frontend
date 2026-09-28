@@ -34,6 +34,7 @@ vi.mock("@/lib/api/client", () => ({
 
 import {
   applyLocally,
+  BatchRejectedError,
   canAcceptWrite,
   flushQueue,
   perform,
@@ -139,6 +140,51 @@ describe("perform — offline branch", () => {
     expect(outcome.mode).toBe("online");
     expect(await db.pendingActions.count()).toBe(0);
     expect(await db.savedJobs.get("job-A")).toBeTruthy();
+  });
+
+  // /sync/batch answers 200 with a per-action status, so a rejected action is not an
+  // exception. These used to return `{ mode: "online" }` — a clean success — and the
+  // caller announced "saved!" over a change the server had refused.
+  it("raises a rejected action rather than reporting success", async () => {
+    postMock.mockResolvedValueOnce({
+      results: [{ idempotencyKey: "k", status: "error", code: "VALIDATION", error: "photoUrl must be a URL" }],
+    });
+
+    await expect(
+      perform("UPDATE_PROFILE", { changes: { photoUrl: "data:image/jpeg;base64,AAAA" } }, { database: db }),
+    ).rejects.toThrow("photoUrl must be a URL");
+  });
+
+  it("carries the server's own error code on the rejection", async () => {
+    postMock.mockResolvedValueOnce({
+      results: [{ idempotencyKey: "k", status: "error", code: "NOT_FOUND", error: "no such profile" }],
+    });
+
+    await expect(
+      perform("UPDATE_PROFILE", { changes: { headline: "x" } }, { database: db }),
+    ).rejects.toMatchObject({ name: "BatchRejectedError", code: "NOT_FOUND" });
+  });
+
+  it("falls back to a readable message when the server sends none", async () => {
+    postMock.mockResolvedValueOnce({
+      results: [{ idempotencyKey: "k", status: "error", code: "VALIDATION" }],
+    });
+
+    await expect(
+      perform("UPDATE_PROFILE", { changes: { headline: "x" } }, { database: db }),
+    ).rejects.toBeInstanceOf(BatchRejectedError);
+  });
+
+  it("queues a FAILED action for a later flush instead of raising", async () => {
+    // FAILED is the one code the contract marks transient.
+    postMock.mockResolvedValueOnce({
+      results: [{ idempotencyKey: "k", status: "error", code: "FAILED", error: "try again" }],
+    });
+
+    const outcome = await perform("UPDATE_PROFILE", { changes: { headline: "x" } }, { database: db });
+
+    expect(outcome.mode).toBe("queued");
+    expect(await db.pendingActions.count()).toBe(1);
   });
 });
 

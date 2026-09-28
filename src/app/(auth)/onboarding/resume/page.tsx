@@ -15,7 +15,6 @@ import {
   MapPin,
   Clock,
   Wifi,
-  BarChart2,
   Info,
   Check,
   HelpCircle,
@@ -202,10 +201,10 @@ function StepIndicator({ current }: { current: Step }) {
             <div key={s.num} className="flex flex-col items-center relative px-2" style={{ background: "var(--color-card)" }}>
               <div
                 className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all duration-300 ${isCompleted
-                    ? "bg-primary-600 border-primary-600 text-white"
-                    : isActive
-                      ? "bg-primary-700 border-primary-600 text-white"
-                      : ""
+                  ? "bg-primary-600 border-primary-600 text-white"
+                  : isActive
+                    ? "bg-primary-700 border-primary-600 text-white"
+                    : ""
                   }`}
                 style={(!isCompleted && !isActive) ? {
                   background: "var(--color-surface)",
@@ -292,7 +291,7 @@ function ResumeUploadStep({
       return;
     }
     setFile(f);
-    await upload(f, f.name.replace(/\.(pdf|docx)$/i, ""));
+    await upload(f, f.name.replace(/\.(pdf|docx|png|jpe?g|webp)$/i, ""));
   };
 
   // Project the real parsed data into the wizard once both parsing has settled
@@ -347,10 +346,6 @@ function ResumeUploadStep({
             <p className="text-sm text-neutral-500 mt-1">
               We&apos;ll analyze it to find better matches
             </p>
-            <div className="mt-2.5 inline-flex items-center gap-1.5 text-xs font-semibold text-green-700 bg-green-50 border border-green-200 rounded-md px-2.5 py-1">
-              <BarChart2 className="w-3.5 h-3.5" />
-              Resume users see 50% more matches
-            </div>
           </div>
 
           {errorMsg && (
@@ -741,9 +736,6 @@ function ResumeUploadStep({
                 You&apos;ll see fewer personalized matches without a resume.
               </p>
             </div>
-          </div>
-          <div className="p-3 bg-amber-50 border border-amber-200 rounded-md text-amber-800 text-xs font-semibold">
-            🎯 Complete your profile now → 50% more matches
           </div>
           <p className="text-[11px] text-neutral-400">Note: Profile will be marked &quot;25% complete&quot; if you skip resume upload.</p>
           <div className="flex gap-3 pt-2">
@@ -1311,8 +1303,8 @@ function ProfileSetupStep({
                 background: state.isSelected
                   ? "var(--color-primary-600)"
                   : state.isFocused
-                  ? "var(--color-surface-hover)"
-                  : "transparent",
+                    ? "var(--color-surface-hover)"
+                    : "transparent",
                 color: state.isSelected ? "#fff" : "var(--color-text-primary)",
                 borderRadius: "6px",
                 fontSize: "0.75rem",
@@ -1659,8 +1651,10 @@ function ProfileSetupStep({
           {/* Search input */}
           <div
             className="relative flex items-center border rounded-md transition-all duration-200"
-            style={{ background: "var(--color-bg)", borderColor: showIndustryDropdown ? "var(--color-primary-500)" : "var(--color-border)",
-              boxShadow: showIndustryDropdown ? "0 0 0 2px rgba(157,78,221,0.25)" : "none" }}
+            style={{
+              background: "var(--color-bg)", borderColor: showIndustryDropdown ? "var(--color-primary-500)" : "var(--color-border)",
+              boxShadow: showIndustryDropdown ? "0 0 0 2px rgba(157,78,221,0.25)" : "none"
+            }}
           >
             <Search className="absolute left-3 w-3.5 h-3.5 pointer-events-none" style={{ color: "var(--color-text-tertiary)" }} />
             <input

@@ -7,6 +7,7 @@ import type {
   EmployerApplicationDto,
   EmployerCompanyDto,
   EmployerJobDto,
+  UpdateCompanyInput,
 } from "./employer.api";
 
 // ── Job status (display) ─────────────────────────────────────────────────────
@@ -273,4 +274,56 @@ export function buildApplicationTrend(
   }
 
   return [...buckets.values()];
+}
+
+/** The company-profile form's fields, as strings straight out of the inputs. */
+export interface CompanyProfileForm {
+  name: string;
+  description: string;
+  website: string;
+  industry: string;
+  size: string;
+  foundedYear: string;
+  city: string;
+  state: string;
+  country: string;
+}
+
+const TEXT_FIELDS = [
+  "name",
+  "description",
+  "website",
+  "industry",
+  "size",
+  "city",
+  "state",
+  "country",
+] as const;
+
+/**
+ * The PATCH body for a company-profile save: only the fields that actually changed.
+ *
+ * A cleared field is sent as "" rather than omitted. The form used to build its payload
+ * with `value || undefined`, which dropped emptied fields from the request — the server
+ * kept the old value and the refetch typed it back into the box, so deleting a value was
+ * the one edit that could never be saved.
+ *
+ * `foundedYear` is the exception: the DTO types it as a number, so no value means
+ * "unset". A changed year is sent; a cleared one cannot be expressed and is skipped.
+ */
+export function buildCompanyUpdate(
+  company: CompanyView,
+  form: CompanyProfileForm,
+): UpdateCompanyInput {
+  const input: UpdateCompanyInput = {};
+
+  for (const key of TEXT_FIELDS) {
+    const next = form[key].trim();
+    if (next !== (company[key] ?? "")) (input as Record<string, string>)[key] = next;
+  }
+
+  const year = form.foundedYear.trim();
+  if (year && year !== String(company.foundedYear ?? "")) input.foundedYear = Number(year);
+
+  return input;
 }

@@ -18,9 +18,31 @@ interface AvatarUploadModalProps {
 const MAX_FILE_BYTES = 5 * 1024 * 1024; // 5 MB
 const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 
+export const AVATAR_SIZE = 512;
+
 /**
- * Optimizes an image file by drawing it to a canvas with max dimension 512x512
- * and returning a lightweight, high-resolution Base64 data URL.
+ * The source rectangle to copy for a centred square crop.
+ *
+ * Avatars are shown in a circle everywhere, but the image stored was previously scaled
+ * to fit 512 on its longest side — a 1200x400 banner became 512x171, so every consumer
+ * cropped it differently and a wide photo showed as a sliver of itself. Cropping to a
+ * square up front makes the stored image match the circle it renders in.
+ */
+export function squareCrop(width: number, height: number) {
+  const side = Math.min(width, height);
+  return {
+    sx: Math.round((width - side) / 2),
+    sy: Math.round((height - side) / 2),
+    side,
+  };
+}
+
+/**
+ * Centre-crops an image to a square, scales it to 512x512 and returns a JPEG data URL.
+ *
+ * The white fill is not cosmetic: JPEG has no alpha, and drawing a transparent PNG onto
+ * a fresh canvas leaves those pixels black, so a logo with a transparent background used
+ * to be saved as a black blob.
  */
 function processAndOptimizeImage(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -30,37 +52,29 @@ function processAndOptimizeImage(file: File): Promise<string> {
       const img = new Image();
       img.onerror = () => reject(new Error("Invalid image format."));
       img.onload = () => {
-        const canvas = document.createElement("canvas");
-        const maxDimension = 512;
-        let width = img.width;
-        let height = img.height;
-
-        if (width > height) {
-          if (width > maxDimension) {
-            height = Math.round((height * maxDimension) / width);
-            width = maxDimension;
-          }
-        } else {
-          if (height > maxDimension) {
-            width = Math.round((width * maxDimension) / height);
-            height = maxDimension;
-          }
+        if (!img.width || !img.height) {
+          reject(new Error("Invalid image format."));
+          return;
         }
 
-        canvas.width = width;
-        canvas.height = height;
+        const canvas = document.createElement("canvas");
+        // Never upscale a small photo into a blurry 512 square.
+        const { sx, sy, side } = squareCrop(img.width, img.height);
+        const target = Math.min(side, AVATAR_SIZE);
+        canvas.width = target;
+        canvas.height = target;
 
         const ctx = canvas.getContext("2d");
         if (!ctx) {
-          // Fallback to raw data url if 2d context unavailable
+          // No 2d context (rare, but the raw file is still a usable avatar).
           resolve(event.target?.result as string);
           return;
         }
 
-        // Draw and compress with high visual quality
-        ctx.drawImage(img, 0, 0, width, height);
-        const dataUrl = canvas.toDataURL("image/jpeg", 0.9);
-        resolve(dataUrl);
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, target, target);
+        ctx.drawImage(img, sx, sy, side, side, 0, 0, target, target);
+        resolve(canvas.toDataURL("image/jpeg", 0.9));
       };
       img.src = event.target?.result as string;
     };

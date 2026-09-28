@@ -245,6 +245,17 @@ async function executeOnline(
   }
 }
 
+/** A per-action rejection from `/sync/batch`. Carries the server's own message. */
+export class BatchRejectedError extends Error {
+  readonly code?: BatchErrorCode;
+
+  constructor(message: string, code?: BatchErrorCode) {
+    super(message);
+    this.name = "BatchRejectedError";
+    this.code = code;
+  }
+}
+
 export interface PerformOutcome {
   /** How the action was handled. */
   mode: "online" | "queued";
@@ -296,6 +307,27 @@ export async function perform(
       await database.pendingActions.put(stored);
       return { mode: "online", conflict: stored };
     }
+
+    // `/sync/batch` answers 200 with a per-action status, so a rejected action is NOT
+    // an exception. Only conflicts were inspected here, which meant an "error" result —
+    // a validation failure, a payload the server refused — returned as a clean success:
+    // the caller showed "saved!", the refetch brought back the unchanged row, and the
+    // edit vanished with nothing said. flushQueue has always routed these; the online
+    // path has to match it.
+    const failure = results?.find((r) => r.status === "error");
+    if (failure) {
+      // FAILED is the one code the contract marks transient — queue it for a later
+      // flush rather than telling the user their change is impossible.
+      if (isRetryable(failure.code)) {
+        await enqueue(type, payload, idempotencyKey, database);
+        return { mode: "queued" };
+      }
+      throw new BatchRejectedError(
+        failure.error ?? "That change could not be saved.",
+        failure.code,
+      );
+    }
+
     return { mode: "online" };
   } catch (error) {
     if (isNetworkError(error)) {

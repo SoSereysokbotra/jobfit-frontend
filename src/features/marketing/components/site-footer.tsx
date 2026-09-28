@@ -10,7 +10,6 @@ const FOOTER_COLUMNS = [
     links: [
       { label: "Find Jobs", href: "/jobs" },
       { label: "Features", href: "#features" },
-      { label: "Pricing", href: "/pricing" },
       { label: "Design System", href: "/ui-reference" },
     ],
   },
@@ -18,14 +17,11 @@ const FOOTER_COLUMNS = [
     heading: "Company",
     links: [
       { label: "About", href: "/about" },
-      { label: "Careers", href: "#" },
-      { label: "Contact", href: "#" },
     ],
   },
   {
     heading: "Resources",
     links: [
-      { label: "Help Center", href: "#" },
       { label: "Career Insights", href: "/insights" },
       { label: "Interview Prep", href: "/learning" },
     ],
@@ -48,7 +44,7 @@ export function SiteFooter() {
   return (
     <footer style={{ background: "var(--color-primary-900)" }}>
       <div className="max-w-7xl mx-auto px-6 lg:px-8 py-14">
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-10">
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-10">
           {/* Brand */}
           <div className="col-span-2">
             <Link href="/" className="flex items-center gap-2.5">

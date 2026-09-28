@@ -101,10 +101,6 @@ export function HeroSection() {
           </Link>
         </Reveal>
 
-        <p className="mt-4 text-xs" style={{ color: "var(--color-text-tertiary)" }}>
-          No credit card required · Free for job seekers
-        </p>
-
         {/* Product preview — carries the fold in place of empty space. */}
         <Reveal delay={320} variant="scale" className="mt-12 w-full flex justify-center">
           <HeroMatchPreview />

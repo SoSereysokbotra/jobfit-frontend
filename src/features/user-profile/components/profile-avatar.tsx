@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Camera } from "lucide-react";
 import { cn } from "@/shared/utils/cn";
 import { AvatarUploadModal } from "./avatar-upload-modal";
@@ -39,6 +39,13 @@ export function ProfileAvatar({
 }: ProfileAvatarProps) {
   const [modalOpen, setModalOpen] = useState(false);
   const [imgError, setImgError] = useState(false);
+
+  // A failed load used to latch forever: once one photo 404'd, the avatar fell back to
+  // initials and stayed there for the life of the component, so a freshly uploaded photo
+  // looked like it had not saved. A new src deserves a fresh attempt.
+  useEffect(() => {
+    setImgError(false);
+  }, [photoUrl]);
 
   const config = SIZE_MAP[size] || SIZE_MAP.md;
   const hasPhoto = Boolean(photoUrl) && !imgError;

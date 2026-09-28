@@ -27,7 +27,6 @@ export function MarketingNavbar() {
   const navLinks = [
     { label: t("marketing.findJobs"), href: "/jobs" },
     { label: t("marketing.features"), href: "/#features" },
-    { label: t("marketing.pricing"), href: "/pricing" },
     { label: t("marketing.about"), href: "/about" },
   ];
 

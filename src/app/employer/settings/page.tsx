@@ -4,9 +4,6 @@ import React, { useState, useEffect } from "react";
 import {
   Building2,
   Users,
-  Bell,
-  CreditCard,
-  Sliders,
   Shield,
   Plus,
   Trash2,
@@ -19,13 +16,27 @@ import { Badge } from "@/shared/components/data-display/badge";
 import { Modal } from "@/shared/components/ui/modal";
 import { Skeleton } from "@/shared/components/feedback/skeleton";
 import { toast } from "@/stores/toast-store";
+import { ApiError } from "@/lib/api/client";
 import {
   useEmployerCompany,
   useUpdateCompany,
   useVerifyCompanyEmail,
 } from "@/features/employer/hooks/use-employer";
+import { buildCompanyUpdate } from "@/features/employer/api/employer.mappers";
 
-type Section = "profile" | "preferences" | "team" | "notifications" | "billing";
+type Section = "profile" | "team";
+
+/** Accepts what people actually type ("acme.com") and makes it pass `type="url"`. */
+function normalizeWebsite(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed || /^https?:\/\//i.test(trimmed)) return trimmed;
+  return `https://${trimmed}`;
+}
+
+function isPlausibleFoundedYear(value: string): boolean {
+  const year = Number(value);
+  return Number.isInteger(year) && year >= 1800 && year <= new Date().getFullYear();
+}
 
 interface TeamMember {
   id: string;
@@ -61,7 +72,11 @@ const INITIAL_TEAM: TeamMember[] = [
 
 export default function EmployerSettingsPage() {
   const [activeSection, setActiveSection] = useState<Section>("profile");
-  const { data: company, isLoading: isCompanyLoading } = useEmployerCompany();
+  const {
+    data: company,
+    isLoading: isCompanyLoading,
+    isError: isCompanyError,
+  } = useEmployerCompany();
   const updateCompanyMutation = useUpdateCompany();
   const verifyCompanyMutation = useVerifyCompanyEmail();
 
@@ -75,18 +90,6 @@ export default function EmployerSettingsPage() {
   const [city, setCity] = useState("");
   const [state, setState] = useState("");
   const [country, setCountry] = useState("");
-
-  // Hiring Preferences State
-  const [minMatchThreshold, setMinMatchThreshold] = useState(70);
-  const [defaultRemoteType, setDefaultRemoteType] = useState("HYBRID");
-  const [autoArchiveUnfit, setAutoArchiveUnfit] = useState(false);
-  const [allowExternalLinks, setAllowExternalLinks] = useState(true);
-
-  // Notification Preferences State
-  const [emailNewApplicant, setEmailNewApplicant] = useState(true);
-  const [emailDailyDigest, setEmailDailyDigest] = useState(true);
-  const [emailOfferUpdates, setEmailOfferUpdates] = useState(true);
-  const [weeklyAnalyticsSummary, setWeeklyAnalyticsSummary] = useState(false);
 
   // Team State
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>(INITIAL_TEAM);
@@ -110,32 +113,59 @@ export default function EmployerSettingsPage() {
 
   const handleSaveProfile = (e: React.FormEvent) => {
     e.preventDefault();
+
+    // There is no company to PATCH. Employers cannot create one — an admin has to
+    // (EMPLOYER_HANDOFF.md §9) — so this is a real state, and reporting success for it
+    // (as this used to) told the employer their edits were stored when nothing was sent.
     if (!company) {
-      toast.success("Organization profile settings saved!");
+      toast.error("Your company profile could not be loaded, so there is nothing to save.");
+      return;
+    }
+
+    // A bare domain is what people type; `type="url"` rejects it and the browser blocks
+    // submit over a field that may be scrolled out of view, which reads as a dead button.
+    const normalizedWebsite = normalizeWebsite(website);
+    if (normalizedWebsite !== website) setWebsite(normalizedWebsite);
+
+    const year = String(foundedYear).trim();
+    if (year && !isPlausibleFoundedYear(year)) {
+      toast.error(`Founded year must be between 1800 and ${new Date().getFullYear()}.`);
+      return;
+    }
+
+    const input = buildCompanyUpdate(company, {
+      name,
+      description,
+      website: normalizedWebsite,
+      industry,
+      size,
+      foundedYear: year,
+      city,
+      state,
+      country,
+    });
+
+    if (Object.keys(input).length === 0) {
+      toast.info("No changes to save.");
       return;
     }
 
     updateCompanyMutation.mutate(
-      {
-        companyId: company.id,
-        input: {
-          name,
-          description: description || undefined,
-          website: website || undefined,
-          industry: industry || undefined,
-          size: size || undefined,
-          foundedYear: foundedYear ? Number(foundedYear) : undefined,
-          city: city || undefined,
-          state: state || undefined,
-          country: country || undefined,
-        },
-      },
+      { companyId: company.id, input },
       {
         onSuccess: () => {
           toast.success("Company profile updated successfully!");
         },
         onError: (err) => {
-          toast.error(err instanceof Error ? err.message : "Failed to update profile.");
+          // A 400 from the ValidationPipe carries one message per field; showing only
+          // the first hides the rest of what the employer has to correct.
+          const detail =
+            err instanceof ApiError
+              ? err.messages.join(" ")
+              : err instanceof Error
+                ? err.message
+                : "";
+          toast.error(detail || "Failed to update profile.");
         },
       }
     );
@@ -181,10 +211,7 @@ export default function EmployerSettingsPage() {
 
   const SECTIONS = [
     { id: "profile", label: "Company Profile", icon: Building2, desc: "Organization identity & brand" },
-    { id: "preferences", label: "Hiring Preferences", icon: Sliders, desc: "Matching rules & defaults" },
     { id: "team", label: "Team & Permissions", icon: Users, desc: "Recruiters & access roles" },
-    { id: "notifications", label: "Notifications", icon: Bell, desc: "Email digests & candidate alerts" },
-    { id: "billing", label: "Plan & Billing", icon: CreditCard, desc: "Subscription tier & credits" },
   ] as const;
 
   return (
@@ -193,7 +220,7 @@ export default function EmployerSettingsPage() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-content">Company Settings</h1>
         <p className="text-sm mt-0.5 text-content-secondary">
-          Manage your organization details, automated screening criteria, and recruiter permissions.
+          Manage your organization details and recruiter permissions.
         </p>
       </div>
 
@@ -258,6 +285,16 @@ export default function EmployerSettingsPage() {
                     <Skeleton className="h-10 rounded-lg" />
                   </div>
                 </div>
+              ) : isCompanyError || !company ? (
+                <div className="py-10 text-center">
+                  <p className="text-sm font-semibold text-content">
+                    We could not load your company profile.
+                  </p>
+                  <p className="text-xs text-content-secondary mt-1.5 max-w-sm mx-auto">
+                    Your account may not be linked to a company yet. Only an administrator
+                    can create one — contact support if this persists.
+                  </p>
+                </div>
               ) : (
                 <form onSubmit={handleSaveProfile} className="space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -283,6 +320,7 @@ export default function EmployerSettingsPage() {
                         type="url"
                         value={website}
                         onChange={(e) => setWebsite(e.target.value)}
+                        onBlur={() => setWebsite(normalizeWebsite(website))}
                         placeholder="https://example.com"
                         className="w-full px-3.5 py-2.5 rounded-lg border border-border bg-card text-content text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
                       />
@@ -340,6 +378,9 @@ export default function EmployerSettingsPage() {
                       </label>
                       <input
                         type="number"
+                        min={1800}
+                        max={new Date().getFullYear()}
+                        step={1}
                         value={foundedYear}
                         onChange={(e) => setFoundedYear(e.target.value)}
                         placeholder="e.g. 2021"
@@ -405,106 +446,6 @@ export default function EmployerSettingsPage() {
                   </div>
                 </form>
               )}
-            </div>
-          )}
-
-          {/* Hiring Preferences Section */}
-          {activeSection === "preferences" && (
-            <div className="p-6 sm:p-8 rounded-2xl border border-border bg-card shadow-sm space-y-6">
-              <div className="border-b border-border pb-4">
-                <h2 className="text-lg font-bold text-content">Hiring & Screening Defaults</h2>
-                <p className="text-xs text-content-secondary mt-0.5">
-                  Configure how AI screening algorithms evaluate incoming candidate resumes.
-                </p>
-              </div>
-
-              <div className="space-y-6">
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="text-xs font-bold text-content uppercase tracking-wider">
-                      Minimum Match Score for Fast-Track
-                    </label>
-                    <span className="text-sm font-bold text-primary-600">
-                      {minMatchThreshold}%
-                    </span>
-                  </div>
-                  <input
-                    type="range"
-                    min="50"
-                    max="95"
-                    step="5"
-                    value={minMatchThreshold}
-                    onChange={(e) => setMinMatchThreshold(Number(e.target.value))}
-                    className="w-full accent-primary-600 cursor-pointer"
-                  />
-                  <p className="text-[11px] text-content-tertiary mt-1">
-                    Candidates scoring at or above this threshold receive automated recommendation flags.
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold text-content uppercase tracking-wider mb-1.5">
-                      Default Work Model
-                    </label>
-                    <select
-                      value={defaultRemoteType}
-                      onChange={(e) => setDefaultRemoteType(e.target.value)}
-                      className="w-full px-3.5 py-2.5 rounded-lg border border-border bg-card text-content text-sm focus:ring-2 focus:ring-primary-500 outline-none"
-                    >
-                      <option value="REMOTE">Remote (Work from Anywhere)</option>
-                      <option value="HYBRID">Hybrid (Flexible Office / Home)</option>
-                      <option value="ON_SITE">On-Site (Office Required)</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="space-y-3 pt-2">
-                  <label className="flex items-center gap-3 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={autoArchiveUnfit}
-                      onChange={(e) => setAutoArchiveUnfit(e.target.checked)}
-                      className="w-4 h-4 rounded text-primary-600 focus:ring-primary-500"
-                    />
-                    <div>
-                      <div className="text-xs font-semibold text-content">
-                        Auto-categorize below 40% match
-                      </div>
-                      <div className="text-[11px] text-content-tertiary">
-                        Moves highly mismatched applications directly to review bucket.
-                      </div>
-                    </div>
-                  </label>
-
-                  <label className="flex items-center gap-3 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={allowExternalLinks}
-                      onChange={(e) => setAllowExternalLinks(e.target.checked)}
-                      className="w-4 h-4 rounded text-primary-600 focus:ring-primary-500"
-                    />
-                    <div>
-                      <div className="text-xs font-semibold text-content">
-                        Allow external applicant URLs
-                      </div>
-                      <div className="text-[11px] text-content-tertiary">
-                        Direct candidates to an external ATS if needed.
-                      </div>
-                    </div>
-                  </label>
-                </div>
-
-                <div className="pt-4 flex justify-end">
-                  <Button
-                    variant="primary"
-                    onClick={() => toast.success("Hiring preferences updated!")}
-                  >
-                    <Save size={16} className="mr-2" />
-                    <span>Update Preferences</span>
-                  </Button>
-                </div>
-              </div>
             </div>
           )}
 
@@ -578,126 +519,6 @@ export default function EmployerSettingsPage() {
               </div>
             </div>
           )}
-
-          {/* Notifications Section */}
-          {activeSection === "notifications" && (
-            <div className="p-6 sm:p-8 rounded-2xl border border-border bg-card shadow-sm space-y-6">
-              <div className="border-b border-border pb-4">
-                <h2 className="text-lg font-bold text-content">Recruiting Notifications</h2>
-                <p className="text-xs text-content-secondary mt-0.5">
-                  Control alert frequencies for new applications and candidate pipeline events.
-                </p>
-              </div>
-
-              <div className="space-y-4">
-                {[
-                  {
-                    title: "Instant Candidate Application Alerts",
-                    desc: "Receive an email as soon as a qualified candidate submits their resume.",
-                    state: emailNewApplicant,
-                    setter: setEmailNewApplicant,
-                  },
-                  {
-                    title: "Daily Applicant Pipeline Digest",
-                    desc: "A summary email every morning with candidate counts and high-match highlights.",
-                    state: emailDailyDigest,
-                    setter: setEmailDailyDigest,
-                  },
-                  {
-                    title: "Offer & Negotiation Updates",
-                    desc: "Get notified when a candidate views, responds to, or discusses an offer.",
-                    state: emailOfferUpdates,
-                    setter: setEmailOfferUpdates,
-                  },
-                  {
-                    title: "Weekly Hiring Analytics Report",
-                    desc: "Performance breakdown of views, conversion rates, and time-to-hire metrics.",
-                    state: weeklyAnalyticsSummary,
-                    setter: setWeeklyAnalyticsSummary,
-                  },
-                ].map((item, i) => (
-                  <label
-                    key={i}
-                    className="p-4 rounded-xl border border-border bg-card flex items-start justify-between gap-4 cursor-pointer hover:bg-neutral-50/50 dark:hover:bg-neutral-800/30 transition-colors"
-                  >
-                    <div>
-                      <div className="text-xs font-bold text-content">{item.title}</div>
-                      <div className="text-xs text-content-secondary mt-0.5">{item.desc}</div>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={item.state}
-                      onChange={(e) => item.setter(e.target.checked)}
-                      className="w-4 h-4 rounded text-primary-600 focus:ring-primary-500 mt-1"
-                    />
-                  </label>
-                ))}
-
-                <div className="pt-2 flex justify-end">
-                  <Button
-                    variant="primary"
-                    onClick={() => toast.success("Notification preferences saved!")}
-                  >
-                    <Save size={16} className="mr-2" />
-                    <span>Save Notifications</span>
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Billing & Plan Section */}
-          {activeSection === "billing" && (
-            <div className="p-6 sm:p-8 rounded-2xl border border-border bg-card shadow-sm space-y-6">
-              <div className="border-b border-border pb-4">
-                <h2 className="text-lg font-bold text-content">Subscription & Billing</h2>
-                <p className="text-xs text-content-secondary mt-0.5">
-                  Manage active job slots, recruiter seats, and payment methods.
-                </p>
-              </div>
-
-              <div className="p-5 rounded-xl border border-primary-200 bg-primary-50/50 dark:bg-primary-950/20 dark:border-primary-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                  <div className="inline-flex items-center gap-2">
-                    <span className="text-xs font-extrabold px-2.5 py-0.5 rounded-full bg-primary-600 text-white">
-                      GROWTH PLAN
-                    </span>
-                    <span className="text-xs text-content-secondary">• Renews on March 1, 2026</span>
-                  </div>
-                  <div className="text-sm font-bold text-content mt-1.5">
-                    10 Active Job Slots • Unlimited AI Screening • 5 Recruiter Seats
-                  </div>
-                </div>
-                <Button
-                  variant="primary"
-                  onClick={() => toast.info("Opening subscription upgrade dialog…")}
-                >
-                  Upgrade Plan
-                </Button>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="p-4 rounded-xl border border-border bg-card">
-                  <div className="text-xs font-semibold uppercase text-content-tertiary">
-                    Active Job Slots
-                  </div>
-                  <div className="text-xl font-bold text-content mt-1">4 / 10 used</div>
-                </div>
-                <div className="p-4 rounded-xl border border-border bg-card">
-                  <div className="text-xs font-semibold uppercase text-content-tertiary">
-                    AI Match Credits
-                  </div>
-                  <div className="text-xl font-bold text-success-600 mt-1">Unlimited</div>
-                </div>
-                <div className="p-4 rounded-xl border border-border bg-card">
-                  <div className="text-xs font-semibold uppercase text-content-tertiary">
-                    Direct Contact Credits
-                  </div>
-                  <div className="text-xl font-bold text-primary-600 mt-1">85 / 100 left</div>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       </div>
 
@@ -734,7 +555,7 @@ export default function EmployerSettingsPage() {
               >
                 <option value="Lead Recruiter">Lead Recruiter (Create jobs, manage applicants)</option>
                 <option value="Hiring Manager">Hiring Manager (Review applicants & notes)</option>
-                <option value="Admin">Admin (Full billing & team access)</option>
+                <option value="Admin">Admin (Full team & settings access)</option>
               </select>
             </div>
 
