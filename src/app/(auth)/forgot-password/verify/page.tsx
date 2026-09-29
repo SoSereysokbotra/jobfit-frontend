@@ -15,7 +15,7 @@ import { Alert } from "@/shared/components/feedback/alert";
 import { Button } from "@/shared/components/ui/button";
 
 /** Mirrors PASSWORD_RESET_CODE_TTL_MINUTES on the backend. */
-const CODE_TTL_SECONDS = 15 * 60;
+const CODE_TTL_SECONDS = 10 * 60;
 const RESEND_COOLDOWN_SECONDS = 30;
 
 const toMessage = (error: unknown, fallback: string) =>

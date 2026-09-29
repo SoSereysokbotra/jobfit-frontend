@@ -13,7 +13,7 @@ import { Button } from "@/shared/components/ui/button";
 import { useTranslation } from "@/providers/locale-provider";
 
 /** Mirrors VERIFICATION_CODE_TTL_MINUTES on the backend. */
-const CODE_TTL_SECONDS = 15 * 60;
+const CODE_TTL_SECONDS = 10 * 60;
 const RESEND_COOLDOWN_SECONDS = 30;
 
 // Mail client definitions
