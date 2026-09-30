@@ -4,14 +4,22 @@ import React from "react";
 import { MapPin, Sparkles } from "lucide-react";
 import MatchScoreBadge from "@/shared/components/data-display/match-score-badge";
 
-/* The four dimensions the real match engine scores against, so the preview
-   mirrors the product instead of inventing a different model. */
+/* The two checks the real match engine scores, with its real weights
+   (jobfit-backend weighted-match.calculator.ts: ROLE_WEIGHTS, PREFERENCE_WEIGHTS),
+   so the preview mirrors the product instead of inventing a different model.
+   The numbers are consistent with the engine's formula:
+     can-do = 96×0.6 + 90×0.4                   = 93.6
+     want   = 100×0.35 + 100×0.25 + 100×0.2 + 90×0.2 = 98
+     final  = round(93.6 × (0.30 + 0.70 × 0.98)) = 92 */
 const FACTORS = [
-  { label: "Technical skills", score: 96, weight: "40%" },
-  { label: "Experience level", score: 90, weight: "25%" },
-  { label: "Location & work mode", score: 100, weight: "20%" },
-  { label: "Salary alignment", score: 92, weight: "15%" },
+  { label: "Can you do it?", score: 94, detail: "Skills 60% · Experience 40%" },
+  {
+    label: "Do you want it?",
+    score: 98,
+    detail: "Work type & location 35% · Job type 25% · Level 20% · Salary 20%",
+  },
 ];
+const FINAL_SCORE = 92;
 
 /**
  * Illustrative match card shown under the hero copy.
@@ -42,7 +50,7 @@ export function HeroMatchPreview() {
           background: "var(--color-surface)",
         }}
       >
-        <MatchScoreBadge score={94} size="md" className="shrink-0" />
+        <MatchScoreBadge score={FINAL_SCORE} size="md" className="shrink-0" />
         <div className="min-w-0 flex-1">
           <p
             className="text-sm sm:text-base font-bold truncate"
@@ -64,23 +72,26 @@ export function HeroMatchPreview() {
         </span>
       </div>
 
-      {/* Score composition. Labels and bars share a row from `sm` up; below
-          that they stack, because a fixed label column wide enough for
-          "Location & work mode (20%)" leaves no room for the bar on a phone. */}
-      <div className="p-5 space-y-3.5 sm:space-y-3">
+      {/* Score composition: the two checks, each with what it is made of.
+          Labels and bars share a row from `sm` up; below that they stack. */}
+      <div className="p-5 space-y-4">
         {FACTORS.map((factor) => (
           <div key={factor.label} className="sm:flex sm:items-center sm:gap-3">
-            <div className="flex items-baseline justify-between gap-2 sm:w-56 sm:shrink-0">
-              <p
-                className="text-xs sm:text-sm font-medium"
-                style={{ color: "var(--color-text-secondary)" }}
-              >
-                {factor.label}
-                <span style={{ color: "var(--color-text-tertiary)" }}>
-                  {" "}
-                  ({factor.weight})
-                </span>
-              </p>
+            <div className="flex items-baseline justify-between gap-2 sm:w-64 sm:shrink-0">
+              <div className="min-w-0">
+                <p
+                  className="text-xs sm:text-sm font-semibold"
+                  style={{ color: "var(--color-text-primary)" }}
+                >
+                  {factor.label}
+                </p>
+                <p
+                  className="mt-0.5 text-[11px] sm:text-xs leading-snug"
+                  style={{ color: "var(--color-text-tertiary)" }}
+                >
+                  {factor.detail}
+                </p>
+              </div>
               <p
                 className="text-xs font-bold sm:hidden"
                 style={{ color: "var(--color-text-primary)" }}
